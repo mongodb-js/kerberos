@@ -2,7 +2,7 @@
   'targets': [
     {
       'target_name': 'kerberos',
-      'sources': [ 'lib/kerberos.cc' ],
+      'sources': [ 'lib/kerberos.cc', 'lib/worker.cc' ],
       'cflags!': [ '-fno-exceptions' ],
       'cflags_cc!': [ '-fno-exceptions' ],
       'conditions': [
