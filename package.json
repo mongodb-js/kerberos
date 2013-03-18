@@ -1,0 +1,25 @@
+{
+  "name": "kerberos",
+  "version": "0.0.1",
+  "description": "Kerberos library for Node.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/christkv/kerberos.git"
+  },
+  "keywords": [
+    "kerberos",
+    "security",
+    "authentication"
+  ],
+  "devDependencies": {
+    "nodeunit": "latest"
+  },
+  "author": "Christian Amor Kvalheim",
+  "license": "Apache 2.0",
+  "readmeFilename": "README.md",
+  "gitHead": "bb01d4fe322e022999aca19da564e7d9db59a8ed"
+}
