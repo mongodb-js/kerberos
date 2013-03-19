@@ -1,5 +1,5 @@
-#ifndef KERBEROS_H
-#define KERBEROS_H
+#ifndef KERBEROS_CONTEXT_H
+#define KERBEROS_CONTEXT_H
 
 #include <gssapi/gssapi.h>
 #include <gssapi/gssapi_generic.h>
@@ -16,11 +16,17 @@ extern "C" {
 using namespace v8;
 using namespace node;
 
-class Kerberos : public ObjectWrap {
+class KerberosContext : public ObjectWrap {
 
 public:
-  Kerberos();
-  ~Kerberos() {};
+  KerberosContext();
+  ~KerberosContext();
+
+  static inline bool HasInstance(Handle<Value> val) {
+    if (!val->IsObject()) return false;
+    Local<Object> obj = val->ToObject();
+    return constructor_template->HasInstance(obj);
+  };
 
   // Constructor used for creating new Kerberos objects from C++
   static Persistent<FunctionTemplate> constructor_template;
@@ -28,16 +34,13 @@ public:
   // Initialize function for the object
   static void Initialize(Handle<Object> target);
 
-  // Method available
-  static Handle<Value> AuthGSSClientInit(const Arguments &args);  
+  // Public constructor
+  static KerberosContext* New();
+
+  // Handle to the kerberos context
+  gss_client_state *state;
 
 private:
   static Handle<Value> New(const Arguments &args);  
-
-  // Handles the uv calls
-  static void Process(uv_work_t* work_req);
-  // Called after work is done
-  static void After(uv_work_t* work_req);
 };
-
 #endif

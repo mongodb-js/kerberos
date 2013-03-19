@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+#ifndef KERBEROS_GSS_H
+#define KERBEROS_GSS_H
 
 #include <gssapi/gssapi.h>
 #include <gssapi/gssapi_generic.h>
@@ -47,7 +49,7 @@ typedef struct {
     char*            response;
 } gss_server_state;
 
-char* server_principal_details(const char* service, const char* hostname);
+// char* server_principal_details(const char* service, const char* hostname);
 
 int authenticate_gss_client_init(const char* service, long int gss_flags, gss_client_state* state);
 int authenticate_gss_client_clean(gss_client_state *state);
@@ -57,4 +59,5 @@ int authenticate_gss_client_wrap(gss_client_state* state, const char* challenge,
 
 int authenticate_gss_server_init(const char* service, gss_server_state* state);
 int authenticate_gss_server_clean(gss_server_state *state);
-int authenticate_gss_server_step(gss_server_state *state, const char *challenge);
+// int authenticate_gss_server_step(gss_server_state *state, const char *challenge);
+#endif

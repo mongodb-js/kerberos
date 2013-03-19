@@ -1,10 +1,12 @@
 #ifndef WORKER_H_
 #define WORKER_H_
 
-#include <v8.h>
 #include <node.h>
+#include <node_object_wrap.h>
+#include <v8.h>
 
 using namespace node;
+using namespace v8;
 
 class Worker {
   public:
@@ -15,10 +17,12 @@ class Worker {
     uv_work_t request;
     // Callback
     v8::Persistent<v8::Function> callback;
-    // Arguments
-    v8::Persistent<v8::Array> arguments;
+    // // Arguments
+    // v8::Persistent<v8::Array> arguments;
+    // Parameters
+    void *parameters;
     // Results
-    v8::Persistent<v8::Value> return_value;
+    void *return_value;
     // Did we raise an error
     bool error;
     // The error message
@@ -26,7 +30,8 @@ class Worker {
     // Error code if not message
     int error_code;
     // Method we are going to fire
-    void virtual execute();
+    void (*execute)(Worker *worker);
+    Handle<Value> (*mapper)(Worker *worker);
 };
 
 #endif  // WORKER_H_

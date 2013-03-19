@@ -1,13 +1,19 @@
 #include "kerberos.h"
-#include "kerberosgss.h"
 #include <stdlib.h>
 #include "worker.h"
+#include "kerberos_context.h"
 
 #ifndef ARRAY_SIZE
 # define ARRAY_SIZE(a) (sizeof((a)) / sizeof((a)[0]))
 #endif
 
 Persistent<FunctionTemplate> Kerberos::constructor_template;
+
+// Call structs
+typedef struct AuthGSSClientCall {
+  uint32_t  flags;
+  char *uri;
+} AuthGSSClientCall;
 
 // VException object (causes throw in calling code)
 static Handle<Value> VException(const char *msg) {
@@ -22,7 +28,7 @@ void Kerberos::Initialize(v8::Handle<v8::Object> target) {
   // Grab the scope of the call from Node
   HandleScope scope;
   // Define a new function template
-  Local<FunctionTemplate> t = FunctionTemplate::New(New);
+  Local<FunctionTemplate> t = FunctionTemplate::New(Kerberos::New);
   constructor_template = Persistent<FunctionTemplate>::New(t);
   constructor_template->InstanceTemplate()->SetInternalFieldCount(1);
   constructor_template->SetClassName(String::NewSymbol("Kerberos"));
@@ -42,57 +48,81 @@ Handle<Value> Kerberos::New(const Arguments &args) {
   return args.This();
 }
 
+static void _authGSSClientInit(Worker *worker) {
+  gss_client_state *state;
+  int result = 0;
+
+  // Allocate state
+  state = (gss_client_state *)malloc(sizeof(gss_client_state));
+  
+  // Unpack the parameter data struct
+  AuthGSSClientCall *call = (AuthGSSClientCall *)worker->parameters;
+  // Start the kerberos client
+  result = authenticate_gss_client_init(call->uri, call->flags, state);
+  // Release the parameter struct memory
+  free(call);
+  // If we have an error mark worker as having had an error
+  if(result == AUTH_GSS_ERROR) {
+    worker->error = TRUE;
+    worker->error_code = result;
+    worker->error_message = (char *)"Failed to initialize GSS client";
+  } else {
+    worker->return_value = state;
+  }
+}
+
+static Handle<Value> _map_authGSSClientInit(Worker *worker) {
+  HandleScope scope;
+
+  KerberosContext *context = KerberosContext::New();
+  context->state = (gss_client_state *)worker->return_value;
+  // Persistent<Value> _context = Persistent<Value>::New(context->handle_);
+  return scope.Close(context->handle_);
+}
+
 // Initialize method
 Handle<Value> Kerberos::AuthGSSClientInit(const Arguments &args) {
   HandleScope scope;
-  gss_client_state *state;
 
   // Ensure valid call
-  if(args.Length() != 3) return VException("Requires a service string uri, integer flags and a callback");
-  if(args.Length() == 3 && !args[0]->IsString() && !args[1]->IsInt32() && !args[2]->IsFunction()) return VException("Requires a service string uri, integer flags and a callback");
+  if(args.Length() != 3) return VException("Requires a service string uri, integer flags and a callback function");
+  if(args.Length() == 3 && !args[0]->IsString() && !args[1]->IsInt32() && !args[2]->IsFunction()) 
+      return VException("Requires a service string uri, integer flags and a callback function");
 
-  // // Convert string to c-string
-  // Local<String> service = args[0]->ToString();
-  // // Allocate space for c-string
-  // char *service_str = (char *)calloc(service->Utf8Length() + 1, sizeof(char));
-  // // Write v8 string to c-string
-  // service->WriteUtf8(service_str);
-  // // Flags
-  // int flags = args[1]->ToInt32()->IntegerValue();
+  Local<String> service = args[0]->ToString();
+  // Convert uri string to c-string
+  char *service_str = (char *)calloc(service->Utf8Length() + 1, sizeof(char));
+  // Write v8 string to c-string
+  service->WriteUtf8(service_str);
 
-  // Create Arguments array
-  Local<Array> arguments_array = Array::New();
-  arguments_array->Set(0, args[0]->ToString());
-  arguments_array->Set(1, args[1]->ToInt32());
+  // Allocate a structure
+  AuthGSSClientCall *call = (AuthGSSClientCall *)calloc(1, sizeof(AuthGSSClientCall));
+  call->flags =args[1]->ToInt32()->Uint32Value();
+  call->uri = service_str;
 
   // Unpack the callback
   Local<Function> callback = Local<Function>::Cast(args[2]);
 
-  // // Let's allocate some space
-  // state = (gss_client_state *)malloc(sizeof(gss_client_state));
+  // Let's allocate some space
   Worker *worker = new Worker();
   worker->error = false;
   worker->request.data = worker;
   worker->callback = Persistent<Function>::New(callback);
-  worker->arguments = Persistent<Array>::New(arguments_array);
-  worker->return_value = Persistent<Value>::New(String::New("hello world"));
+  worker->parameters = call;
+  worker->execute = _authGSSClientInit;
+  worker->mapper = _map_authGSSClientInit;
 
   // Schedule the worker with lib_uv
   uv_queue_work(uv_default_loop(), &worker->request, Kerberos::Process, Kerberos::After);
-
-  // return scope.Close(Uint32::New((uint32_t) countSerializer.GetSerializeSize()));
-  // Local<Array> returnArray = Array::New();
-  // returnArray->Set(0, Integer::New(0));
-  // returnArray->Set(1, Object::New());
-  // return scope.Close(returnArray);
-  return scope.Close(Null());
+  // Return no value as it's callback based
+  return scope.Close(Undefined());
 }
 
 void Kerberos::Process(uv_work_t* work_req) {
   // Grab the worker
   Worker *worker = static_cast<Worker*>(work_req->data);
   // Execute the worker code
-  worker->execute();
+  worker->execute(worker);
 }
 
 void Kerberos::After(uv_work_t* work_req) {
@@ -116,7 +146,7 @@ void Kerberos::After(uv_work_t* work_req) {
     }
   } else {
     // // Map the data
-    v8::Handle<v8::Value> result = worker->return_value;
+    v8::Handle<v8::Value> result = worker->mapper(worker);
     // Set up the callback with a null first
     v8::Handle<v8::Value> args[2] = { v8::Local<v8::Value>::New(v8::Null()), result};
     // Wrap the callback function call in a TryCatch so that we can call
@@ -142,6 +172,5 @@ void Kerberos::After(uv_work_t* work_req) {
 extern "C" void init(Handle<Object> target) {
   HandleScope scope;
   Kerberos::Initialize(target);
+  KerberosContext::Initialize(target);
 }
-
-NODE_MODULE(kerberos, Kerberos::Initialize);

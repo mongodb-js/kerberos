@@ -5,6 +5,3 @@ Worker::Worker() {
 
 Worker::~Worker() {
 }
-
-void Worker::execute() {
-}

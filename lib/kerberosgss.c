@@ -14,7 +14,6 @@
  * limitations under the License.
  **/
 
-#include <Python.h>
 #include "kerberosgss.h"
 
 #include "base64.h"
@@ -26,7 +25,7 @@
 
 static void set_gss_error(OM_uint32 err_maj, OM_uint32 err_min);
 
-extern PyObject *GssException_class;
+/*extern PyObject *GssException_class;
 extern PyObject *KrbException_class;
 
 char* server_principal_details(const char* service, const char* hostname)
@@ -105,35 +104,33 @@ end:
     
     return result;
 }
+*/
+int authenticate_gss_client_init(const char* service, long int gss_flags, gss_client_state* state) {
+  OM_uint32 maj_stat;
+  OM_uint32 min_stat;
+  gss_buffer_desc name_token = GSS_C_EMPTY_BUFFER;
+  int ret = AUTH_GSS_COMPLETE;
 
-int authenticate_gss_client_init(const char* service, long int gss_flags, gss_client_state* state)
-{
-    OM_uint32 maj_stat;
-    OM_uint32 min_stat;
-    gss_buffer_desc name_token = GSS_C_EMPTY_BUFFER;
-    int ret = AUTH_GSS_COMPLETE;
-    
-    state->server_name = GSS_C_NO_NAME;
-    state->context = GSS_C_NO_CONTEXT;
-    state->gss_flags = gss_flags;
-    state->username = NULL;
-    state->response = NULL;
-    
-    // Import server name first
-    name_token.length = strlen(service);
-    name_token.value = (char *)service;
-    
-    maj_stat = gss_import_name(&min_stat, &name_token, gss_krb5_nt_service_name, &state->server_name);
-    
-    if (GSS_ERROR(maj_stat))
-    {
-        set_gss_error(maj_stat, min_stat);
-        ret = AUTH_GSS_ERROR;
-        goto end;
-    }
-    
+  state->server_name = GSS_C_NO_NAME;
+  state->context = GSS_C_NO_CONTEXT;
+  state->gss_flags = gss_flags;
+  state->username = NULL;
+  state->response = NULL;
+  
+  // Import server name first
+  name_token.length = strlen(service);
+  name_token.value = (char *)service;
+  
+  maj_stat = gss_import_name(&min_stat, &name_token, gss_krb5_nt_service_name, &state->server_name);
+  
+  if (GSS_ERROR(maj_stat)) {
+  set_gss_error(maj_stat, min_stat);
+  ret = AUTH_GSS_ERROR;
+  goto end;
+  }
+  
 end:
-    return ret;
+  return ret;
 }
 
 int authenticate_gss_client_clean(gss_client_state *state)
@@ -257,133 +254,133 @@ end:
 
 int authenticate_gss_client_unwrap(gss_client_state *state, const char *challenge)
 {
-	OM_uint32 maj_stat;
-	OM_uint32 min_stat;
-	gss_buffer_desc input_token = GSS_C_EMPTY_BUFFER;
-	gss_buffer_desc output_token = GSS_C_EMPTY_BUFFER;
-	int ret = AUTH_GSS_CONTINUE;
+  OM_uint32 maj_stat;
+  OM_uint32 min_stat;
+  gss_buffer_desc input_token = GSS_C_EMPTY_BUFFER;
+  gss_buffer_desc output_token = GSS_C_EMPTY_BUFFER;
+  int ret = AUTH_GSS_CONTINUE;
     
-	// Always clear out the old response
-	if (state->response != NULL)
-	{
-		free(state->response);
-		state->response = NULL;
-	}
+  // Always clear out the old response
+  if (state->response != NULL)
+  {
+    free(state->response);
+    state->response = NULL;
+  }
     
-	// If there is a challenge (data from the server) we need to give it to GSS
-	if (challenge && *challenge)
-	{
-		int len;
-		input_token.value = base64_decode(challenge, &len);
-		input_token.length = len;
-	}
+  // If there is a challenge (data from the server) we need to give it to GSS
+  if (challenge && *challenge)
+  {
+    int len;
+    input_token.value = base64_decode(challenge, &len);
+    input_token.length = len;
+  }
     
-	// Do GSSAPI step
-	maj_stat = gss_unwrap(&min_stat,
+  // Do GSSAPI step
+  maj_stat = gss_unwrap(&min_stat,
                           state->context,
                           &input_token,
                           &output_token,
                           NULL,
                           NULL);
     
-	if (maj_stat != GSS_S_COMPLETE)
-	{
-		set_gss_error(maj_stat, min_stat);
-		ret = AUTH_GSS_ERROR;
-		goto end;
-	}
-	else
-		ret = AUTH_GSS_COMPLETE;
+  if (maj_stat != GSS_S_COMPLETE)
+  {
+    set_gss_error(maj_stat, min_stat);
+    ret = AUTH_GSS_ERROR;
+    goto end;
+  }
+  else
+    ret = AUTH_GSS_COMPLETE;
     
-	// Grab the client response
-	if (output_token.length)
-	{
-		state->response = base64_encode((const unsigned char *)output_token.value, output_token.length);
-		maj_stat = gss_release_buffer(&min_stat, &output_token);
-	}
+  // Grab the client response
+  if (output_token.length)
+  {
+    state->response = base64_encode((const unsigned char *)output_token.value, output_token.length);
+    maj_stat = gss_release_buffer(&min_stat, &output_token);
+  }
 end:
-	if (output_token.value)
-		gss_release_buffer(&min_stat, &output_token);
-	if (input_token.value)
-		free(input_token.value);
-	return ret;
+  if (output_token.value)
+    gss_release_buffer(&min_stat, &output_token);
+  if (input_token.value)
+    free(input_token.value);
+  return ret;
 }
 
 int authenticate_gss_client_wrap(gss_client_state* state, const char* challenge, const char* user)
 {
-	OM_uint32 maj_stat;
-	OM_uint32 min_stat;
-	gss_buffer_desc input_token = GSS_C_EMPTY_BUFFER;
-	gss_buffer_desc output_token = GSS_C_EMPTY_BUFFER;
-	int ret = AUTH_GSS_CONTINUE;
-	char buf[4096], server_conf_flags;
-	unsigned long buf_size;
+  OM_uint32 maj_stat;
+  OM_uint32 min_stat;
+  gss_buffer_desc input_token = GSS_C_EMPTY_BUFFER;
+  gss_buffer_desc output_token = GSS_C_EMPTY_BUFFER;
+  int ret = AUTH_GSS_CONTINUE;
+  char buf[4096], server_conf_flags;
+  unsigned long buf_size;
     
-	// Always clear out the old response
-	if (state->response != NULL)
-	{
-		free(state->response);
-		state->response = NULL;
-	}
+  // Always clear out the old response
+  if (state->response != NULL)
+  {
+    free(state->response);
+    state->response = NULL;
+  }
     
-	if (challenge && *challenge)
-	{
-		int len;
-		input_token.value = base64_decode(challenge, &len);
-		input_token.length = len;
-	}
+  if (challenge && *challenge)
+  {
+    int len;
+    input_token.value = base64_decode(challenge, &len);
+    input_token.length = len;
+  }
     
-	if (user) {
-		// get bufsize
-		server_conf_flags = ((char*) input_token.value)[0];
-		((char*) input_token.value)[0] = 0;
-		buf_size = ntohl(*((long *) input_token.value));
-		free(input_token.value);
+  if (user) {
+    // get bufsize
+    server_conf_flags = ((char*) input_token.value)[0];
+    ((char*) input_token.value)[0] = 0;
+    buf_size = ntohl(*((long *) input_token.value));
+    free(input_token.value);
 #ifdef PRINTFS
-		printf("User: %s, %c%c%c\n", user,
+    printf("User: %s, %c%c%c\n", user,
                server_conf_flags & GSS_AUTH_P_NONE      ? 'N' : '-',
                server_conf_flags & GSS_AUTH_P_INTEGRITY ? 'I' : '-',
                server_conf_flags & GSS_AUTH_P_PRIVACY   ? 'P' : '-');
-		printf("Maximum GSS token size is %ld\n", buf_size);
+    printf("Maximum GSS token size is %ld\n", buf_size);
 #endif
         
-		// agree to terms (hack!)
-		buf_size = htonl(buf_size); // not relevant without integrity/privacy
-		memcpy(buf, &buf_size, 4);
-		buf[0] = GSS_AUTH_P_NONE;
-		// server decides if principal can log in as user
-		strncpy(buf + 4, user, sizeof(buf) - 4);
-		input_token.value = buf;
-		input_token.length = 4 + strlen(user);
-	}
+    // agree to terms (hack!)
+    buf_size = htonl(buf_size); // not relevant without integrity/privacy
+    memcpy(buf, &buf_size, 4);
+    buf[0] = GSS_AUTH_P_NONE;
+    // server decides if principal can log in as user
+    strncpy(buf + 4, user, sizeof(buf) - 4);
+    input_token.value = buf;
+    input_token.length = 4 + strlen(user);
+  }
     
-	// Do GSSAPI wrap
-	maj_stat = gss_wrap(&min_stat,
-						state->context,
-						0,
-						GSS_C_QOP_DEFAULT,
-						&input_token,
-						NULL,
-						&output_token);
+  // Do GSSAPI wrap
+  maj_stat = gss_wrap(&min_stat,
+            state->context,
+            0,
+            GSS_C_QOP_DEFAULT,
+            &input_token,
+            NULL,
+            &output_token);
     
-	if (maj_stat != GSS_S_COMPLETE)
-	{
-		set_gss_error(maj_stat, min_stat);
-		ret = AUTH_GSS_ERROR;
-		goto end;
-	}
-	else
-		ret = AUTH_GSS_COMPLETE;
-	// Grab the client response to send back to the server
-	if (output_token.length)
-	{
-		state->response = base64_encode((const unsigned char *)output_token.value, output_token.length);;
-		maj_stat = gss_release_buffer(&min_stat, &output_token);
-	}
+  if (maj_stat != GSS_S_COMPLETE)
+  {
+    set_gss_error(maj_stat, min_stat);
+    ret = AUTH_GSS_ERROR;
+    goto end;
+  }
+  else
+    ret = AUTH_GSS_COMPLETE;
+  // Grab the client response to send back to the server
+  if (output_token.length)
+  {
+    state->response = base64_encode((const unsigned char *)output_token.value, output_token.length);;
+    maj_stat = gss_release_buffer(&min_stat, &output_token);
+  }
 end:
-	if (output_token.value)
-		gss_release_buffer(&min_stat, &output_token);
-	return ret;
+  if (output_token.value)
+    gss_release_buffer(&min_stat, &output_token);
+  return ret;
 }
 
 int authenticate_gss_server_init(const char *service, gss_server_state *state)
@@ -470,7 +467,7 @@ int authenticate_gss_server_clean(gss_server_state *state)
     return ret;
 }
 
-int authenticate_gss_server_step(gss_server_state *state, const char *challenge)
+/*int authenticate_gss_server_step(gss_server_state *state, const char *challenge)
 {
     OM_uint32 maj_stat;
     OM_uint32 min_stat;
@@ -569,7 +566,7 @@ end:
         free(input_token.value);
     return ret;
 }
-
+*/
 
 static void set_gss_error(OM_uint32 err_maj, OM_uint32 err_min)
 {
@@ -605,5 +602,5 @@ static void set_gss_error(OM_uint32 err_maj, OM_uint32 err_min)
         }
     } while (!GSS_ERROR(maj_stat) && msg_ctx != 0);
     
-    PyErr_SetObject(GssException_class, Py_BuildValue("((s:i)(s:i))", buf_maj, err_maj, buf_min, err_min));
+    /*PyErr_SetObject(GssException_class, Py_BuildValue("((s:i)(s:i))", buf_maj, err_maj, buf_min, err_min));*/
 }
