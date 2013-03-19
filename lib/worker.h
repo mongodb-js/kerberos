@@ -29,6 +29,8 @@ class Worker {
     char *error_message;
     // Error code if not message
     int error_code;
+    // Any return code
+    int return_code;
     // Method we are going to fire
     void (*execute)(Worker *worker);
     Handle<Value> (*mapper)(Worker *worker);

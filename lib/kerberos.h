@@ -29,7 +29,8 @@ public:
   static void Initialize(Handle<Object> target);
 
   // Method available
-  static Handle<Value> AuthGSSClientInit(const Arguments &args);  
+  static Handle<Value> AuthGSSClientInit(const Arguments &args);
+  static Handle<Value> AuthGSSClientStep(const Arguments &args);
 
 private:
   static Handle<Value> New(const Arguments &args);  
