@@ -31,33 +31,40 @@
 #define GSS_AUTH_P_PRIVACY      4
 
 typedef struct {
-    gss_ctx_id_t     context;
-    gss_name_t       server_name;
-    long int         gss_flags;
-    char*            username;
-    char*            response;
+  int return_code;
+  char *message;
+} gss_client_response;
+
+typedef struct {
+  gss_ctx_id_t     context;
+  gss_name_t       server_name;
+  long int         gss_flags;
+  char*            username;
+  char*            response;
 } gss_client_state;
 
 typedef struct {
-    gss_ctx_id_t     context;
-    gss_name_t       server_name;
-    gss_name_t       client_name;
-    gss_cred_id_t    server_creds;
-    gss_cred_id_t    client_creds;
-    char*            username;
-    char*            targetname;
-    char*            response;
+  gss_ctx_id_t     context;
+  gss_name_t       server_name;
+  gss_name_t       client_name;
+  gss_cred_id_t    server_creds;
+  gss_cred_id_t    client_creds;
+  char*            username;
+  char*            targetname;
+  char*            response;
 } gss_server_state;
 
 // char* server_principal_details(const char* service, const char* hostname);
 
-int authenticate_gss_client_init(const char* service, long int gss_flags, gss_client_state* state);
+gss_client_response *authenticate_gss_client_init(const char* service, long int gss_flags, gss_client_state* state);
 int authenticate_gss_client_clean(gss_client_state *state);
-int authenticate_gss_client_step(gss_client_state *state, const char *challenge);
+gss_client_response *authenticate_gss_client_step(gss_client_state *state, const char *challenge);
 int authenticate_gss_client_unwrap(gss_client_state* state, const char* challenge);
 int authenticate_gss_client_wrap(gss_client_state* state, const char* challenge, const char* user);
 
 int authenticate_gss_server_init(const char* service, gss_server_state* state);
 int authenticate_gss_server_clean(gss_server_state *state);
 // int authenticate_gss_server_step(gss_server_state *state, const char *challenge);
+
+gss_client_response *gss_error(OM_uint32 err_maj, OM_uint32 err_min);
 #endif
