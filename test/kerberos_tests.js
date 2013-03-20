@@ -17,7 +17,8 @@ exports['Simple initialize of Kerberos object'] = function(test) {
     test.equal(null, err);
     test.ok(context != null && typeof context == 'object');
     // console.log("===================================== authGSSClientInit")
-    // console.dir(err)
+    console.dir(err)
+    console.dir(context)
     // console.dir(typeof result)
 
     // Perform the first step
@@ -25,6 +26,7 @@ exports['Simple initialize of Kerberos object'] = function(test) {
       console.log("===================================== authGSSClientStep")
       console.dir(err)
       console.dir(result)
+      console.dir(context)
 
       test.done();
     });

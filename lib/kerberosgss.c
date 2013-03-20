@@ -199,10 +199,7 @@ gss_client_response *authenticate_gss_client_step(gss_client_state* state, const
                                   NULL,
                                   NULL);
 
-  /*printf("====================== maj_stat :: %d\n", maj_stat);*/
-  
   if ((maj_stat != GSS_S_COMPLETE) && (maj_stat != GSS_S_CONTINUE_NEEDED)) {
-    /*printf("====================== maj_stat :: 0 \n");*/
     response = gss_error(maj_stat, min_stat);
     response->return_code = AUTH_GSS_ERROR;
     goto end;
@@ -211,14 +208,12 @@ gss_client_response *authenticate_gss_client_step(gss_client_state* state, const
   ret = (maj_stat == GSS_S_COMPLETE) ? AUTH_GSS_COMPLETE : AUTH_GSS_CONTINUE;
   // Grab the client response to send back to the server
   if(output_token.length) {
-    /*printf("====================== maj_stat :: 1 \n");*/
     state->response = base64_encode((const unsigned char *)output_token.value, output_token.length);;
     maj_stat = gss_release_buffer(&min_stat, &output_token);
   }
   
   // Try to get the user name if we have completed all GSS operations
   if (ret == AUTH_GSS_COMPLETE) {
-    /*printf("====================== maj_stat :: 3 \n");*/
     gss_name_t gssuser = GSS_C_NO_NAME;
     maj_stat = gss_inquire_context(&min_stat, state->context, &gssuser, NULL, NULL, NULL,  NULL, NULL, NULL);
     
@@ -264,24 +259,22 @@ end:
   return response;
 }
 
-int authenticate_gss_client_unwrap(gss_client_state *state, const char *challenge)
-{
+gss_client_response *authenticate_gss_client_unwrap(gss_client_state *state, const char *challenge) {
   OM_uint32 maj_stat;
   OM_uint32 min_stat;
   gss_buffer_desc input_token = GSS_C_EMPTY_BUFFER;
   gss_buffer_desc output_token = GSS_C_EMPTY_BUFFER;
+  gss_client_response *response = NULL;
   int ret = AUTH_GSS_CONTINUE;
     
   // Always clear out the old response
-  if (state->response != NULL)
-  {
+  if(state->response != NULL) {
     free(state->response);
     state->response = NULL;
   }
     
   // If there is a challenge (data from the server) we need to give it to GSS
-  if (challenge && *challenge)
-  {
+  if(challenge && *challenge) {
     int len;
     input_token.value = base64_decode(challenge, &len);
     input_token.length = len;
@@ -295,27 +288,32 @@ int authenticate_gss_client_unwrap(gss_client_state *state, const char *challeng
                           NULL,
                           NULL);
     
-  if (maj_stat != GSS_S_COMPLETE)
-  {
-    set_gss_error(maj_stat, min_stat);
-    ret = AUTH_GSS_ERROR;
+  if(maj_stat != GSS_S_COMPLETE) {
+    response = gss_error(maj_stat, min_stat);
+    response->return_code = AUTH_GSS_ERROR;
     goto end;
+  } else {
+    ret = AUTH_GSS_COMPLETE;    
   }
-  else
-    ret = AUTH_GSS_COMPLETE;
     
   // Grab the client response
-  if (output_token.length)
-  {
+  if(output_token.length) {
     state->response = base64_encode((const unsigned char *)output_token.value, output_token.length);
     maj_stat = gss_release_buffer(&min_stat, &output_token);
   }
 end:
-  if (output_token.value)
+  if(output_token.value)
     gss_release_buffer(&min_stat, &output_token);
-  if (input_token.value)
+  if(input_token.value)
     free(input_token.value);
-  return ret;
+
+  if(response == NULL) {
+    response = calloc(1, sizeof(gss_client_response));
+    response->return_code = ret;
+  }
+
+  // Return the response
+  return response;
 }
 
 int authenticate_gss_client_wrap(gss_client_state* state, const char* challenge, const char* user)

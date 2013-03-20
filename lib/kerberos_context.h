@@ -42,5 +42,7 @@ public:
 
 private:
   static Handle<Value> New(const Arguments &args);  
+
+  static Handle<Value> ResponseGetter(Local<String> property, const AccessorInfo& info);  
 };
 #endif

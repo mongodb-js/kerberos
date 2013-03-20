@@ -31,7 +31,7 @@ public:
   // Method available
   static Handle<Value> AuthGSSClientInit(const Arguments &args);
   static Handle<Value> AuthGSSClientStep(const Arguments &args);
-  static Handle<Value> AuthGSSClientResponse(const Arguments &args);
+  static Handle<Value> AuthGSSClientUnwrap(const Arguments &args);
 
 private:
   static Handle<Value> New(const Arguments &args);  

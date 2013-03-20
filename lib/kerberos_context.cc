@@ -27,6 +27,8 @@ Handle<Value> KerberosContext::New(const Arguments &args) {
   return args.This();    
 }
 
+static Persistent<String> response_symbol;
+
 void KerberosContext::Initialize(Handle<Object> target) {
   // Grab the scope of the call from Node
   HandleScope scope;
@@ -35,23 +37,37 @@ void KerberosContext::Initialize(Handle<Object> target) {
   constructor_template = Persistent<FunctionTemplate>::New(t);
   constructor_template->InstanceTemplate()->SetInternalFieldCount(1);
   constructor_template->SetClassName(String::NewSymbol("KerberosContext"));
-  
-  // // Instance methods
+
+  // Property symbols
+  response_symbol = NODE_PSYMBOL("response");
+    
+  // Getter for the response
+  constructor_template->InstanceTemplate()->SetAccessor(response_symbol, ResponseGetter);
+
+  // Instance methods
+  // NODE_SET_PROTOTYPE_METHOD(constructor_template, "response", ToString);
   // NODE_SET_PROTOTYPE_METHOD(constructor_template, "toString", ToString);
   // NODE_SET_PROTOTYPE_METHOD(constructor_template, "inspect", Inspect);  
 
+  // Set up the Symbol for the Class on the Module
   target->Set(String::NewSymbol("KerberosContext"), constructor_template->GetFunction());
 }
 
-// Handle<Value> MinKey::Inspect(const Arguments &args) {
-//   return MinKey::ToString(args);
-// }
+//
+// Response Setter / Getter
+Handle<Value> KerberosContext::ResponseGetter(Local<String> property, const AccessorInfo& info) {
+  HandleScope scope;
+  gss_client_state *state;
 
-// Handle<Value> MinKey::ToString(const Arguments &args) {
-//   HandleScope scope;
-//   // Return the raw data  
-//   return Object::New()->ToString();
-// }
+  // Unpack the object
+  KerberosContext *context = ObjectWrap::Unwrap<KerberosContext>(info.Holder());
+  // Let's grab the response
+  state = context->state;
+  // No state no response
+  if(state == NULL || state->response == NULL) return scope.Close(Null());
+  // Return the response
+  return scope.Close(String::New(state->response));
+}
 
 
 

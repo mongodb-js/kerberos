@@ -59,7 +59,7 @@ typedef struct {
 gss_client_response *authenticate_gss_client_init(const char* service, long int gss_flags, gss_client_state* state);
 int authenticate_gss_client_clean(gss_client_state *state);
 gss_client_response *authenticate_gss_client_step(gss_client_state *state, const char *challenge);
-int authenticate_gss_client_unwrap(gss_client_state* state, const char* challenge);
+gss_client_response *authenticate_gss_client_unwrap(gss_client_state* state, const char* challenge);
 int authenticate_gss_client_wrap(gss_client_state* state, const char* challenge, const char* user);
 
 int authenticate_gss_server_init(const char* service, gss_server_state* state);
