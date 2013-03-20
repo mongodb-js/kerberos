@@ -31,6 +31,10 @@ typedef struct AuthGSSClientWrapCall {
   char *user_name;
 } AuthGSSClientWrapCall;
 
+typedef struct AuthGSSClientCleanCall {
+  KerberosContext *context;
+} AuthGSSClientCleanCall;
+
 // VException object (causes throw in calling code)
 static Handle<Value> VException(const char *msg) {
   HandleScope scope;
@@ -54,6 +58,7 @@ void Kerberos::Initialize(v8::Handle<v8::Object> target) {
   NODE_SET_PROTOTYPE_METHOD(constructor_template, "authGSSClientStep", AuthGSSClientStep);  
   NODE_SET_PROTOTYPE_METHOD(constructor_template, "authGSSClientUnwrap", AuthGSSClientUnwrap);
   NODE_SET_PROTOTYPE_METHOD(constructor_template, "authGSSClientWrap", AuthGSSClientWrap);
+  NODE_SET_PROTOTYPE_METHOD(constructor_template, "authGSSClientClean", AuthGSSClientClean);
 
   // Set the symbol
   target->ForceSet(String::NewSymbol("Kerberos"), constructor_template->GetFunction());
@@ -354,6 +359,7 @@ static void _authGSSClientWrap(Worker *worker) {
 
   // Free up structure
   if(call->challenge != NULL) free(call->challenge);
+  if(call->user_name != NULL) free(call->user_name);
   free(call);
   free(response);
 }
@@ -416,6 +422,73 @@ Handle<Value> Kerberos::AuthGSSClientWrap(const Arguments &args) {
   worker->parameters = call;
   worker->execute = _authGSSClientWrap;
   worker->mapper = _map_authGSSClientWrap;
+
+  // Schedule the worker with lib_uv
+  uv_queue_work(uv_default_loop(), &worker->request, Kerberos::Process, Kerberos::After);
+
+  // Return no value as it's callback based
+  return scope.Close(Undefined());
+}
+
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// authGSSClientWrap
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+static void _authGSSClientClean(Worker *worker) {
+  gss_client_response *response;
+
+  // Unpack the parameter data struct
+  AuthGSSClientCleanCall *call = (AuthGSSClientCleanCall *)worker->parameters;
+
+  // Perform authentication step
+  response = authenticate_gss_client_clean(call->context->state);
+
+  // If we have an error mark worker as having had an error
+  if(response->return_code == AUTH_GSS_ERROR) {
+    worker->error = TRUE;
+    worker->error_code = response->return_code;
+    worker->error_message = response->message;
+  } else {
+    worker->return_code = response->return_code;
+  }
+
+  // Free up structure
+  free(call);
+  free(response);
+}
+
+static Handle<Value> _map_authGSSClientClean(Worker *worker) {
+  HandleScope scope;
+  // Return the return code
+  return scope.Close(Int32::New(worker->return_code));
+}
+
+// Initialize method
+Handle<Value> Kerberos::AuthGSSClientClean(const Arguments &args) {
+  HandleScope scope;
+
+  // // Ensure valid call
+  if(args.Length() != 2) return VException("Requires a GSS context and callback function");
+  if(!KerberosContext::HasInstance(args[0]) && !args[1]->IsFunction()) return VException("Requires a GSS context and callback function");
+
+  // Let's unpack the kerberos context
+  Local<Object> object = args[0]->ToObject();
+  KerberosContext *kerberos_context = KerberosContext::Unwrap<KerberosContext>(object);
+
+  // Allocate a structure
+  AuthGSSClientCleanCall *call = (AuthGSSClientCleanCall *)calloc(1, sizeof(AuthGSSClientCleanCall));
+  call->context = kerberos_context;
+
+  // Unpack the callback
+  Local<Function> callback = args.Length() == 4 ? Local<Function>::Cast(args[3]) : Local<Function>::Cast(args[2]);
+
+  // Let's allocate some space
+  Worker *worker = new Worker();
+  worker->error = false;
+  worker->request.data = worker;
+  worker->callback = Persistent<Function>::New(callback);
+  worker->parameters = call;
+  worker->execute = _authGSSClientClean;
+  worker->mapper = _map_authGSSClientClean;
 
   // Schedule the worker with lib_uv
   uv_queue_work(uv_default_loop(), &worker->request, Kerberos::Process, Kerberos::After);

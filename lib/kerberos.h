@@ -33,6 +33,7 @@ public:
   static Handle<Value> AuthGSSClientStep(const Arguments &args);
   static Handle<Value> AuthGSSClientUnwrap(const Arguments &args);
   static Handle<Value> AuthGSSClientWrap(const Arguments &args);
+  static Handle<Value> AuthGSSClientClean(const Arguments &args);
 
 private:
   static Handle<Value> New(const Arguments &args);  

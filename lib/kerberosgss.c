@@ -139,28 +139,34 @@ end:
   return response;
 }
 
-int authenticate_gss_client_clean(gss_client_state *state)
-{
-    OM_uint32 maj_stat;
-    OM_uint32 min_stat;
-    int ret = AUTH_GSS_COMPLETE;
-    
-    if (state->context != GSS_C_NO_CONTEXT)
-        maj_stat = gss_delete_sec_context(&min_stat, &state->context, GSS_C_NO_BUFFER);
-    if (state->server_name != GSS_C_NO_NAME)
-        maj_stat = gss_release_name(&min_stat, &state->server_name);
-    if (state->username != NULL)
-    {
-        free(state->username);
-        state->username = NULL;
-    }
-    if (state->response != NULL)
-    {
-        free(state->response);
-        state->response = NULL;
-    }
-    
-    return ret;
+gss_client_response *authenticate_gss_client_clean(gss_client_state *state) {
+  OM_uint32 maj_stat;
+  OM_uint32 min_stat;
+  int ret = AUTH_GSS_COMPLETE;
+  gss_client_response *response = NULL;
+  
+  if(state->context != GSS_C_NO_CONTEXT)
+    maj_stat = gss_delete_sec_context(&min_stat, &state->context, GSS_C_NO_BUFFER);
+  
+  if(state->server_name != GSS_C_NO_NAME)
+    maj_stat = gss_release_name(&min_stat, &state->server_name);
+  
+  if(state->username != NULL) {
+    free(state->username);
+    state->username = NULL;
+  }
+
+  if (state->response != NULL) {
+    free(state->response);
+    state->response = NULL;
+  }
+  
+  if(response == NULL) {
+    response = calloc(1, sizeof(gss_client_response));
+    response->return_code = ret;    
+  }
+
+  return response;
 }
 
 gss_client_response *authenticate_gss_client_step(gss_client_state* state, const char* challenge) {
