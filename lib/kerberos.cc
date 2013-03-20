@@ -25,6 +25,12 @@ typedef struct AuthGSSClientUnwrapCall {
   char *challenge;
 } AuthGSSClientUnwrapCall;
 
+typedef struct AuthGSSClientWrapCall {
+  KerberosContext *context;
+  char *challenge;
+  char *user_name;
+} AuthGSSClientWrapCall;
+
 // VException object (causes throw in calling code)
 static Handle<Value> VException(const char *msg) {
   HandleScope scope;
@@ -47,6 +53,7 @@ void Kerberos::Initialize(v8::Handle<v8::Object> target) {
   NODE_SET_PROTOTYPE_METHOD(constructor_template, "authGSSClientInit", AuthGSSClientInit);  
   NODE_SET_PROTOTYPE_METHOD(constructor_template, "authGSSClientStep", AuthGSSClientStep);  
   NODE_SET_PROTOTYPE_METHOD(constructor_template, "authGSSClientUnwrap", AuthGSSClientUnwrap);
+  NODE_SET_PROTOTYPE_METHOD(constructor_template, "authGSSClientWrap", AuthGSSClientWrap);
 
   // Set the symbol
   target->ForceSet(String::NewSymbol("Kerberos"), constructor_template->GetFunction());
@@ -234,14 +241,11 @@ Handle<Value> Kerberos::AuthGSSClientStep(const Arguments &args) {
 // authGSSClientUnwrap
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 static void _authGSSClientUnwrap(Worker *worker) {
-  gss_client_state *state;
   gss_client_response *response;
   char *challenge;
 
   // Unpack the parameter data struct
   AuthGSSClientUnwrapCall *call = (AuthGSSClientUnwrapCall *)worker->parameters;
-  // Get the state
-  state = call->context->state;
 
   // Check what kind of challenge we have
   if(call->challenge == NULL) {
@@ -249,7 +253,7 @@ static void _authGSSClientUnwrap(Worker *worker) {
   }
 
   // Perform authentication step
-  response = authenticate_gss_client_unwrap(state, challenge);
+  response = authenticate_gss_client_unwrap(call->context->state, challenge);
 
   // If we have an error mark worker as having had an error
   if(response->return_code == AUTH_GSS_ERROR) {
@@ -278,8 +282,8 @@ Handle<Value> Kerberos::AuthGSSClientUnwrap(const Arguments &args) {
 
   // Ensure valid call
   if(args.Length() != 2 && args.Length() != 3) return VException("Requires a GSS context, optional challenge string and callback function");
-  if(args.Length() == 2 && !KerberosContext::HasInstance(args[0])) return VException("Requires a GSS context, optional challenge string and callback function");
-  if(args.Length() == 3 && !KerberosContext::HasInstance(args[0]) && !args[1]->IsString()) return VException("Requires a GSS context, optional challenge string and callback function");
+  if(args.Length() == 2 && !KerberosContext::HasInstance(args[0]) && !args[1]->IsFunction()) return VException("Requires a GSS context, optional challenge string and callback function");
+  if(args.Length() == 3 && !KerberosContext::HasInstance(args[0]) && !args[1]->IsString() && !args[2]->IsFunction()) return VException("Requires a GSS context, optional challenge string and callback function");
 
   // Challenge string
   char *challenge_str = NULL;
@@ -288,9 +292,9 @@ Handle<Value> Kerberos::AuthGSSClientUnwrap(const Arguments &args) {
   KerberosContext *kerberos_context = KerberosContext::Unwrap<KerberosContext>(object);
 
   // If we have a challenge string
-  if(args.Length() == 2) {
+  if(args.Length() == 3) {
     // The possible callback
-    Local<String> challenge = args[0]->ToString();
+    Local<String> challenge = args[1]->ToString();
     // Convert uri string to c-string
     challenge_str = (char *)calloc(challenge->Utf8Length() + 1, sizeof(char));
     // Write v8 string to c-string
@@ -303,7 +307,7 @@ Handle<Value> Kerberos::AuthGSSClientUnwrap(const Arguments &args) {
   call->challenge = challenge_str;
 
   // Unpack the callback
-  Local<Function> callback = Local<Function>::Cast(args[2]);
+  Local<Function> callback = args.Length() == 3 ? Local<Function>::Cast(args[2]) : Local<Function>::Cast(args[1]);
 
   // Let's allocate some space
   Worker *worker = new Worker();
@@ -313,6 +317,105 @@ Handle<Value> Kerberos::AuthGSSClientUnwrap(const Arguments &args) {
   worker->parameters = call;
   worker->execute = _authGSSClientUnwrap;
   worker->mapper = _map_authGSSClientUnwrap;
+
+  // Schedule the worker with lib_uv
+  uv_queue_work(uv_default_loop(), &worker->request, Kerberos::Process, Kerberos::After);
+
+  // Return no value as it's callback based
+  return scope.Close(Undefined());
+}
+
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// authGSSClientWrap
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+static void _authGSSClientWrap(Worker *worker) {
+  gss_client_response *response;
+  char *user_name = NULL;
+
+  // Unpack the parameter data struct
+  AuthGSSClientWrapCall *call = (AuthGSSClientWrapCall *)worker->parameters;
+
+  // Check what kind of challenge we have
+  if(call->user_name == NULL) {
+    user_name = (char *)"";
+  }
+
+  // Perform authentication step
+  response = authenticate_gss_client_wrap(call->context->state, call->challenge, user_name);
+
+  // If we have an error mark worker as having had an error
+  if(response->return_code == AUTH_GSS_ERROR) {
+    worker->error = TRUE;
+    worker->error_code = response->return_code;
+    worker->error_message = response->message;
+  } else {
+    worker->return_code = response->return_code;
+  }
+
+  // Free up structure
+  if(call->challenge != NULL) free(call->challenge);
+  free(call);
+  free(response);
+}
+
+static Handle<Value> _map_authGSSClientWrap(Worker *worker) {
+  HandleScope scope;
+  // Return the return code
+  return scope.Close(Int32::New(worker->return_code));
+}
+
+// Initialize method
+Handle<Value> Kerberos::AuthGSSClientWrap(const Arguments &args) {
+  HandleScope scope;
+
+  // Ensure valid call
+  if(args.Length() != 3 && args.Length() != 4) return VException("Requires a GSS context, the result from the authGSSClientResponse after authGSSClientUnwrap, optional user name and callback function");
+  if(args.Length() == 3 && !KerberosContext::HasInstance(args[0]) && !args[1]->IsString() && !args[2]->IsFunction()) return VException("Requires a GSS context, the result from the authGSSClientResponse after authGSSClientUnwrap, optional user name and callback function");
+  if(args.Length() == 4 && !KerberosContext::HasInstance(args[0]) && !args[1]->IsString() && !args[2]->IsString() && !args[2]->IsFunction()) return VException("Requires a GSS context, the result from the authGSSClientResponse after authGSSClientUnwrap, optional user name and callback function");
+
+  // Challenge string
+  char *challenge_str = NULL;
+  char *user_name_str = NULL;
+  
+  // Let's unpack the kerberos context
+  Local<Object> object = args[0]->ToObject();
+  KerberosContext *kerberos_context = KerberosContext::Unwrap<KerberosContext>(object);
+
+  // Unpack the challenge string
+  Local<String> challenge = args[1]->ToString();
+  // Convert uri string to c-string
+  challenge_str = (char *)calloc(challenge->Utf8Length() + 1, sizeof(char));
+  // Write v8 string to c-string
+  challenge->WriteUtf8(challenge_str);    
+
+
+  // If we have a challenge string
+  if(args.Length() == 4) {
+    // The possible callback
+    Local<String> user_name = args[2]->ToString();
+    // Convert uri string to c-string
+    user_name_str = (char *)calloc(user_name->Utf8Length() + 1, sizeof(char));
+    // Write v8 string to c-string
+    user_name->WriteUtf8(user_name_str);
+  }
+
+  // Allocate a structure
+  AuthGSSClientWrapCall *call = (AuthGSSClientWrapCall *)calloc(1, sizeof(AuthGSSClientWrapCall));
+  call->context = kerberos_context;
+  call->challenge = challenge_str;
+  call->user_name = user_name_str;
+
+  // Unpack the callback
+  Local<Function> callback = args.Length() == 4 ? Local<Function>::Cast(args[3]) : Local<Function>::Cast(args[2]);
+
+  // Let's allocate some space
+  Worker *worker = new Worker();
+  worker->error = false;
+  worker->request.data = worker;
+  worker->callback = Persistent<Function>::New(callback);
+  worker->parameters = call;
+  worker->execute = _authGSSClientWrap;
+  worker->mapper = _map_authGSSClientWrap;
 
   // Schedule the worker with lib_uv
   uv_queue_work(uv_default_loop(), &worker->request, Kerberos::Process, Kerberos::After);
