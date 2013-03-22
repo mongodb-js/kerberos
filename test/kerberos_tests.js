@@ -12,7 +12,7 @@ exports['Simple initialize of Kerberos object'] = function(test) {
   // console.dir(kerberos)
 
   // Initiate kerberos client
-  kerberos.authGSSClientInit('dev1/10GEN.ME', Kerberos.GSS_C_MUTUAL_FLAG, function(err, context) {
+  kerberos.authGSSClientInit('mongodb@kdc.10gen.me', Kerberos.GSS_C_MUTUAL_FLAG, function(err, context) {
     console.log("===================================== authGSSClientInit")
     test.equal(null, err);
     test.ok(context != null && typeof context == 'object');
