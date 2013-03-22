@@ -65,16 +65,6 @@ Handle<Value> KerberosContext::ResponseGetter(Local<String> property, const Acce
   state = context->state;
   // No state no response
   if(state == NULL || state->response == NULL) return scope.Close(Null());
-<<<<<<< HEAD
-  // Get size, decode
-  int string_size = strlen(state->response);
-  // Decode the string and add zero terminating value at the end of the string
-  char *value = (char *)calloc(string_size + 1, sizeof(char));
-  strncpy(value, state->response, string_size);
-  // Encode the string (string - null termiating character)
-  Local<Value> utf8_encoded_str = Encode(value, string_size, BINARY)->ToString();
-  return scope.Close(utf8_encoded_str);
-=======
   printf("===============================================\n :: %lu\n", strlen(state->response));
 
   // // Decode the string and add zero terminating value at the end of the string
@@ -87,7 +77,6 @@ Handle<Value> KerberosContext::ResponseGetter(Local<String> property, const Acce
   // Return the response
   return scope.Close(String::New(state->response));
   // return scope.Close(string);
->>>>>>> parent of ce8da23... Cleaning up code
 }
 
 

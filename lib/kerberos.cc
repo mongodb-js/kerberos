@@ -211,11 +211,9 @@ Handle<Value> Kerberos::AuthGSSClientStep(const Arguments &args) {
 
   // If we have a challenge string
   if(args.Length() == 3) {
-    Local<String> challenge = args[1]->ToString();
-    // Convert uri string to c-string
-    challenge_str = (char *)calloc(challenge->Utf8Length() + 1, sizeof(char));
-    // Write v8 string to c-string
-    challenge->WriteUtf8(challenge_str);
+    ssize_t len = DecodeBytes(args[1], BINARY);
+    challenge_str = (char *)calloc(len, sizeof(char));
+    DecodeWrite(challenge_str, len, args[1], BINARY);
   }
 
   // Allocate a structure
@@ -299,11 +297,9 @@ Handle<Value> Kerberos::AuthGSSClientUnwrap(const Arguments &args) {
 
   // If we have a challenge string
   if(args.Length() == 3) {
-    Local<String> challenge = args[1]->ToString();
-    // Convert uri string to c-string
-    challenge_str = (char *)calloc(challenge->Utf8Length() + 1, sizeof(char));
-    // Write v8 string to c-string
-    challenge->WriteUtf8(challenge_str);
+    ssize_t len = DecodeBytes(args[1], BINARY);
+    challenge_str = (char *)calloc(len, sizeof(char));
+    DecodeWrite(challenge_str, len, args[1], BINARY);
   }
 
   // Allocate a structure
@@ -389,11 +385,9 @@ Handle<Value> Kerberos::AuthGSSClientWrap(const Arguments &args) {
   KerberosContext *kerberos_context = KerberosContext::Unwrap<KerberosContext>(object);
 
   // Unpack the challenge string
-  Local<String> challenge = args[1]->ToString();
-  // Convert uri string to c-string
-  challenge_str = (char *)calloc(challenge->Utf8Length() + 1, sizeof(char));
-  // Write v8 string to c-string
-  challenge->WriteUtf8(challenge_str);
+  ssize_t len = DecodeBytes(args[1], BINARY);
+  challenge_str = (char *)calloc(len, sizeof(char));
+  DecodeWrite(challenge_str, len, args[1], BINARY);
 
   // // Unpack the challenge string
   // Local<String> challenge = args[1]->ToString();
@@ -404,14 +398,6 @@ Handle<Value> Kerberos::AuthGSSClientWrap(const Arguments &args) {
 
   // If we have a user string
   if(args.Length() == 4) {
-<<<<<<< HEAD
-    // Unpack the user name
-    Local<String> username = args[1]->ToString();
-    // Convert uri string to c-string
-    user_name_str = (char *)calloc(username->Utf8Length() + 1, sizeof(char));
-    // Write v8 string to c-string
-    username->WriteUtf8(user_name_str);
-=======
     // Unpack the challenge string
     len = DecodeBytes(args[2], BINARY);
     user_name_str = (char *)calloc(len, sizeof(char));
@@ -422,7 +408,6 @@ Handle<Value> Kerberos::AuthGSSClientWrap(const Arguments &args) {
     // user_name_str = (char *)calloc(user_name->Utf8Length() + 1, sizeof(char));
     // // Write v8 string to c-string
     // user_name->WriteUtf8(user_name_str);
->>>>>>> parent of ce8da23... Cleaning up code
   }
 
   printf("============================= DECODED\n");
@@ -489,7 +474,7 @@ static Handle<Value> _map_authGSSClientClean(Worker *worker) {
 Handle<Value> Kerberos::AuthGSSClientClean(const Arguments &args) {
   HandleScope scope;
 
-  // Ensure valid call
+  // // Ensure valid call
   if(args.Length() != 2) return VException("Requires a GSS context and callback function");
   if(!KerberosContext::HasInstance(args[0]) && !args[1]->IsFunction()) return VException("Requires a GSS context and callback function");
 
@@ -502,7 +487,7 @@ Handle<Value> Kerberos::AuthGSSClientClean(const Arguments &args) {
   call->context = kerberos_context;
 
   // Unpack the callback
-  Local<Function> callback = Local<Function>::Cast(args[1]);
+  Local<Function> callback = args.Length() == 4 ? Local<Function>::Cast(args[3]) : Local<Function>::Cast(args[2]);
 
   // Let's allocate some space
   Worker *worker = new Worker();
