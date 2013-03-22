@@ -466,7 +466,7 @@ static Handle<Value> _map_authGSSClientClean(Worker *worker) {
 Handle<Value> Kerberos::AuthGSSClientClean(const Arguments &args) {
   HandleScope scope;
 
-  // // Ensure valid call
+  // Ensure valid call
   if(args.Length() != 2) return VException("Requires a GSS context and callback function");
   if(!KerberosContext::HasInstance(args[0]) && !args[1]->IsFunction()) return VException("Requires a GSS context and callback function");
 
@@ -479,7 +479,7 @@ Handle<Value> Kerberos::AuthGSSClientClean(const Arguments &args) {
   call->context = kerberos_context;
 
   // Unpack the callback
-  Local<Function> callback = args.Length() == 4 ? Local<Function>::Cast(args[3]) : Local<Function>::Cast(args[2]);
+  Local<Function> callback = Local<Function>::Cast(args[1]);
 
   // Let's allocate some space
   Worker *worker = new Worker();
