@@ -44,6 +44,11 @@ void KerberosContext::Initialize(Handle<Object> target) {
   // Getter for the response
   constructor_template->InstanceTemplate()->SetAccessor(response_symbol, ResponseGetter);
 
+  // Instance methods
+  // NODE_SET_PROTOTYPE_METHOD(constructor_template, "response", ToString);
+  // NODE_SET_PROTOTYPE_METHOD(constructor_template, "toString", ToString);
+  // NODE_SET_PROTOTYPE_METHOD(constructor_template, "inspect", Inspect);  
+
   // Set up the Symbol for the Class on the Module
   target->Set(String::NewSymbol("KerberosContext"), constructor_template->GetFunction());
 }
@@ -60,6 +65,7 @@ Handle<Value> KerberosContext::ResponseGetter(Local<String> property, const Acce
   state = context->state;
   // No state no response
   if(state == NULL || state->response == NULL) return scope.Close(Null());
+<<<<<<< HEAD
   // Get size, decode
   int string_size = strlen(state->response);
   // Decode the string and add zero terminating value at the end of the string
@@ -68,6 +74,20 @@ Handle<Value> KerberosContext::ResponseGetter(Local<String> property, const Acce
   // Encode the string (string - null termiating character)
   Local<Value> utf8_encoded_str = Encode(value, string_size, BINARY)->ToString();
   return scope.Close(utf8_encoded_str);
+=======
+  printf("===============================================\n :: %lu\n", strlen(state->response));
+
+  // // Decode the string and add zero terminating value at the end of the string
+  // char *value = (char *)calloc(strlen(state->response) + 1, sizeof(char));
+  // strncpy(value, state->response, strlen(state->response));
+  // // Encode the string (string - null termiating character)
+  // Local<Value> string = Encode(value, strlen(state->response), ASCII)->ToString();
+
+
+  // Return the response
+  return scope.Close(String::New(state->response));
+  // return scope.Close(string);
+>>>>>>> parent of ce8da23... Cleaning up code
 }
 
 
