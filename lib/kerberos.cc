@@ -481,7 +481,7 @@ Handle<Value> Kerberos::AuthGSSClientClean(const Arguments &args) {
   call->context = kerberos_context;
 
   // Unpack the callback
-  Local<Function> callback = args.Length() == 4 ? Local<Function>::Cast(args[3]) : Local<Function>::Cast(args[2]);
+  Local<Function> callback = Local<Function>::Cast(args[1]);
 
   // Let's allocate some space
   Worker *worker = new Worker();
