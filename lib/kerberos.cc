@@ -211,9 +211,12 @@ Handle<Value> Kerberos::AuthGSSClientStep(const Arguments &args) {
 
   // If we have a challenge string
   if(args.Length() == 3) {
-    ssize_t len = DecodeBytes(args[1], BINARY);
-    challenge_str = (char *)calloc(len, sizeof(char));
-    DecodeWrite(challenge_str, len, args[1], BINARY);
+    // Unpack the challenge string
+    Local<String> challenge = args[1]->ToString();
+    // Convert uri string to c-string
+    challenge_str = (char *)calloc(challenge->Utf8Length() + 1, sizeof(char));
+    // Write v8 string to c-string
+    challenge->WriteUtf8(challenge_str);    
   }
 
   // Allocate a structure
@@ -297,9 +300,12 @@ Handle<Value> Kerberos::AuthGSSClientUnwrap(const Arguments &args) {
 
   // If we have a challenge string
   if(args.Length() == 3) {
-    ssize_t len = DecodeBytes(args[1], BINARY);
-    challenge_str = (char *)calloc(len, sizeof(char));
-    DecodeWrite(challenge_str, len, args[1], BINARY);
+    // Unpack the challenge string
+    Local<String> challenge = args[1]->ToString();
+    // Convert uri string to c-string
+    challenge_str = (char *)calloc(challenge->Utf8Length() + 1, sizeof(char));
+    // Write v8 string to c-string
+    challenge->WriteUtf8(challenge_str);    
   }
 
   // Allocate a structure
@@ -385,33 +391,21 @@ Handle<Value> Kerberos::AuthGSSClientWrap(const Arguments &args) {
   KerberosContext *kerberos_context = KerberosContext::Unwrap<KerberosContext>(object);
 
   // Unpack the challenge string
-  ssize_t len = DecodeBytes(args[1], BINARY);
-  challenge_str = (char *)calloc(len, sizeof(char));
-  DecodeWrite(challenge_str, len, args[1], BINARY);
-
-  // // Unpack the challenge string
-  // Local<String> challenge = args[1]->ToString();
-  // // Convert uri string to c-string
-  // challenge_str = (char *)calloc(challenge->Utf8Length() + 1, sizeof(char));
-  // // Write v8 string to c-string
-  // challenge->WriteUtf8(challenge_str);    
+  Local<String> challenge = args[1]->ToString();
+  // Convert uri string to c-string
+  challenge_str = (char *)calloc(challenge->Utf8Length() + 1, sizeof(char));
+  // Write v8 string to c-string
+  challenge->WriteUtf8(challenge_str);    
 
   // If we have a user string
   if(args.Length() == 4) {
-    // Unpack the challenge string
-    len = DecodeBytes(args[2], BINARY);
-    user_name_str = (char *)calloc(len, sizeof(char));
-    DecodeWrite(user_name_str, len, args[2], BINARY);
-    // // The possible callback
-    // Local<String> user_name = args[2]->ToString();
-    // // Convert uri string to c-string
-    // user_name_str = (char *)calloc(user_name->Utf8Length() + 1, sizeof(char));
-    // // Write v8 string to c-string
-    // user_name->WriteUtf8(user_name_str);
+    // Unpack user name
+    Local<String> user_name = args[2]->ToString();
+    // Convert uri string to c-string
+    user_name_str = (char *)calloc(user_name->Utf8Length() + 1, sizeof(char));
+    // Write v8 string to c-string
+    user_name->WriteUtf8(user_name_str);
   }
-
-  printf("============================= DECODED\n");
-  printf("%s\n%s\n", challenge_str, user_name_str);
 
   // Allocate a structure
   AuthGSSClientWrapCall *call = (AuthGSSClientWrapCall *)calloc(1, sizeof(AuthGSSClientWrapCall));

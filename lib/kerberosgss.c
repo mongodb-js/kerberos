@@ -615,10 +615,6 @@ static void set_gss_error(OM_uint32 err_maj, OM_uint32 err_min) {
     if (!GSS_ERROR(maj_stat)) {
 
       strncpy(buf_min, (char*) status_string.value , sizeof(buf_min));
-
-      printf("buf_maj :: %s\n", buf_maj);
-      printf("buf_min :: %s\n", buf_min);
-
       gss_release_buffer(&min_stat, &status_string);
     }
   } while (!GSS_ERROR(maj_stat) && msg_ctx != 0);
