@@ -214,7 +214,7 @@ gss_client_response *authenticate_gss_client_step(gss_client_state* state, const
   ret = (maj_stat == GSS_S_COMPLETE) ? AUTH_GSS_COMPLETE : AUTH_GSS_CONTINUE;
   // Grab the client response to send back to the server
   if(output_token.length) {
-    state->response = base64_encode((const unsigned char *)output_token.value, output_token.length);;
+    state->response = base64_encode((const unsigned char *)output_token.value, output_token.length);
     maj_stat = gss_release_buffer(&min_stat, &output_token);
   }
   

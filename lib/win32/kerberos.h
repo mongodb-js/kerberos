@@ -7,6 +7,7 @@
 
 extern "C" {
   #include "kerberos_sspi.h"
+  #include "base64.h"
 }
 
 using namespace v8;
@@ -46,6 +47,10 @@ private:
   SecPkgInfo m_PkgInfo;
   // context
   CtxtHandle m_Context;
+  // Do we have a context
+  bool m_HaveContext;
+  // Attributes
+  DWORD CtxtAttr;
 
   // Handles the uv calls
   static void Process(uv_work_t* work_req);

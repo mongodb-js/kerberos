@@ -20,7 +20,7 @@
           }
         }],
         ['OS=="win"',  {
-          'sources': [ 'lib/win32/kerberos.cc', 'lib/win32/kerberos_sspi.c' ],
+          'sources': [ 'lib/win32/kerberos.cc', 'lib/win32/base64.c', 'lib/win32/kerberos_sspi.c' ],
           "link_settings": {
             "libraries": [
             ]

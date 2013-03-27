@@ -1,6 +1,7 @@
 #include "kerberos.h"
 #include <stdlib.h>
 #include <tchar.h>
+#include "base64.h"
 
 #ifndef ARRAY_SIZE
 # define ARRAY_SIZE(a) (sizeof((a)) / sizeof((a)[0]))
@@ -52,6 +53,7 @@ Handle<Value> Kerberos::New(const Arguments &args) {
   load_library();
   // Create a Kerberos instance
   Kerberos *kerberos = new Kerberos();
+  kerberos->m_HaveContext = false;
   // Return the kerberos object
   kerberos->Wrap(args.This());
   return args.This();
@@ -62,7 +64,7 @@ Handle<Value> Kerberos::New(const Arguments &args) {
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Handle<Value> Kerberos::AcquireAlternateCredentials(const Arguments &args) {
   HandleScope scope;
-  printf("============= Acquire :: 0\n");
+  // printf("============= Acquire :: 0\n");
 
   // C String pointers
   char *domain_str          = NULL;
@@ -92,13 +94,13 @@ Handle<Value> Kerberos::AcquireAlternateCredentials(const Arguments &args) {
   password_str = (char *)calloc(password->Utf8Length() + 1, sizeof(char));
   password->WriteUtf8(password_str);
 
-  printf("============= Acquire :: 0:1\n");
-  printf("%s :: %s\n", user_name_str, password_str);
+  // printf("============= Acquire :: 0:1\n");
+  // printf("%s :: %s\n", user_name_str, password_str);
 
   // Set up domain
   if(domain_str != NULL) {
 
-    printf("============= Acquire :: 0:2\n");
+    // printf("============= Acquire :: 0:2\n");
     kerberos->m_Identity.Domain = USTR(_tcsdup(domain_str));
     kerberos->m_Identity.DomainLength = (unsigned long)_tcslen(domain_str);    
   } else {
@@ -120,7 +122,7 @@ Handle<Value> Kerberos::AcquireAlternateCredentials(const Arguments &args) {
     kerberos->m_Identity.Flags          = SEC_WINNT_AUTH_IDENTITY_ANSI;
 #endif
 
-  printf("============= Acquire :: 1\n");
+  // printf("============= Acquire :: 1\n");
   // Try to acquire credentials
   status = _kerberos_AcquireCredentialsHandle(
       NULL,
@@ -133,8 +135,8 @@ Handle<Value> Kerberos::AcquireAlternateCredentials(const Arguments &args) {
       &kerberos->Expiration      
     );
 
-  printf("============= Acquire :: 2\n");
-  printf("=================== status :: %d :: %d\n", status, SEC_E_OK);
+  // printf("============= Acquire :: 2\n");
+  // printf("=================== status :: %d :: %d\n", status, SEC_E_OK);
   return scope.Close(String::New("hello"));
 }
 
@@ -142,13 +144,16 @@ Handle<Value> Kerberos::PrepareOutboundPackage(const Arguments &args) {
   HandleScope scope;
   // Variables used
   char *in_bound_data_str = NULL;
+  int in_bound_length = 0;
+  char *temp;
   char *target_str = NULL;
+  char *payload = NULL;
   BYTE *out_bound_data_str = NULL;
   SecBufferDesc   ibd, obd;
   SecBuffer       ib,  ob;
   SECURITY_STATUS status;
   Local<String> inbound;
-  Local<String> target;
+  Local<String> target;  
 
   // Unpack the long object
   Kerberos *kerberos = ObjectWrap::Unwrap<Kerberos>(args.This());
@@ -162,9 +167,15 @@ Handle<Value> Kerberos::PrepareOutboundPackage(const Arguments &args) {
   // Unpack the inbound data if any
   if(args[1]->IsString()) {
     inbound = args[1]->ToString();
+    in_bound_length = inbound->Utf8Length();
     // Create c strings of the values passed in
-    in_bound_data_str = (char *)calloc(inbound->Utf8Length() + 1, sizeof(char));
+    in_bound_data_str = (char *)calloc(in_bound_length + 1, sizeof(char));    
     inbound->WriteUtf8(in_bound_data_str);    
+    // Keep reference to we can get rid of the memory
+    temp = in_bound_data_str;
+    // Now let's get the base64 decoded string
+    in_bound_data_str = (char *)base64_decode(in_bound_data_str, &in_bound_length);
+    free(temp);
   }
 
   // prepare outbound buffer
@@ -184,9 +195,11 @@ Handle<Value> Kerberos::PrepareOutboundPackage(const Arguments &args) {
   obd.pBuffers  = &ob;
 
   if(in_bound_data_str != NULL) {
+
+    printf("================= strlen(in_bound_data_str) :: %lu\n", in_bound_length);
     // prepare inbound buffer
     ib.BufferType = SECBUFFER_TOKEN;
-    ib.cbBuffer   = inbound->Utf8Length();
+    ib.cbBuffer   = in_bound_length;
     ib.pvBuffer   = in_bound_data_str;
     // prepare buffer description
     ibd.cBuffers  = 1;
@@ -196,65 +209,75 @@ Handle<Value> Kerberos::PrepareOutboundPackage(const Arguments &args) {
 
   // prepare our context
   DWORD      CtxtAttr;
-  TimeStamp  Expiration;
+  // TimeStamp  Expiration;
 
-  printf("=============== target ::%s\n", target_str);
+  // printf("=============== target ::%s\n", target_str);
+
+  if(kerberos->m_HaveContext == true) {
+    printf("^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GOT CONTEXT\n");
+  }
+
+  if(in_bound_data_str != NULL) {
+    printf("^^^^^^^^^^^^^^^^^^^^^^^^^^^^ INBOUND DATA\n");
+  }
 
   status = _kerberos_initializeSecurityContext ( 
     &kerberos->m_Credentials,
-    NULL,
+    kerberos->m_HaveContext ? &kerberos->m_Context : NULL,
     const_cast<TCHAR*>(target_str),
     0x2, // MUTUAL
     0,  
     0,   // Network
-    NULL,
+    in_bound_data_str != NULL ? &ibd : NULL,
     0,
     &kerberos->m_Context,
     &obd,
-    &CtxtAttr,
-    &Expiration 
+    &kerberos->CtxtAttr,
+    &kerberos->Expiration 
   );
 
-      // &kerberos->m_Credentials,
-      // NULL,
-      // const_cast<TCHAR*>(target_str),
-      // 0x2, // MUTUAL
-      // 0,  
-      // 0,   // Network
-      // // (in_bound_data_str != NULL) ? &ibd : NULL, 
-      // NULL,
-      // 0,
-      // &kerberos->m_Context,
-      // &obd,
-      // &CtxtAttr,
-      // &Expiration 
+  if((status == SEC_I_COMPLETE_NEEDED) || (status == SEC_I_COMPLETE_AND_CONTINUE)) {
+    printf("==================== SEC_I_COMPLETE_NEEDED/SEC_I_COMPLETE_AND_CONTINUE");
+  }
+
 
     switch ( status )
     {
     case SEC_E_OK:
+        // we should now have a context
+        kerberos->m_HaveContext = true;
+        payload = base64_encode((const unsigned char *)ob.pvBuffer, ob.cbBuffer);
+        // printf("payload :: %s\n", payload);
+        return scope.Close(String::New(payload));
+        break;
     case SEC_I_COMPLETE_NEEDED:
         // m_State = AuthSuccess;   // we're done here
-        printf("SEC_I_COMPLETE_NEEDED\n");
+        // printf("SEC_I_COMPLETE_NEEDED\n");
         break;
     case SEC_I_CONTINUE_NEEDED:
     case SEC_I_COMPLETE_AND_CONTINUE:
-        printf("SEC_I_CONTINUE_NEEDED/SEC_I_COMPLETE_AND_CONTINUE\n");
+        // we should now have a context
+        kerberos->m_HaveContext = true;
+        // printf("SEC_I_CONTINUE_NEEDED/SEC_I_COMPLETE_AND_CONTINUE\n");
+        payload = base64_encode((const unsigned char *)ob.pvBuffer, ob.cbBuffer);
+        // printf("payload :: %s\n", payload);
+        return scope.Close(String::New(payload));
         // m_State = AuthContinue;  // keep on going
         break;
     case SEC_E_LOGON_DENIED:
-        printf("SEC_E_LOGON_DENIED\n");
+        // printf("SEC_E_LOGON_DENIED\n");
         // m_State = AuthFailed;    // logon denied
         break;
     default:
         printf("ERROR\n");
+        break;
         // m_State = AuthFailed;
         // make sure we don't leak memory
         // FreeBuffer ( pOutbound ); 
         // THROWEXE ( ErrorAuthFailed, status );
     }
 
-
-  return scope.Close(String::New("hello again"));
+  return scope.Close(String::New(""));
 }
 
 
