@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-static HINSTANCE _kerberos_security_dll; 
+static HINSTANCE _kerberos_security_dll = NULL; 
 
 /**
  * Encrypt A Message
@@ -34,13 +34,22 @@ SECURITY_STATUS SEC_ENTRY _kerberos_AcquireCredentialsHandle(
   void * pvLogonId, void * pAuthData, SEC_GET_KEY_FN pGetKeyFn, void * pvGetKeyArgument,
   PCredHandle phCredential, PTimeStamp ptsExpiry
 ) {
+  SECURITY_STATUS     status;
   // Create function pointer instance
   acquireCredentialsHandle_fn pfn_acquireCredentialsHandle = NULL;
 
+  /*printf("======================================== 0\n");*/
   // Return error if library not loaded
   if(_kerberos_security_dll == NULL) return -1;
+
   // Map function
-  pfn_acquireCredentialsHandle = (acquireCredentialsHandle_fn)GetProcAddress(_kerberos_security_dll, "AcquireCredentialsHandleA");
+  #ifdef _UNICODE
+      pfn_acquireCredentialsHandle = (acquireCredentialsHandle_fn)GetProcAddress(_kerberos_security_dll, "AcquireCredentialsHandleW");
+  #else
+      pfn_acquireCredentialsHandle = (acquireCredentialsHandle_fn)GetProcAddress(_kerberos_security_dll, "AcquireCredentialsHandleA");
+  #endif
+
+  /*printf("======================================== 1\n");*/
 
   // Check if the we managed to map function pointer
   if(!pfn_acquireCredentialsHandle) {
@@ -48,10 +57,17 @@ SECURITY_STATUS SEC_ENTRY _kerberos_AcquireCredentialsHandle(
     return -2;
   }
 
-  // Call the function
-  return (*pfn_acquireCredentialsHandle)(pszPrincipal, pszPackage, fCredentialUse,
+  /*printf("======================================== 2\n");*/
+
+  // Status
+  status = (*pfn_acquireCredentialsHandle)(pszPrincipal, pszPackage, fCredentialUse,
       pvLogonId, pAuthData, pGetKeyFn, pvGetKeyArgument, phCredential, ptsExpiry
     );
+
+  /*printf("======================================== 3 :: %d :: %d\n", status, SEC_E_OK);*/
+
+  // Call the function
+  return status;
 }
 
 /**
@@ -101,7 +117,7 @@ SECURITY_STATUS SEC_ENTRY _kerberos_DecryptMessage(PCtxtHandle phContext, PSecBu
 /**
  * Initialize Security Context
  */
-SECURITY_STATUS SEC_ENTRY _kerberos_SaslInitializeSecurityContext(
+SECURITY_STATUS SEC_ENTRY _kerberos_initializeSecurityContext(
   PCredHandle phCredential, PCtxtHandle phContext,
   LPSTR pszTargetName, unsigned long fContextReq, 
   unsigned long Reserved1, unsigned long TargetDataRep, 
@@ -109,26 +125,36 @@ SECURITY_STATUS SEC_ENTRY _kerberos_SaslInitializeSecurityContext(
   PCtxtHandle phNewContext, PSecBufferDesc pOutput,
   unsigned long * pfContextAttr, PTimeStamp ptsExpiry
 ) {
+  SECURITY_STATUS status;
   // Create function pointer instance
-  saslInitializeSecurityContext_fn pfn_saslInitializeSecurityContext = NULL;
+  initializeSecurityContext_fn pfn_initializeSecurityContext = NULL;
 
   // Return error if library not loaded
   if(_kerberos_security_dll == NULL) return -1;
   // Map function
-  pfn_saslInitializeSecurityContext = (saslInitializeSecurityContext_fn)GetProcAddress(_kerberos_security_dll, "SaslInitializeSecurityContext");
+  #ifdef _UNICODE
+    pfn_initializeSecurityContext = (initializeSecurityContext_fn)GetProcAddress(_kerberos_security_dll, "InitializeSecurityContextW");
+  #else
+    pfn_initializeSecurityContext = (initializeSecurityContext_fn)GetProcAddress(_kerberos_security_dll, "InitializeSecurityContextA");
+  #endif
 
   // Check if the we managed to map function pointer
-  if(!pfn_saslInitializeSecurityContext) {
+  if(!pfn_initializeSecurityContext) {
     printf("GetProcAddress failed.\n");
     return -2;
   }
 
-  // Call the function
-  return (*pfn_saslInitializeSecurityContext)(
+  // Execute intialize context
+  status = (*pfn_initializeSecurityContext)(
     phCredential, phContext, pszTargetName, fContextReq, 
     Reserved1, TargetDataRep, pInput, Reserved2,
     phNewContext, pOutput, pfContextAttr, ptsExpiry
   );
+
+  printf("_kerberos_initializeSecurityContext :: %d\n", status);
+
+  // Call the function
+  return status;
 }
 /**
  * Query Context Attributes
@@ -171,36 +197,4 @@ int load_library() {
   }
 
   return 0;
-
-
-/*  DWORD err;
-  HINSTANCE hDLL = LoadLibrary("security.dll");
-  
-  if(hDLL != NULL) {
-    printf("Library has been loaded\n");
-  } else {
-    err = GetLastError();
-    printf("Couldn't load dll\n");
-  }
-
-  // Create function pointer
-  typedef DWORD (WINAPI *encryptMessage_fn)(PCtxtHandle phContext, ULONG fQOP, PSecBufferDesc pMessage, ULONG MessageSeqNo);
-*/
-
-/*  HMODULE winmmDLL = LoadLibraryA("winmm.dll");
-
-  if (!winmmDLL) {
-    printf("Couldn't load dll\n");
-      return 1;
-  }
-
-  pfnTimeGetTime = (timeGetTime_fn)GetProcAddress(winmmDLL, "timeGetTime");
-
-  if (!pfnTimeGetTime) {
-    printf("GetProcAddress failed.\n");
-      return 2;
-  }
-
-  printf("============== %d\n", (*pfnTimeGetTime)());
-  return 0;
-*/}
+}

@@ -59,7 +59,7 @@ typedef DWORD (WINAPI *decryptMessage_fn)(
 /**
  * Initialize Security Context
  */
-SECURITY_STATUS SEC_ENTRY _kerberos_SaslInitializeSecurityContext(
+SECURITY_STATUS SEC_ENTRY _kerberos_initializeSecurityContext(
   PCredHandle phCredential,       // Cred to base context
   PCtxtHandle phContext,          // Existing context (OPT)
   LPSTR pszTargetName,            // Name of target
@@ -74,7 +74,7 @@ SECURITY_STATUS SEC_ENTRY _kerberos_SaslInitializeSecurityContext(
   PTimeStamp ptsExpiry            // (out) Life span (OPT)
 );
 
-typedef DWORD (WINAPI *saslInitializeSecurityContext_fn)(
+typedef DWORD (WINAPI *initializeSecurityContext_fn)(
   PCredHandle phCredential, PCtxtHandle phContext, LPSTR pszTargetName, unsigned long fContextReq, 
   unsigned long Reserved1, unsigned long TargetDataRep, PSecBufferDesc pInput, unsigned long Reserved2,
   PCtxtHandle phNewContext, PSecBufferDesc pOutput, unsigned long * pfContextAttr, PTimeStamp ptsExpiry);
