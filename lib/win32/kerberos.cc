@@ -40,7 +40,7 @@ void Kerberos::Initialize(v8::Handle<v8::Object> target) {
   // Set up method for the Kerberos instance
   NODE_SET_PROTOTYPE_METHOD(constructor_template, "acquireAlternateCredentials", AcquireAlternateCredentials);
   NODE_SET_PROTOTYPE_METHOD(constructor_template, "prepareOutboundPackage", PrepareOutboundPackage);  
-  // NODE_SET_PROTOTYPE_METHOD(constructor_template, "authGSSClientUnwrap", AuthGSSClientUnwrap);
+  NODE_SET_PROTOTYPE_METHOD(constructor_template, "decryptMessage", DecryptMessage);
   // NODE_SET_PROTOTYPE_METHOD(constructor_template, "authGSSClientWrap", AuthGSSClientWrap);
   // NODE_SET_PROTOTYPE_METHOD(constructor_template, "authGSSClientClean", AuthGSSClientClean);
 
@@ -280,6 +280,171 @@ Handle<Value> Kerberos::PrepareOutboundPackage(const Arguments &args) {
   return scope.Close(String::New(""));
 }
 
+static void DisplaySECError(DWORD ErrCode)
+{
+    LPSTR pszName = NULL; // WinError.h
+
+    switch(ErrCode) 
+    {
+            case     SEC_E_BUFFER_TOO_SMALL:
+                pszName = "SEC_E_BUFFER_TOO_SMALL - The message buffer is too small. Used with the Digest SSP.";
+                break;
+
+            case     SEC_E_CRYPTO_SYSTEM_INVALID:
+                pszName = "SEC_E_CRYPTO_SYSTEM_INVALID - The cipher chosen for the security context is not supported. Used with the Digest SSP."; 
+                break;
+            case     SEC_E_INCOMPLETE_MESSAGE:
+                pszName = "SEC_E_INCOMPLETE_MESSAGE - The data in the input buffer is incomplete. The application needs to read more data from the server and call DecryptMessage (General) again."; 
+                break;
+
+            case     SEC_E_INVALID_HANDLE:
+                pszName = "SEC_E_INVALID_HANDLE - A context handle that is not valid was specified in the phContext parameter. Used with the Digest and Schannel SSPs."; 
+                break;
+
+            case     SEC_E_INVALID_TOKEN:
+                pszName = "SEC_E_INVALID_TOKEN - The buffers are of the wrong type or no buffer of type SECBUFFER_DATA was found. Used with the Schannel SSP."; 
+                break;
+                
+            case     SEC_E_MESSAGE_ALTERED:
+                pszName = "SEC_E_MESSAGE_ALTERED - The message has been altered. Used with the Digest and Schannel SSPs."; 
+                break;
+                
+            case     SEC_E_OUT_OF_SEQUENCE:
+                pszName = "SEC_E_OUT_OF_SEQUENCE - The message was not received in the correct sequence."; 
+                break;
+                
+            case     SEC_E_QOP_NOT_SUPPORTED:
+                pszName = "SEC_E_QOP_NOT_SUPPORTED - Neither confidentiality nor integrity are supported by the security context. Used with the Digest SSP."; 
+                break;
+                
+            case     SEC_I_CONTEXT_EXPIRED:
+                pszName = "SEC_I_CONTEXT_EXPIRED - The message sender has finished using the connection and has initiated a shutdown."; 
+                break;
+                
+            case     SEC_I_RENEGOTIATE:
+                pszName = "SEC_I_RENEGOTIATE - The remote party requires a new handshake sequence or the application has just initiated a shutdown."; 
+                break;
+                
+            case     SEC_E_ENCRYPT_FAILURE:
+                pszName = "SEC_E_ENCRYPT_FAILURE - The specified data could not be encrypted."; 
+                break;
+                
+            case     SEC_E_DECRYPT_FAILURE:
+                pszName = "SEC_E_DECRYPT_FAILURE - The specified data could not be decrypted."; 
+                break;
+
+    }
+    printf("Error 0x%x %s \n", ErrCode, pszName);
+}
+
+Handle<Value> Kerberos::DecryptMessage(const Arguments &args) {
+  HandleScope scope;
+  char *challenge_str;
+  int challenge_str_size;
+  SECURITY_STATUS status;
+  // SecBufferDesc   ibd;
+  // SecBuffer       ib;
+  char *temp;
+  unsigned long quality;
+
+  Local<String> challenge = args[0]->ToString();
+  // Unpack the long object
+  Kerberos *kerberos = ObjectWrap::Unwrap<Kerberos>(args.This());
+
+  challenge_str_size = challenge->Utf8Length();
+  // Copy challenge string
+  challenge_str = (char *)calloc(challenge_str_size + 1, sizeof(char));
+  challenge->WriteUtf8(challenge_str);
+
+  printf("-------------------------------------------------- %d\n", challenge_str_size);
+  printf("%s\n", challenge_str);
+
+  // Base 64 decode the challenge_str
+  temp = challenge_str;
+  challenge_str = (char *)base64_decode(challenge_str, &challenge_str_size);
+  free(temp);
+
+  printf("--------------------------------------------------\n");
+  printf("%s\n", challenge_str);
+
+  printf("============= challenge_str_size :: %d\n", challenge_str_size);
+
+  SecBufferDesc Message;
+  SecBuffer Buffers[2];
+
+  printf("================================== EXECUTING -3\n");
+
+  int message_length = 0;
+  char* encrypted_message = (char *)calloc(message_length, sizeof(char));
+  memcpy((void *)encrypted_message, (void *)challenge_str, message_length);
+
+  printf("================================== EXECUTING -2\n");
+
+  int security_trailer_length = challenge_str_size - message_length;
+  char *security_trailer = (char *)calloc(security_trailer_length, sizeof(char));
+  memcpy((void *)security_trailer, (void *)(challenge_str + message_length), security_trailer_length);
+
+  printf("================================== EXECUTING -1\n");
+
+  // Build the buffers needed
+  Buffers[0].BufferType = SECBUFFER_DATA;
+  Buffers[0].pvBuffer = challenge_str;
+  Buffers[0].cbBuffer = challenge_str_size;
+  Buffers[1].BufferType = SECBUFFER_STREAM;
+  Buffers[1].pvBuffer = security_trailer;
+  Buffers[1].cbBuffer = security_trailer_length;
+
+  // Set up the message
+  Message.ulVersion       = SECBUFFER_VERSION;
+  Message.cBuffers        = 2;
+  Message.pBuffers        = Buffers;
+
+  printf("================================== EXECUTING 0\n");
+  // Let's decrypt this boy
+  status = _kerberos_DecryptMessage(
+    &kerberos->m_Context,
+    &Message,
+    0,
+    (unsigned long)&quality
+  );
+
+  printf("================================== EXECUTING 1\n");
+
+  if(status == SEC_E_INCOMPLETE_MESSAGE) {
+    printf("+++++++++++++++++++++++++++++ SEC_E_INCOMPLETE_MESSAGE \n");
+  }
+
+  DisplaySECError((DWORD)status);
+
+  printf("========================== EXECUTING :: %d :: %d\n", status, quality);
+  printf("Number of buffers :: %d\n", Message.cBuffers);
+
+  // We've got ok
+  if(status == SEC_E_OK) {
+
+    // Calculate the total response size
+    int total_response_size = 0;
+    for(unsigned int i = 0; i < Message.cBuffers; i++) {
+      total_response_size += Message.pBuffers[i].cbBuffer;
+    }
+
+    // Allocate the size
+    char *result = (char *)calloc(total_response_size, sizeof(char));
+    int offset = 0;
+
+    // Join all parts of the response
+    for(unsigned int i = 0; i < Message.cBuffers; i++) {
+      memcpy((void *)(result + offset), Message.pBuffers[i].pvBuffer, Message.pBuffers[i].cbBuffer);
+      offset += Message.pBuffers[i].cbBuffer;
+    }
+
+    char *payload = base64_encode((unsigned char *)result, total_response_size);
+    printf("payload :: %s\n", payload);
+    return scope.Close(String::New(payload));    
+  }
+
+  return scope.Close(String::New(""));
+}
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // UV Lib callbacks

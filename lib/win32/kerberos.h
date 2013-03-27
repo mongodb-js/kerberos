@@ -28,7 +28,7 @@ public:
   // Method available
   static Handle<Value> AcquireAlternateCredentials(const Arguments &args);
   static Handle<Value> PrepareOutboundPackage(const Arguments &args);
-  // static Handle<Value> AuthGSSClientInit(const Arguments &args);
+  static Handle<Value> DecryptMessage(const Arguments &args);
   // static Handle<Value> AuthGSSClientStep(const Arguments &args);
   // static Handle<Value> AuthGSSClientUnwrap(const Arguments &args);
   // static Handle<Value> AuthGSSClientWrap(const Arguments &args);
