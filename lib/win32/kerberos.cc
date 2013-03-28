@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include <tchar.h>
 #include "base64.h"
+#include "wrappers/security_buffer.h"
+#include "wrappers/security_buffer_descriptor.h"
+#include "wrappers/security_context.h"
+#include "wrappers/security_credentials.h"
 
 #ifndef ARRAY_SIZE
 # define ARRAY_SIZE(a) (sizeof((a)) / sizeof((a)[0]))
@@ -41,8 +45,8 @@ void Kerberos::Initialize(v8::Handle<v8::Object> target) {
   NODE_SET_PROTOTYPE_METHOD(constructor_template, "acquireAlternateCredentials", AcquireAlternateCredentials);
   NODE_SET_PROTOTYPE_METHOD(constructor_template, "prepareOutboundPackage", PrepareOutboundPackage);  
   NODE_SET_PROTOTYPE_METHOD(constructor_template, "decryptMessage", DecryptMessage);
-  // NODE_SET_PROTOTYPE_METHOD(constructor_template, "authGSSClientWrap", AuthGSSClientWrap);
-  // NODE_SET_PROTOTYPE_METHOD(constructor_template, "authGSSClientClean", AuthGSSClientClean);
+  NODE_SET_PROTOTYPE_METHOD(constructor_template, "encryptMessage", EncryptMessage);
+  NODE_SET_PROTOTYPE_METHOD(constructor_template, "queryContextAttribute", QueryContextAttributes);
 
   // Set the symbol
   target->ForceSet(String::NewSymbol("Kerberos"), constructor_template->GetFunction());
@@ -124,7 +128,7 @@ Handle<Value> Kerberos::AcquireAlternateCredentials(const Arguments &args) {
 
   // printf("============= Acquire :: 1\n");
   // Try to acquire credentials
-  status = _kerberos_AcquireCredentialsHandle(
+  status = _sspi_AcquireCredentialsHandle(
       NULL,
       "Kerberos",
       SECPKG_CRED_OUTBOUND,
@@ -221,7 +225,7 @@ Handle<Value> Kerberos::PrepareOutboundPackage(const Arguments &args) {
     printf("^^^^^^^^^^^^^^^^^^^^^^^^^^^^ INBOUND DATA\n");
   }
 
-  status = _kerberos_initializeSecurityContext ( 
+  status = _sspi_initializeSecurityContext ( 
     &kerberos->m_Credentials,
     kerberos->m_HaveContext ? &kerberos->m_Context : NULL,
     const_cast<TCHAR*>(target_str),
@@ -347,10 +351,11 @@ Handle<Value> Kerberos::DecryptMessage(const Arguments &args) {
   char *temp;
   unsigned long quality;
 
-  Local<String> challenge = args[0]->ToString();
   // Unpack the long object
   Kerberos *kerberos = ObjectWrap::Unwrap<Kerberos>(args.This());
 
+  // Unpack the challenge  
+  Local<String> challenge = args[0]->ToString();
   challenge_str_size = challenge->Utf8Length();
   // Copy challenge string
   challenge_str = (char *)calloc(challenge_str_size + 1, sizeof(char));
@@ -401,7 +406,7 @@ Handle<Value> Kerberos::DecryptMessage(const Arguments &args) {
 
   printf("================================== EXECUTING 0\n");
   // Let's decrypt this boy
-  status = _kerberos_DecryptMessage(
+  status = _sspi_DecryptMessage(
     &kerberos->m_Context,
     &Message,
     0,
@@ -441,6 +446,80 @@ Handle<Value> Kerberos::DecryptMessage(const Arguments &args) {
     char *payload = base64_encode((unsigned char *)result, total_response_size);
     printf("payload :: %s\n", payload);
     return scope.Close(String::New(payload));    
+  }
+
+  return scope.Close(String::New(""));
+}
+
+Handle<Value> Kerberos::QueryContextAttributes(const Arguments &args) {
+  HandleScope scope;
+  SecPkgContext_Sizes sizes;
+  SECURITY_STATUS status;
+
+  uint64_t attribute = args[0]->ToInteger()->IntegerValue();
+
+  // Unpack the long object
+  Kerberos *kerberos = ObjectWrap::Unwrap<Kerberos>(args.This());
+  // Let's grab the query context attribute
+  status = _sspi_QueryContextAttributes(
+    &kerberos->m_Context,
+    attribute,
+    &sizes
+  );
+
+  printf("===================== query context attribute status :: %d\n", status);
+
+
+  return scope.Close(String::New(""));
+}
+
+Handle<Value> Kerberos::EncryptMessage(const Arguments &args) {
+  HandleScope scope;
+  char *username_str = NULL, *challenge_str = NULL;
+  char *bytes_received_from_server = NULL, *temp = NULL;
+  int challenge_str_size, username_str_size;
+  int length = 4;
+
+  // Unpack the long object
+  Kerberos *kerberos = ObjectWrap::Unwrap<Kerberos>(args.This());
+
+  // Unpack the challenge  
+  Local<String> challenge = args[0]->ToString();
+  challenge_str_size = challenge->Utf8Length();  
+
+  // Unpack the user name if available
+  if(args.Length() && args[1]->IsString()) {
+    Local<String> username = args[1]->ToString();
+    username_str_size = username->Utf8Length();
+    // Decode the user name
+    username_str = (char *)calloc(username_str_size + 1, sizeof(char));
+    username->WriteUtf8(username_str);    
+  }
+
+  // Copy challenge string
+  challenge_str = (char *)calloc(challenge_str_size + 1, sizeof(char));
+  challenge->WriteUtf8(challenge_str);
+
+  // Base 64 decode the challenge_str
+  temp = challenge_str;
+  challenge_str = (char *)base64_decode(challenge_str, &challenge_str_size);
+  free(temp);
+
+  // Modify the challenge_str to prepare for decryption
+  if(username_str != NULL) {
+    length += username_str_size;
+  }
+
+  // Allocate bytes
+  bytes_received_from_server = (char *)calloc(length, sizeof(char));
+  bytes_received_from_server[0] = 0x01;    // NO PROTECTION
+  bytes_received_from_server[1] = 0x00;    // NO PROTECTION
+  bytes_received_from_server[2] = 0x00;    // NO PROTECTION
+  bytes_received_from_server[3] = 0x00;    // NO PROTECTION
+
+  // Modify end byte sequence if we have a principal(user)
+  if(username_str != NULL) {
+    memcpy(username_str, (bytes_received_from_server + 4), username_str_size);
   }
 
   return scope.Close(String::New(""));
@@ -501,10 +580,14 @@ void Kerberos::After(uv_work_t* work_req) {
 }
 
 
-// // Exporting function
-// extern "C" void init(Handle<Object> target) {
-//   HandleScope scope;
-//   Kerberos::Initialize(target);
-// }
+// Exporting function
+extern "C" void init(Handle<Object> target) {
+  HandleScope scope;
+  Kerberos::Initialize(target);
+  SecurityBuffer::Initialize(target);
+  SecurityBufferDescriptor::Initialize(target);
+  SecurityContext::Initialize(target);
+  SecurityCredentials::Initialize(target);
+}
 
-NODE_MODULE(kerberos, Kerberos::Initialize);
+NODE_MODULE(kerberos, init);

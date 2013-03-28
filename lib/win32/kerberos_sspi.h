@@ -1,5 +1,5 @@
-#ifndef KERBEROS_SSPI_H
-#define KERBEROS_SSPI_H
+#ifndef SSPI_C_H
+#define SSPI_C_H
 
 #define SECURITY_WIN32 1
 
@@ -9,14 +9,14 @@
 /**
  * Encrypt A Message
  */
-SECURITY_STATUS SEC_ENTRY _kerberos_EncryptMessage(PCtxtHandle phContext, unsigned long fQOP, PSecBufferDesc pMessage, unsigned long MessageSeqNo);
+SECURITY_STATUS SEC_ENTRY _sspi_EncryptMessage(PCtxtHandle phContext, unsigned long fQOP, PSecBufferDesc pMessage, unsigned long MessageSeqNo);
 
 typedef DWORD (WINAPI *encryptMessage_fn)(PCtxtHandle phContext, ULONG fQOP, PSecBufferDesc pMessage, ULONG MessageSeqNo);  
 
 /**
  * Acquire Credentials
  */
-SECURITY_STATUS SEC_ENTRY _kerberos_AcquireCredentialsHandle(
+SECURITY_STATUS SEC_ENTRY _sspi_AcquireCredentialsHandle(
   LPSTR pszPrincipal,                 // Name of principal
   LPSTR pszPackage,                   // Name of package
   unsigned long fCredentialUse,       // Flags indicating use
@@ -37,7 +37,7 @@ typedef DWORD (WINAPI *acquireCredentialsHandle_fn)(
 /**
  * Delete Security Context
  */
-SECURITY_STATUS SEC_ENTRY _kerberos_DeleteSecurityContext(
+SECURITY_STATUS SEC_ENTRY _sspi_DeleteSecurityContext(
   PCtxtHandle phContext               // Context to delete
 );
 
@@ -46,7 +46,7 @@ typedef DWORD (WINAPI *deleteSecurityContext_fn)(PCtxtHandle phContext);
 /**
  * Decrypt Message
  */
-SECURITY_STATUS SEC_ENTRY _kerberos_DecryptMessage(
+SECURITY_STATUS SEC_ENTRY _sspi_DecryptMessage(
   PCtxtHandle phContext, 
   PSecBufferDesc pMessage, 
   unsigned long MessageSeqNo, 
@@ -59,7 +59,7 @@ typedef DWORD (WINAPI *decryptMessage_fn)(
 /**
  * Initialize Security Context
  */
-SECURITY_STATUS SEC_ENTRY _kerberos_initializeSecurityContext(
+SECURITY_STATUS SEC_ENTRY _sspi_initializeSecurityContext(
   PCredHandle phCredential,       // Cred to base context
   PCtxtHandle phContext,          // Existing context (OPT)
   LPSTR pszTargetName,            // Name of target
@@ -82,7 +82,7 @@ typedef DWORD (WINAPI *initializeSecurityContext_fn)(
 /**
  * Query Context Attributes
  */
-SECURITY_STATUS SEC_ENTRY _kerberos_QueryContextAttributes(
+SECURITY_STATUS SEC_ENTRY _sspi_QueryContextAttributes(
   PCtxtHandle phContext,          // Context to query
   unsigned long ulAttribute,      // Attribute to query
   void * pBuffer                  // Buffer for attributes

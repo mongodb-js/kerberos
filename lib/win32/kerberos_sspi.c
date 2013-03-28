@@ -2,20 +2,20 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-static HINSTANCE _kerberos_security_dll = NULL; 
+static HINSTANCE _sspi_security_dll = NULL; 
 
 /**
  * Encrypt A Message
  */
-SECURITY_STATUS SEC_ENTRY _kerberos_EncryptMessage(PCtxtHandle phContext, unsigned long fQOP, PSecBufferDesc pMessage, unsigned long MessageSeqNo) {
+SECURITY_STATUS SEC_ENTRY _sspi_EncryptMessage(PCtxtHandle phContext, unsigned long fQOP, PSecBufferDesc pMessage, unsigned long MessageSeqNo) {
   // Create function pointer instance
   encryptMessage_fn pfn_encryptMessage = NULL;
 
   // Return error if library not loaded
-  if(_kerberos_security_dll == NULL) return -1;
+  if(_sspi_security_dll == NULL) return -1;
 
   // Map function to library method
-  pfn_encryptMessage = (encryptMessage_fn)GetProcAddress(_kerberos_security_dll, "EncryptMessage");
+  pfn_encryptMessage = (encryptMessage_fn)GetProcAddress(_sspi_security_dll, "EncryptMessage");
   // Check if the we managed to map function pointer
   if(!pfn_encryptMessage) {
     printf("GetProcAddress failed.\n");
@@ -29,7 +29,7 @@ SECURITY_STATUS SEC_ENTRY _kerberos_EncryptMessage(PCtxtHandle phContext, unsign
 /**
  * Acquire Credentials
  */
-SECURITY_STATUS SEC_ENTRY _kerberos_AcquireCredentialsHandle(
+SECURITY_STATUS SEC_ENTRY _sspi_AcquireCredentialsHandle(
   LPSTR pszPrincipal, LPSTR pszPackage, unsigned long fCredentialUse,
   void * pvLogonId, void * pAuthData, SEC_GET_KEY_FN pGetKeyFn, void * pvGetKeyArgument,
   PCredHandle phCredential, PTimeStamp ptsExpiry
@@ -40,13 +40,13 @@ SECURITY_STATUS SEC_ENTRY _kerberos_AcquireCredentialsHandle(
 
   /*printf("======================================== 0\n");*/
   // Return error if library not loaded
-  if(_kerberos_security_dll == NULL) return -1;
+  if(_sspi_security_dll == NULL) return -1;
 
   // Map function
   #ifdef _UNICODE
-      pfn_acquireCredentialsHandle = (acquireCredentialsHandle_fn)GetProcAddress(_kerberos_security_dll, "AcquireCredentialsHandleW");
+      pfn_acquireCredentialsHandle = (acquireCredentialsHandle_fn)GetProcAddress(_sspi_security_dll, "AcquireCredentialsHandleW");
   #else
-      pfn_acquireCredentialsHandle = (acquireCredentialsHandle_fn)GetProcAddress(_kerberos_security_dll, "AcquireCredentialsHandleA");
+      pfn_acquireCredentialsHandle = (acquireCredentialsHandle_fn)GetProcAddress(_sspi_security_dll, "AcquireCredentialsHandleA");
   #endif
 
   /*printf("======================================== 1\n");*/
@@ -73,14 +73,14 @@ SECURITY_STATUS SEC_ENTRY _kerberos_AcquireCredentialsHandle(
 /**
  * Delete Security Context
  */
-SECURITY_STATUS SEC_ENTRY _kerberos_DeleteSecurityContext(PCtxtHandle phContext) {
+SECURITY_STATUS SEC_ENTRY _sspi_DeleteSecurityContext(PCtxtHandle phContext) {
   // Create function pointer instance
   deleteSecurityContext_fn pfn_deleteSecurityContext = NULL;
 
   // Return error if library not loaded
-  if(_kerberos_security_dll == NULL) return -1;
+  if(_sspi_security_dll == NULL) return -1;
   // Map function
-  pfn_deleteSecurityContext = (deleteSecurityContext_fn)GetProcAddress(_kerberos_security_dll, "DeleteSecurityContext");
+  pfn_deleteSecurityContext = (deleteSecurityContext_fn)GetProcAddress(_sspi_security_dll, "DeleteSecurityContext");
 
   // Check if the we managed to map function pointer
   if(!pfn_deleteSecurityContext) {
@@ -95,14 +95,14 @@ SECURITY_STATUS SEC_ENTRY _kerberos_DeleteSecurityContext(PCtxtHandle phContext)
 /**
  * Decrypt Message
  */
-SECURITY_STATUS SEC_ENTRY _kerberos_DecryptMessage(PCtxtHandle phContext, PSecBufferDesc pMessage, unsigned long MessageSeqNo, unsigned long pfQOP) {
+SECURITY_STATUS SEC_ENTRY _sspi_DecryptMessage(PCtxtHandle phContext, PSecBufferDesc pMessage, unsigned long MessageSeqNo, unsigned long pfQOP) {
   // Create function pointer instance
   decryptMessage_fn pfn_decryptMessage = NULL;
 
   // Return error if library not loaded
-  if(_kerberos_security_dll == NULL) return -1;
+  if(_sspi_security_dll == NULL) return -1;
   // Map function
-  pfn_decryptMessage = (decryptMessage_fn)GetProcAddress(_kerberos_security_dll, "DecryptMessage");
+  pfn_decryptMessage = (decryptMessage_fn)GetProcAddress(_sspi_security_dll, "DecryptMessage");
 
   // Check if the we managed to map function pointer
   if(!pfn_decryptMessage) {
@@ -117,7 +117,7 @@ SECURITY_STATUS SEC_ENTRY _kerberos_DecryptMessage(PCtxtHandle phContext, PSecBu
 /**
  * Initialize Security Context
  */
-SECURITY_STATUS SEC_ENTRY _kerberos_initializeSecurityContext(
+SECURITY_STATUS SEC_ENTRY _sspi_initializeSecurityContext(
   PCredHandle phCredential, PCtxtHandle phContext,
   LPSTR pszTargetName, unsigned long fContextReq, 
   unsigned long Reserved1, unsigned long TargetDataRep, 
@@ -130,12 +130,13 @@ SECURITY_STATUS SEC_ENTRY _kerberos_initializeSecurityContext(
   initializeSecurityContext_fn pfn_initializeSecurityContext = NULL;
 
   // Return error if library not loaded
-  if(_kerberos_security_dll == NULL) return -1;
+  if(_sspi_security_dll == NULL) return -1;
+  
   // Map function
   #ifdef _UNICODE
-    pfn_initializeSecurityContext = (initializeSecurityContext_fn)GetProcAddress(_kerberos_security_dll, "InitializeSecurityContextW");
+    pfn_initializeSecurityContext = (initializeSecurityContext_fn)GetProcAddress(_sspi_security_dll, "InitializeSecurityContextW");
   #else
-    pfn_initializeSecurityContext = (initializeSecurityContext_fn)GetProcAddress(_kerberos_security_dll, "InitializeSecurityContextA");
+    pfn_initializeSecurityContext = (initializeSecurityContext_fn)GetProcAddress(_sspi_security_dll, "InitializeSecurityContextA");
   #endif
 
   // Check if the we managed to map function pointer
@@ -151,7 +152,7 @@ SECURITY_STATUS SEC_ENTRY _kerberos_initializeSecurityContext(
     phNewContext, pOutput, pfContextAttr, ptsExpiry
   );
 
-  printf("_kerberos_initializeSecurityContext :: %d\n", status);
+  printf("_sspi_initializeSecurityContext :: %d\n", status);
 
   // Call the function
   return status;
@@ -159,16 +160,20 @@ SECURITY_STATUS SEC_ENTRY _kerberos_initializeSecurityContext(
 /**
  * Query Context Attributes
  */
-SECURITY_STATUS SEC_ENTRY _kerberos_QueryContextAttributes(
+SECURITY_STATUS SEC_ENTRY _sspi_QueryContextAttributes(
   PCtxtHandle phContext, unsigned long ulAttribute, void * pBuffer
 ) {
   // Create function pointer instance
   queryContextAttributes_fn pfn_queryContextAttributes = NULL;
 
   // Return error if library not loaded
-  if(_kerberos_security_dll == NULL) return -1;
-  // Map function
-  pfn_queryContextAttributes = (queryContextAttributes_fn)GetProcAddress(_kerberos_security_dll, "QueryContextAttributes");
+  if(_sspi_security_dll == NULL) return -1;
+
+  #ifdef _UNICODE
+    pfn_queryContextAttributes = (queryContextAttributes_fn)GetProcAddress(_sspi_security_dll, "QueryContextAttributesW");
+  #else
+    pfn_queryContextAttributes = (queryContextAttributes_fn)GetProcAddress(_sspi_security_dll, "QueryContextAttributesA");
+  #endif
 
   // Check if the we managed to map function pointer
   if(!pfn_queryContextAttributes) {
@@ -188,10 +193,10 @@ SECURITY_STATUS SEC_ENTRY _kerberos_QueryContextAttributes(
 int load_library() {
   DWORD err;
   // Load the library
-  _kerberos_security_dll = LoadLibrary("security.dll");
+  _sspi_security_dll = LoadLibrary("security.dll");
 
   // Check if the library loaded
-  if(_kerberos_security_dll == NULL) {
+  if(_sspi_security_dll == NULL) {
     err = GetLastError();
     return err;
   }

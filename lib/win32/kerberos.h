@@ -29,10 +29,8 @@ public:
   static Handle<Value> AcquireAlternateCredentials(const Arguments &args);
   static Handle<Value> PrepareOutboundPackage(const Arguments &args);
   static Handle<Value> DecryptMessage(const Arguments &args);
-  // static Handle<Value> AuthGSSClientStep(const Arguments &args);
-  // static Handle<Value> AuthGSSClientUnwrap(const Arguments &args);
-  // static Handle<Value> AuthGSSClientWrap(const Arguments &args);
-  // static Handle<Value> AuthGSSClientClean(const Arguments &args);
+  static Handle<Value> EncryptMessage(const Arguments &args);
+  static Handle<Value> QueryContextAttributes(const Arguments &args);
 
 private:
   static Handle<Value> New(const Arguments &args);  
