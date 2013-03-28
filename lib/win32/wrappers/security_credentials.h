@@ -5,15 +5,38 @@
 #include <node_object_wrap.h>
 #include <v8.h>
 
+#define SECURITY_WIN32 1
+
+#include <windows.h>
+#include <sspi.h>
+#include <tchar.h>
+
+extern "C" {
+  #include "../kerberos_sspi.h"
+}
+
+// SEC_WINNT_AUTH_IDENTITY makes it unusually hard
+// to compile for both Unicode and ansi, so I use this macro:
+#ifdef _UNICODE
+#define USTR(str) (str)
+#else
+#define USTR(str) ((unsigned char*)(str))
+#endif
+
 using namespace v8;
 using namespace node;
 
 class SecurityCredentials : public ObjectWrap {  
   public:    
-    Persistent<Object> value;
-    
-    SecurityCredentials(Persistent<Object> value);
+    SecurityCredentials();
     ~SecurityCredentials();    
+
+    // Pointer to context object
+    SEC_WINNT_AUTH_IDENTITY m_Identity;
+    // credentials
+    CredHandle m_Credentials;    
+    // Expiry time for ticket
+    TimeStamp Expiration;
 
     // Has instance check
     static inline bool HasInstance(Handle<Value> val) {
@@ -24,16 +47,10 @@ class SecurityCredentials : public ObjectWrap {
 
     // Functions available from V8
     static void Initialize(Handle<Object> target);    
-    // static Handle<Value> ToString(const Arguments &args);
-    // static Handle<Value> Inspect(const Arguments &args);
-    // static Handle<Value> ToJSON(const Arguments &args);
+    static Handle<Value> Aquire(const Arguments &args);
 
     // Constructor used for creating new Long objects from C++
     static Persistent<FunctionTemplate> constructor_template;
-    
-    // // Setters and Getters for internal properties
-    // static Handle<Value> ValueGetter(Local<String> property, const AccessorInfo& info);
-    // static void ValueSetter(Local<String> property, Local<Value> value, const AccessorInfo& info);
     
   private:
     static Handle<Value> New(const Arguments &args);
