@@ -66,7 +66,7 @@ Handle<Value> SecurityCredentials::Aquire(const Arguments &args) {
   if(args.Length() == 3 && !args[2]->IsString())
     return VException("Aquire must be called with either [package:string, username:string, [password:string, domain:string]]");
 
-  if(args.Length() == 4 && !args[3]->IsString())
+  if(args.Length() == 4 && (!args[3]->IsString() && !args[3]->IsUndefined() && !args[3]->IsNull()))
     return VException("Aquire must be called with either [package:string, username:string, [password:string, domain:string]]");
 
   // Unpack the package
@@ -87,14 +87,13 @@ Handle<Value> SecurityCredentials::Aquire(const Arguments &args) {
   }
 
   // If we have a domain
-  if(args.Length() == 4) {
+  if(args.Length() == 4 && args[3]->IsString()) {
     Local<String> domain = args[3]->ToString();
     domain_str = (char *)calloc(domain->Utf8Length() + 1, sizeof(char));
     domain->WriteUtf8(domain_str);    
   }
 
   // Create Security instance
-  // Local<Value> argv[] = {};
   Local<Object> security_credentials_value = constructor_template->GetFunction()->NewInstance();
 
   // Unwrap the credentials
