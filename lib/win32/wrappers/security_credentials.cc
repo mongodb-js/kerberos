@@ -103,6 +103,9 @@ Handle<Value> SecurityCredentials::Aquire(const Arguments &args) {
   if(domain_str != NULL) {
     security_credentials->m_Identity.Domain = USTR(_tcsdup(domain_str));
     security_credentials->m_Identity.DomainLength = (unsigned long)_tcslen(domain_str);
+  } else {
+    security_credentials->m_Identity.Domain = NULL;
+    security_credentials->m_Identity.DomainLength = 0;
   }
 
   // Set up the user
@@ -117,12 +120,13 @@ Handle<Value> SecurityCredentials::Aquire(const Arguments &args) {
   }
 
   #ifdef _UNICODE
-      security_credentials->m_Identity.Flags = SEC_WINNT_AUTH_IDENTITY_UNICODE;
+    security_credentials->m_Identity.Flags = SEC_WINNT_AUTH_IDENTITY_UNICODE;
   #else
-      security_credentials->m_Identity.Flags = SEC_WINNT_AUTH_IDENTITY_ANSI;
+    security_credentials->m_Identity.Flags = SEC_WINNT_AUTH_IDENTITY_ANSI;
   #endif
 
   printf("========================= AQUIRE Credentials\n");
+  printf("package_str :: %s\n", package_str);
   printf("domain_str :: %s\n", domain_str);
   printf("username_str :: %s\n", username_str);
   printf("password_str :: %s\n", password_str);

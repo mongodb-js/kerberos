@@ -297,9 +297,6 @@ Handle<Value> SecurityContext::InitalizeStep(const Arguments &args) {
     
 Handle<Value> SecurityContext::EncryptMessage(const Arguments &args) {
   HandleScope scope;
-  char *challenge_str = NULL, *challenge_str_decoded = NULL;
-  int challenge_str_size;
-  unsigned long quality;
   SECURITY_STATUS status;
 
   if(args.Length() != 2)
@@ -318,14 +315,14 @@ Handle<Value> SecurityContext::EncryptMessage(const Arguments &args) {
   // Let's execute encryption
   status = _sspi_EncryptMessage(
       &security_context->m_Context
-    , args[1]->ToInteger()->Value()
+    , (unsigned long)args[1]->ToInteger()->Value()
     , &descriptor->secBufferDesc
     , 0
   );
 
   // We've got ok
   if(status == SEC_E_OK) {
-    int bytesToAllocate = descriptor->bufferSize();    
+    int bytesToAllocate = (int)descriptor->bufferSize();    
     // Free up existing payload
     if(security_context->payload != NULL) free(security_context->payload);
     // Save the payload
@@ -345,9 +342,7 @@ Handle<Value> SecurityContext::EncryptMessage(const Arguments &args) {
 
 Handle<Value> SecurityContext::DecryptMessage(const Arguments &args) {
   HandleScope scope;
-  char *challenge_str = NULL, *challenge_str_decoded = NULL;
-  int challenge_str_size;
-  unsigned long quality;
+  unsigned long quality = 0;
   SECURITY_STATUS status;
 
   if(args.Length() != 1)
@@ -366,12 +361,14 @@ Handle<Value> SecurityContext::DecryptMessage(const Arguments &args) {
       &security_context->m_Context
     , &descriptor->secBufferDesc
     , 0
-    , quality
+    , (unsigned long)&quality
   );
+
+  printf("================== quality :: %ul\n", quality);
 
   // We've got ok
   if(status == SEC_E_OK) {
-    int bytesToAllocate = descriptor->bufferSize();    
+    int bytesToAllocate = (int)descriptor->bufferSize();    
     // Free up existing payload
     if(security_context->payload != NULL) free(security_context->payload);
     // Save the payload
