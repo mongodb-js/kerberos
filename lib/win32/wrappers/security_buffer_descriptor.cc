@@ -40,12 +40,19 @@ SecurityBufferDescriptor::SecurityBufferDescriptor(Persistent<Array> arrayObject
     // Assign the buffer
     this->secBufferDesc.pBuffers = &security_obj->sec_buffer;
   } else {
+    printf("======================== CREATE SecurityBufferDescriptor :: %d\n", arrayObject->Length());
     // SecBuffer **Buffers = (SecBuffer **)calloc(arrayObject->Length(), sizeof(SecBuffer));
     this->secBufferDesc.pBuffers = new SecBuffer[arrayObject->Length()];
+    this->secBufferDesc.cBuffers = arrayObject->Length();
     
     // Assign the buffers
     for(uint32_t i = 0; i < arrayObject->Length(); i++) {
       security_obj = ObjectWrap::Unwrap<SecurityBuffer>(arrayObject->Get(i)->ToObject());
+
+      printf("============= ADDING ARRAY :: %d\n", i);
+      printf("type :: %d\n", security_obj->sec_buffer.BufferType);
+      printf("size :: %d\n", security_obj->sec_buffer.cbBuffer);
+
       this->secBufferDesc.pBuffers[i].BufferType = security_obj->sec_buffer.BufferType;
       this->secBufferDesc.pBuffers[i].pvBuffer = security_obj->sec_buffer.pvBuffer;
       this->secBufferDesc.pBuffers[i].cbBuffer = security_obj->sec_buffer.cbBuffer;
@@ -63,15 +70,14 @@ size_t SecurityBufferDescriptor::bufferSize() {
     security_obj = ObjectWrap::Unwrap<SecurityBuffer>(arrayObject->Get(0)->ToObject());
     return security_obj->size;
   } else {
-    // Calculate the total response size
-    int total_response_size = 0;
-    // Calculate the size
-    for(uint32_t i = 0; i < this->arrayObject->Length(); i++) {
-      security_obj = ObjectWrap::Unwrap<SecurityBuffer>(arrayObject->Get(i)->ToObject());
-      total_response_size += security_obj->size;
+    int bytesToAllocate = 0;
+
+    for(unsigned int i = 0; i < this->secBufferDesc.cBuffers; i++) {
+      bytesToAllocate += this->secBufferDesc.pBuffers[i].cbBuffer;
     }
+
     // Return total size
-    return total_response_size;
+    return bytesToAllocate;
   }
 }
 
@@ -84,25 +90,17 @@ char *SecurityBufferDescriptor::toBuffer() {
     data = (char *)malloc(security_obj->size * sizeof(char));
     memcpy(data, security_obj->data, security_obj->size);
   } else {
-    // Calculate the total response size
-    int total_response_size = 0;
-    // Calculate the size
-    for(uint32_t i = 0; i < this->arrayObject->Length(); i++) {
-      security_obj = ObjectWrap::Unwrap<SecurityBuffer>(arrayObject->Get(i)->ToObject());
-      total_response_size += security_obj->size;
-    }
-
-    // Allocate the size
-    data = (char *)calloc(total_response_size, sizeof(char));
+    int bytesToAllocate = this->bufferSize();
+    char *data = (char *)calloc(bytesToAllocate, sizeof(char));
     int offset = 0;
 
-    // Join all parts of the response
-    for(unsigned int i = 0; i < this->arrayObject->Length(); i++) {
-      security_obj = ObjectWrap::Unwrap<SecurityBuffer>(arrayObject->Get(i)->ToObject());
-      // Copy the memory
-      memcpy((void *)(data + offset), security_obj->data, security_obj->size);
-      offset += security_obj->size;
+    for(unsigned int i = 0; i < this->secBufferDesc.cBuffers; i++) {
+      memcpy((data + offset), this->secBufferDesc.pBuffers[i].pvBuffer, this->secBufferDesc.pBuffers[i].cbBuffer);
+      offset +=this->secBufferDesc.pBuffers[i].cbBuffer;
     }
+
+    // Return the data
+    return data;
   }
 
   return data;

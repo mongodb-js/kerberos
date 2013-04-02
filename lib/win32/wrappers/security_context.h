@@ -5,15 +5,38 @@
 #include <node_object_wrap.h>
 #include <v8.h>
 
+#define SECURITY_WIN32 1
+
+#include <windows.h>
+#include <sspi.h>
+#include <tchar.h>
+#include "security_credentials.h"
+
+extern "C" {
+  #include "../kerberos_sspi.h"
+  #include "../base64.h"
+}
+
 using namespace v8;
 using namespace node;
 
 class SecurityContext : public ObjectWrap {  
   public:    
-    Persistent<Object> value;
-    
-    SecurityContext(Persistent<Object> value);
+    SecurityContext();
     ~SecurityContext();    
+
+    // Do we have a context
+    bool hasContext;
+    // Reference to security credentials
+    SecurityCredentials *security_credentials;
+    // Security context
+    CtxtHandle m_Context;
+    // Attributes
+    DWORD CtxtAttr;
+    // Expiry time for ticket
+    TimeStamp Expiration;
+    // Payload
+    char *payload;
 
     // Has instance check
     static inline bool HasInstance(Handle<Value> val) {
@@ -24,16 +47,17 @@ class SecurityContext : public ObjectWrap {
 
     // Functions available from V8
     static void Initialize(Handle<Object> target);    
-    // static Handle<Value> ToString(const Arguments &args);
-    // static Handle<Value> Inspect(const Arguments &args);
-    // static Handle<Value> ToJSON(const Arguments &args);
+    static Handle<Value> InitializeContext(const Arguments &args);
+    static Handle<Value> InitalizeStep(const Arguments &args);
+    static Handle<Value> EncryptMessage(const Arguments &args);
+    static Handle<Value> DecryptMessage(const Arguments &args);
+    static Handle<Value> QueryContextAttributes(const Arguments &args);
+
+    // Payload getter
+    static Handle<Value> PayloadGetter(Local<String> property, const AccessorInfo& info);
 
     // Constructor used for creating new Long objects from C++
     static Persistent<FunctionTemplate> constructor_template;
-    
-    // // Setters and Getters for internal properties
-    // static Handle<Value> ValueGetter(Local<String> property, const AccessorInfo& info);
-    // static void ValueSetter(Local<String> property, Local<Value> value, const AccessorInfo& info);
     
   private:
     static Handle<Value> New(const Arguments &args);

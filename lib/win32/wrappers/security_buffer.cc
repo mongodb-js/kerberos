@@ -59,7 +59,7 @@ Handle<Value> SecurityBuffer::New(const Arguments &args) {
     return VException("Two parameters needed integer buffer type and  [32 bit integer/Buffer] required");
 
   // Unpack buffer type
-  uint32_t buffer_type = args[1]->ToUint32()->Value();
+  uint32_t buffer_type = args[0]->ToUint32()->Value();
 
   // If we have an integer
   if(args[1]->IsInt32()) {
@@ -92,8 +92,6 @@ Handle<Value> SecurityBuffer::ToBuffer(const Arguments &args) {
   // Return the buffer
   return scope.Close(buffer->handle_);  
 }
-
-static Persistent<String> value_Double;
 
 void SecurityBuffer::Initialize(Handle<Object> target) {
   // Grab the scope of the call from Node

@@ -215,7 +215,7 @@ Handle<Value> Kerberos::PrepareOutboundPackage(const Arguments &args) {
   DWORD      CtxtAttr;
   // TimeStamp  Expiration;
 
-  // printf("=============== target ::%s\n", target_str);
+  printf("=============== target ::%s\n", target_str);
 
   if(kerberos->m_HaveContext == true) {
     printf("^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GOT CONTEXT\n");
@@ -467,9 +467,6 @@ Handle<Value> Kerberos::QueryContextAttributes(const Arguments &args) {
     &sizes
   );
 
-  printf("===================== query context attribute status :: %d\n", status);
-
-
   return scope.Close(String::New(""));
 }
 
@@ -584,9 +581,9 @@ void Kerberos::After(uv_work_t* work_req) {
 extern "C" void init(Handle<Object> target) {
   HandleScope scope;
   Kerberos::Initialize(target);
+  SecurityContext::Initialize(target);
   SecurityBuffer::Initialize(target);
   SecurityBufferDescriptor::Initialize(target);
-  SecurityContext::Initialize(target);
   SecurityCredentials::Initialize(target);
 }
 

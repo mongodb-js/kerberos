@@ -15,8 +15,6 @@ using namespace node;
 
 class SecurityBuffer : public ObjectWrap {  
   public:    
-    Persistent<Object> value;
-    
     SecurityBuffer(uint32_t security_type, uint32_t size);
     SecurityBuffer(uint32_t security_type, uint32_t size, void *data);
     ~SecurityBuffer();    

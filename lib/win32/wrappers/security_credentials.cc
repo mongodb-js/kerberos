@@ -49,7 +49,7 @@ Handle<Value> SecurityCredentials::New(const Arguments &args) {
 
 Handle<Value> SecurityCredentials::Aquire(const Arguments &args) {
   HandleScope scope;  
-  char *package_str, *username_str, *password_str, *domain_str;
+  char *package_str = NULL, *username_str = NULL, *password_str = NULL, *domain_str = NULL;
   // Status of operation
   SECURITY_STATUS status;
 
@@ -80,7 +80,7 @@ Handle<Value> SecurityCredentials::Aquire(const Arguments &args) {
   username->WriteUtf8(username_str);
 
   // If we have a password
-  if(args.Length() == 3) {
+  if(args.Length() == 3 || args.Length() == 4) {
     Local<String> password = args[2]->ToString();
     password_str = (char *)calloc(password->Utf8Length() + 1, sizeof(char));
     password->WriteUtf8(password_str);    
@@ -122,6 +122,11 @@ Handle<Value> SecurityCredentials::Aquire(const Arguments &args) {
       security_credentials->m_Identity.Flags = SEC_WINNT_AUTH_IDENTITY_ANSI;
   #endif
 
+  printf("========================= AQUIRE Credentials\n");
+  printf("domain_str :: %s\n", domain_str);
+  printf("username_str :: %s\n", username_str);
+  printf("password_str :: %s\n", password_str);
+
   // Attempt to acquire credentials
   status = _sspi_AcquireCredentialsHandle(
     NULL,
@@ -145,8 +150,10 @@ Handle<Value> SecurityCredentials::Aquire(const Arguments &args) {
     }
   }
 
+  // Make object persistent
+  Persistent<Object> persistent = Persistent<Object>::New(security_credentials_value);
   // Return the object
-  return scope.Close(security_credentials_value);
+  return scope.Close(persistent);
 }
 
 void SecurityCredentials::Initialize(Handle<Object> target) {
@@ -159,7 +166,7 @@ void SecurityCredentials::Initialize(Handle<Object> target) {
   constructor_template->SetClassName(String::NewSymbol("SecurityCredentials"));
 
   // Class methods
-  NODE_SET_METHOD(constructor_template->GetFunction(), "aquire", Aquire);
+  NODE_SET_METHOD(constructor_template, "aquire", Aquire);
 
   // Set the class on the target module
   target->Set(String::NewSymbol("SecurityCredentials"), constructor_template->GetFunction());  
