@@ -54,9 +54,14 @@ class SecurityContext : public ObjectWrap {
     static Handle<Value> InitalizeStep(const Arguments &args);
     static Handle<Value> InitalizeStepSync(const Arguments &args);
 
-    static Handle<Value> EncryptMessageSync(const Arguments &args);
+    static Handle<Value> DecryptMessage(const Arguments &args);
     static Handle<Value> DecryptMessageSync(const Arguments &args);
+
     static Handle<Value> QueryContextAttributesSync(const Arguments &args);
+    static Handle<Value> QueryContextAttributes(const Arguments &args);
+
+    static Handle<Value> EncryptMessageSync(const Arguments &args);
+    static Handle<Value> EncryptMessage(const Arguments &args);
 
     // Payload getter
     static Handle<Value> PayloadGetter(Local<String> property, const AccessorInfo& info);

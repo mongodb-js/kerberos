@@ -557,12 +557,6 @@ Handle<Value> SecurityContext::InitalizeStep(const Arguments &args) {
   return scope.Close(Undefined());  
 }
 
-
-
-
-
-
-
 Handle<Value> SecurityContext::InitalizeStepSync(const Arguments &args) {
   HandleScope scope;
 
@@ -670,7 +664,100 @@ Handle<Value> SecurityContext::InitalizeStepSync(const Arguments &args) {
 
   return scope.Close(Null());
 }
-    
+
+//
+//  Async EncryptMessage
+//
+typedef struct SecurityContextEncryptMessageCall {
+  SecurityContext *context;
+  SecurityBufferDescriptor *descriptor;
+  unsigned long flags;
+} SecurityContextEncryptMessageCall;
+
+static void _encryptMessage(Worker *worker) {
+  SECURITY_STATUS status;
+  // Unpack call
+  SecurityContextEncryptMessageCall *call = (SecurityContextEncryptMessageCall *)worker->parameters;
+  // Unpack the security context
+  SecurityContext *context = call->context;
+  SecurityBufferDescriptor *descriptor = call->descriptor;
+
+  // Let's execute encryption
+  status = _sspi_EncryptMessage(
+      &context->m_Context
+    , call->flags
+    , &descriptor->secBufferDesc
+    , 0
+  );
+
+  // We've got ok
+  if(status == SEC_E_OK) {
+    int bytesToAllocate = (int)descriptor->bufferSize();    
+    // Free up existing payload
+    if(context->payload != NULL) free(context->payload);
+    // Save the payload
+    context->payload = base64_encode((unsigned char *)descriptor->toBuffer(), bytesToAllocate);
+    // Set result
+    worker->return_code = status;
+    worker->return_value = context;
+  } else {
+    worker->error = TRUE;
+    worker->error_code = status;
+    worker->error_message = DisplaySECError(status);
+  }
+}
+
+static Handle<Value> _map_encryptMessage(Worker *worker) {
+  HandleScope scope;
+  // Unwrap the security context
+  SecurityContext *context = (SecurityContext *)worker->return_value;
+  // Return the value
+  return scope.Close(context->handle_);
+}
+
+Handle<Value> SecurityContext::EncryptMessage(const Arguments &args) {
+  HandleScope scope;
+
+  if(args.Length() != 3)
+    return VException("EncryptMessage takes an instance of SecurityBufferDescriptor, an integer flag and a callback function");  
+  if(!SecurityBufferDescriptor::HasInstance(args[0]))
+    return VException("EncryptMessage takes an instance of SecurityBufferDescriptor, an integer flag and a callback function");  
+  if(!args[1]->IsUint32())
+    return VException("EncryptMessage takes an instance of SecurityBufferDescriptor, an integer flag and a callback function");  
+  if(!args[2]->IsFunction())
+    return VException("EncryptMessage takes an instance of SecurityBufferDescriptor, an integer flag and a callback function");  
+
+  // Unpack the security context
+  SecurityContext *security_context = ObjectWrap::Unwrap<SecurityContext>(args.This());
+
+  // Unpack the descriptor
+  SecurityBufferDescriptor *descriptor = ObjectWrap::Unwrap<SecurityBufferDescriptor>(args[0]->ToObject());
+
+  // Create call structure
+  SecurityContextEncryptMessageCall *call = (SecurityContextEncryptMessageCall *)calloc(1, sizeof(SecurityContextEncryptMessageCall));
+  call->context = security_context;
+  call->descriptor = descriptor;
+  call->flags = (unsigned long)args[1]->ToInteger()->Value();
+
+  // Callback
+  Local<Function> callback = Local<Function>::Cast(args[2]);
+
+  // Let's allocate some space
+  Worker *worker = new Worker();
+  worker->error = false;
+  worker->request.data = worker;
+  worker->callback = Persistent<Function>::New(callback);
+  worker->parameters = call;
+  worker->execute = _encryptMessage;
+  worker->mapper = _map_encryptMessage;
+
+  // Schedule the worker with lib_uv
+  uv_queue_work(uv_default_loop(), &worker->request, Process, (uv_after_work_cb)After);
+
+  // Return undefined
+  return scope.Close(Undefined());  
+}
+
 Handle<Value> SecurityContext::EncryptMessageSync(const Arguments &args) {
   HandleScope scope;
   SECURITY_STATUS status;
@@ -714,6 +801,94 @@ Handle<Value> SecurityContext::EncryptMessageSync(const Arguments &args) {
   }
 
   return scope.Close(Null());
+}
+
+//
+//  Async DecryptMessage
+//
+typedef struct SecurityContextDecryptMessageCall {
+  SecurityContext *context;
+  SecurityBufferDescriptor *descriptor;
+} SecurityContextDecryptMessageCall;
+
+static void _decryptMessage(Worker *worker) {
+  unsigned long quality = 0;
+  SECURITY_STATUS status;
+  
+  // Unpack parameters
+  SecurityContextDecryptMessageCall *call = (SecurityContextDecryptMessageCall *)worker->parameters;
+  SecurityContext *context = call->context;
+  SecurityBufferDescriptor *descriptor = call->descriptor;
+
+  // Let's execute encryption
+  status = _sspi_DecryptMessage(
+      &context->m_Context
+    , &descriptor->secBufferDesc
+    , 0
+    , (unsigned long)&quality
+  );
+
+  // We've got ok
+  if(status == SEC_E_OK) {
+    int bytesToAllocate = (int)descriptor->bufferSize();    
+    // Free up existing payload
+    if(context->payload != NULL) free(context->payload);
+    // Save the payload
+    context->payload = base64_encode((unsigned char *)descriptor->toBuffer(), bytesToAllocate);
+    // Set return values
+    worker->return_code = status;
+    worker->return_value = context;
+  } else {
+    worker->error = TRUE;
+    worker->error_code = status;
+    worker->error_message = DisplaySECError(status);
+  }
+}
+
+static Handle<Value> _map_decryptMessage(Worker *worker) {
+  HandleScope scope;
+  // Unwrap the security context
+  SecurityContext *context = (SecurityContext *)worker->return_value;
+  // Return the value
+  return scope.Close(context->handle_);
+}
+
+Handle<Value> SecurityContext::DecryptMessage(const Arguments &args) {
+  HandleScope scope;
+
+  if(args.Length() != 2)
+    return VException("DecryptMessage takes an instance of SecurityBufferDescriptor and a callback function");
+  if(!SecurityBufferDescriptor::HasInstance(args[0]))
+    return VException("DecryptMessage takes an instance of SecurityBufferDescriptor and a callback function");
+  if(!args[1]->IsFunction())
+    return VException("DecryptMessage takes an instance of SecurityBufferDescriptor and a callback function");
+
+  // Unpack the security context
+  SecurityContext *security_context = ObjectWrap::Unwrap<SecurityContext>(args.This());
+  // Unpack the descriptor
+  SecurityBufferDescriptor *descriptor = ObjectWrap::Unwrap<SecurityBufferDescriptor>(args[0]->ToObject());
+  // Create call structure
+  SecurityContextDecryptMessageCall *call = (SecurityContextDecryptMessageCall *)calloc(1, sizeof(SecurityContextDecryptMessageCall));
+  call->context = security_context;
+  call->descriptor = descriptor;
+
+  // Callback
+  Local<Function> callback = Local<Function>::Cast(args[1]);
+
+  // Let's allocate some space
+  Worker *worker = new Worker();
+  worker->error = false;
+  worker->request.data = worker;
+  worker->callback = Persistent<Function>::New(callback);
+  worker->parameters = call;
+  worker->execute = _decryptMessage;
+  worker->mapper = _map_decryptMessage;
+
+  // Schedule the worker with lib_uv
+  uv_queue_work(uv_default_loop(), &worker->request, Process, (uv_after_work_cb)After);
+
+  // Return undefined
+  return scope.Close(Undefined());  
 }
 
 Handle<Value> SecurityContext::DecryptMessageSync(const Arguments &args) {
@@ -760,6 +935,105 @@ Handle<Value> SecurityContext::DecryptMessageSync(const Arguments &args) {
   return scope.Close(Null());
 }
 
+//
+//  Async QueryContextAttributes
+//
+typedef struct SecurityContextQueryContextAttributesCall {
+  SecurityContext *context;
+  uint32_t attribute;
+} SecurityContextQueryContextAttributesCall;
+
+static void _queryContextAttributes(Worker *worker) {
+  SECURITY_STATUS status;
+
+  // Cast to data structure
+  SecurityContextQueryContextAttributesCall *call = (SecurityContextQueryContextAttributesCall *)worker->parameters;  
+
+  // Allocate some space
+  SecPkgContext_Sizes *sizes = (SecPkgContext_Sizes *)calloc(1, sizeof(SecPkgContext_Sizes));
+  // Let's grab the query context attribute
+  status = _sspi_QueryContextAttributes(
+    &call->context->m_Context,
+    call->attribute,
+    sizes
+  );  
+  
+  if(status == SEC_E_OK) {
+    worker->return_code = status;
+    worker->return_value = sizes;
+  } else {
+    worker->error = TRUE;
+    worker->error_code = status;
+    worker->error_message = DisplaySECError(status);
+  }
+}
+
+static Handle<Value> _map_queryContextAttributes(Worker *worker) {
+  HandleScope scope;
+
+  // Cast to data structure
+  SecurityContextQueryContextAttributesCall *call = (SecurityContextQueryContextAttributesCall *)worker->parameters;  
+
+  // Convert data
+  if(call->attribute == SECPKG_ATTR_SIZES) {
+    SecPkgContext_Sizes *sizes = (SecPkgContext_Sizes *)worker->return_value;
+    // Create object
+    Local<Object> value = Object::New();
+    value->Set(String::New("maxToken"), Integer::New(sizes->cbMaxToken));
+    value->Set(String::New("maxSignature"), Integer::New(sizes->cbMaxSignature));
+    value->Set(String::New("blockSize"), Integer::New(sizes->cbBlockSize));
+    value->Set(String::New("securityTrailer"), Integer::New(sizes->cbSecurityTrailer));
+    return scope.Close(value);
+  }
+
+  // Return the value
+  return scope.Close(Null());
+}
+
+Handle<Value> SecurityContext::QueryContextAttributes(const Arguments &args) {
+  HandleScope scope;
+
+  if(args.Length() != 2)
+    return VException("QueryContextAttributesSync method takes a an integer Attribute specifier and a callback function");
+  if(!args[0]->IsInt32())
+    return VException("QueryContextAttributes method takes a an integer Attribute specifier and a callback function");
+  if(!args[1]->IsFunction())
+    return VException("QueryContextAttributes method takes a an integer Attribute specifier and a callback function");
+
+  // Unpack the security context
+  SecurityContext *security_context = ObjectWrap::Unwrap<SecurityContext>(args.This());
+
+  // Unpack the int value
+  uint32_t attribute = args[0]->ToInt32()->Value();  
+
+  // Check that we have a supported attribute
+  if(attribute != SECPKG_ATTR_SIZES) 
+    return VException("QueryContextAttributes only supports the SECPKG_ATTR_SIZES attribute");
+
+  // Create call structure
+  SecurityContextQueryContextAttributesCall *call = (SecurityContextQueryContextAttributesCall *)calloc(1, sizeof(SecurityContextQueryContextAttributesCall));
+  call->attribute = attribute;
+  call->context = security_context;
+
+  // Callback
+  Local<Function> callback = Local<Function>::Cast(args[1]);
+
+  // Let's allocate some space
+  Worker *worker = new Worker();
+  worker->error = false;
+  worker->request.data = worker;
+  worker->callback = Persistent<Function>::New(callback);
+  worker->parameters = call;
+  worker->execute = _queryContextAttributes;
+  worker->mapper = _map_queryContextAttributes;
+
+  // Schedule the worker with lib_uv
+  uv_queue_work(uv_default_loop(), &worker->request, Process, (uv_after_work_cb)After);
+
+  // Return undefined
+  return scope.Close(Undefined());  
+}
+
 Handle<Value> SecurityContext::QueryContextAttributesSync(const Arguments &args) {
   HandleScope scope;
   SECURITY_STATUS status;
@@ -772,6 +1046,9 @@ Handle<Value> SecurityContext::QueryContextAttributesSync(const Arguments &args)
   // Unpack the security context
   SecurityContext *security_context = ObjectWrap::Unwrap<SecurityContext>(args.This());
   uint32_t attribute = args[0]->ToInt32()->Value();
+
+  if(attribute != SECPKG_ATTR_SIZES) 
+    return VException("QueryContextAttributes only supports the SECPKG_ATTR_SIZES attribute");
 
   // Check what attribute we are asking for
   if(attribute == SECPKG_ATTR_SIZES) {
@@ -821,9 +1098,15 @@ void SecurityContext::Initialize(Handle<Object> target) {
   // Set up method for the instance
   NODE_SET_PROTOTYPE_METHOD(constructor_template, "initializeSync", InitalizeStepSync);
   NODE_SET_PROTOTYPE_METHOD(constructor_template, "initialize", InitalizeStep);
-  NODE_SET_PROTOTYPE_METHOD(constructor_template, "encryptMessageSync", EncryptMessageSync);
+
   NODE_SET_PROTOTYPE_METHOD(constructor_template, "decryptMessageSync", DecryptMessageSync);
+  NODE_SET_PROTOTYPE_METHOD(constructor_template, "decryptMessage", DecryptMessage);
+
   NODE_SET_PROTOTYPE_METHOD(constructor_template, "queryContextAttributesSync", QueryContextAttributesSync);
+  NODE_SET_PROTOTYPE_METHOD(constructor_template, "queryContextAttributes", QueryContextAttributes);
+
+  NODE_SET_PROTOTYPE_METHOD(constructor_template, "encryptMessageSync", EncryptMessageSync);
+  NODE_SET_PROTOTYPE_METHOD(constructor_template, "encryptMessage", EncryptMessage);
 
   // Getters for correct serialization of the object  
   constructor_template->InstanceTemplate()->SetAccessor(String::NewSymbol("payload"), PayloadGetter);
