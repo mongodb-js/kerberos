@@ -7,10 +7,10 @@
 
 #define SECURITY_WIN32 1
 
-#include <windows.h>
 #include <sspi.h>
 #include <tchar.h>
 #include "security_credentials.h"
+#include "../worker.h"
 
 extern "C" {
   #include "../kerberos_sspi.h"
@@ -48,10 +48,12 @@ class SecurityContext : public ObjectWrap {
     // Functions available from V8
     static void Initialize(Handle<Object> target);    
     static Handle<Value> InitializeContext(const Arguments &args);
-    static Handle<Value> InitalizeStep(const Arguments &args);
-    static Handle<Value> EncryptMessage(const Arguments &args);
-    static Handle<Value> DecryptMessage(const Arguments &args);
-    static Handle<Value> QueryContextAttributes(const Arguments &args);
+    static Handle<Value> InitializeContextSync(const Arguments &args);
+    
+    static Handle<Value> InitalizeStepSync(const Arguments &args);
+    static Handle<Value> EncryptMessageSync(const Arguments &args);
+    static Handle<Value> DecryptMessageSync(const Arguments &args);
+    static Handle<Value> QueryContextAttributesSync(const Arguments &args);
 
     // Payload getter
     static Handle<Value> PayloadGetter(Local<String> property, const AccessorInfo& info);
@@ -60,7 +62,12 @@ class SecurityContext : public ObjectWrap {
     static Persistent<FunctionTemplate> constructor_template;
     
   private:
+    // Create a new instance
     static Handle<Value> New(const Arguments &args);
+    // Handles the uv calls
+    static void Process(uv_work_t* work_req);
+    // Called after work is done
+    static void After(uv_work_t* work_req);
 };
 
 #endif

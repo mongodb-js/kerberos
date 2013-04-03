@@ -13,6 +13,10 @@
 #include "security_context.h"
 #include "security_buffer_descriptor.h"
 
+#ifndef ARRAY_SIZE
+# define ARRAY_SIZE(a) (sizeof((a)) / sizeof((a)[0]))
+#endif
+
 static LPSTR DisplaySECError(DWORD ErrCode);
 
 static Handle<Value> VException(const char *msg) {
@@ -47,7 +51,7 @@ Handle<Value> SecurityContext::New(const Arguments &args) {
   return args.This();    
 }
 
-Handle<Value> SecurityContext::InitializeContext(const Arguments &args) {
+Handle<Value> SecurityContext::InitializeContextSync(const Arguments &args) {
   HandleScope scope;  
   char *service_principal_name_str = NULL, *input_str = NULL, *decoded_input_str = NULL;
   BYTE *out_bound_data_str = NULL;
@@ -94,7 +98,6 @@ Handle<Value> SecurityContext::InitializeContext(const Arguments &args) {
 
   // Create Security context instance
   Local<Object> security_context_value = constructor_template->GetFunction()->NewInstance();
-  security_context_value->Get(String::New("initialize"));
   // Unwrap the security context
   SecurityContext *security_context = ObjectWrap::Unwrap<SecurityContext>(security_context_value);
   // Add a reference to the security_credentials
@@ -164,10 +167,179 @@ Handle<Value> SecurityContext::InitializeContext(const Arguments &args) {
     }
   }
 
-  // Make object persistent
-  // Persistent<Object> persistent = Persistent<Object>::New(security_context_value);
   // Return security context
   return scope.Close(security_context_value);
+}
+
+//
+//  Async InitializeContext
+//
+// Call structs
+typedef struct SecurityContextStaticInitializeCall {
+  char *service_principal_name_str;
+  char *decoded_input_str;
+  int decoded_input_str_length;
+  SecurityContext *context;
+} SecurityContextStaticInitializeCall;
+
+static void _initializeContext(Worker *worker) {
+  // Status of operation
+  SECURITY_STATUS status;
+  BYTE *out_bound_data_str = NULL;
+  SecurityContextStaticInitializeCall *call = (SecurityContextStaticInitializeCall *)worker->parameters;
+
+  // Structures used for c calls
+  SecBufferDesc ibd, obd;
+  SecBuffer ib, ob;
+  // package info
+  SecPkgInfo m_PkgInfo;
+
+  // 
+  // Prepare data structure for returned data from SSPI
+  ob.BufferType = SECBUFFER_TOKEN;
+  ob.cbBuffer = m_PkgInfo.cbMaxToken;
+  // Allocate space for return data
+  out_bound_data_str = new BYTE[ob.cbBuffer + sizeof(DWORD)];
+  ob.pvBuffer = out_bound_data_str;
+  // prepare buffer description
+  obd.cBuffers  = 1;
+  obd.ulVersion = SECBUFFER_VERSION;
+  obd.pBuffers  = &ob;
+
+  //
+  // Prepare the data we are passing to the SSPI method
+  if(call->decoded_input_str_length > 0) {
+    ib.BufferType = SECBUFFER_TOKEN;
+    ib.cbBuffer   = call->decoded_input_str_length;
+    ib.pvBuffer   = call->decoded_input_str;
+    // prepare buffer description
+    ibd.cBuffers  = 1;
+    ibd.ulVersion = SECBUFFER_VERSION;
+    ibd.pBuffers  = &ib;    
+  }
+
+  // Perform initialization step
+  status = _sspi_initializeSecurityContext(
+      &call->context->security_credentials->m_Credentials
+    , NULL
+    , const_cast<TCHAR*>(call->service_principal_name_str)
+    , 0x02  // MUTUAL
+    , 0
+    , 0     // Network
+    , call->decoded_input_str_length > 0 ? &ibd : NULL
+    , 0
+    , &call->context->m_Context
+    , &obd
+    , &call->context->CtxtAttr
+    , &call->context->Expiration
+  );
+
+  // If we have a ok or continue let's prepare the result
+  if(status == SEC_E_OK 
+    || status == SEC_I_COMPLETE_NEEDED
+    || status == SEC_I_CONTINUE_NEEDED
+    || status == SEC_I_COMPLETE_AND_CONTINUE
+  ) {
+    call->context->hasContext = true;
+    call->context->payload = base64_encode((const unsigned char *)ob.pvBuffer, ob.cbBuffer);
+
+    // Set the context
+    worker->return_code = status;
+    worker->return_value = call->context;
+  } else {
+    worker->error = TRUE;
+    worker->error_code = status;
+    worker->error_message = DisplaySECError(status);
+  }
+}
+
+static Handle<Value> _map_initializeContext(Worker *worker) {
+  HandleScope scope;
+
+  // Unwrap the security context
+  SecurityContext *context = (SecurityContext *)worker->return_value;
+  // Return the value
+  return scope.Close(context->handle_);
+}
+
+Handle<Value> SecurityContext::InitializeContext(const Arguments &args) {
+  HandleScope scope;  
+  char *service_principal_name_str = NULL, *input_str = NULL, *decoded_input_str = NULL;
+  int decoded_input_str_length = NULL;
+  // Store reference to security credentials
+  SecurityCredentials *security_credentials = NULL;
+  // Status of operation
+  SECURITY_STATUS status;
+
+  // We need 3 parameters
+  if(args.Length() != 4)
+    return VException("Initialize must be called with [credential:SecurityCredential, servicePrincipalName:string, input:string, callback:function]");
+
+  // First parameter must be an instance of SecurityCredentials
+  if(!SecurityCredentials::HasInstance(args[0]))
+    return VException("First parameter for Initialize must be an instance of SecurityCredentials");
+
+  // Second parameter must be a string
+  if(!args[1]->IsString())
+    return VException("Second parameter for Initialize must be a string");
+
+  // Third parameter must be a base64 encoded string
+  if(!args[2]->IsString())
+    return VException("Second parameter for Initialize must be a string");
+
+  // Third parameter must be a callback
+  if(!args[3]->IsFunction())
+    return VException("Third parameter for Initialize must be a callback function");
+
+  // Let's unpack the values
+  Local<String> service_principal_name = args[1]->ToString();
+  service_principal_name_str = (char *)calloc(service_principal_name->Utf8Length() + 1, sizeof(char));
+  service_principal_name->WriteUtf8(service_principal_name_str);
+
+  // Unpack the user name
+  Local<String> input = args[2]->ToString();
+
+  if(input->Utf8Length() > 0) {
+    input_str = (char *)calloc(input->Utf8Length() + 1, sizeof(char));
+    input->WriteUtf8(input_str);
+
+    // Now let's get the base64 decoded string
+    decoded_input_str = (char *)base64_decode(input_str, &decoded_input_str_length);
+  }
+
+  // Unpack the Security credentials
+  security_credentials = ObjectWrap::Unwrap<SecurityCredentials>(args[0]->ToObject());
+  // Create Security context instance
+  Local<Object> security_context_value = constructor_template->GetFunction()->NewInstance();
+  // Unwrap the security context
+  SecurityContext *security_context = ObjectWrap::Unwrap<SecurityContext>(security_context_value);
+  // Add a reference to the security_credentials
+  security_context->security_credentials = security_credentials;
+
+  // Build the call function
+  SecurityContextStaticInitializeCall *call = (SecurityContextStaticInitializeCall *)calloc(1, sizeof(SecurityContextStaticInitializeCall));
+  call->context = security_context;
+  call->decoded_input_str = decoded_input_str;
+  call->decoded_input_str_length = decoded_input_str_length;
+  call->service_principal_name_str = service_principal_name_str;
+
+  // Callback
+  Local<Function> callback = Local<Function>::Cast(args[3]);
+
+  // Let's allocate some space
+  Worker *worker = new Worker();
+  worker->error = false;
+  worker->request.data = worker;
+  worker->callback = Persistent<Function>::New(callback);
+  worker->parameters = call;
+  worker->execute = _initializeContext;
+  worker->mapper = _map_initializeContext;
+
+  // Schedule the worker with lib_uv
+  uv_queue_work(uv_default_loop(), &worker->request, SecurityContext::Process, (uv_after_work_cb)SecurityContext::After);
+
+  // Return no value
+  return scope.Close(Undefined());  
 }
 
 Handle<Value> SecurityContext::PayloadGetter(Local<String> property, const AccessorInfo& info) {
@@ -178,10 +350,8 @@ Handle<Value> SecurityContext::PayloadGetter(Local<String> property, const Acces
   return scope.Close(String::New(context->payload));
 }
 
-
-Handle<Value> SecurityContext::InitalizeStep(const Arguments &args) {
+Handle<Value> SecurityContext::InitalizeStepSync(const Arguments &args) {
   HandleScope scope;
-  printf("========================= InitalizeStep\n");
 
   char *service_principal_name_str = NULL, *input_str = NULL, *decoded_input_str = NULL;
   BYTE *out_bound_data_str = NULL;
@@ -206,19 +376,12 @@ Handle<Value> SecurityContext::InitalizeStep(const Arguments &args) {
   service_principal_name_str = (char *)calloc(service_principal_name->Utf8Length() + 1, sizeof(char));
   service_principal_name->WriteUtf8(service_principal_name_str);
 
-  printf("================================== service_principal_name\n");
-  printf("%s\n", service_principal_name_str);
-
   // Unpack the user name
   Local<String> input = args[1]->ToString();
 
   if(input->Utf8Length() > 0) {
     input_str = (char *)calloc(input->Utf8Length() + 1, sizeof(char));
     input->WriteUtf8(input_str);
-
-    printf("================================== input_str\n");
-    printf("%s\n", input_str);
-
     // Now let's get the base64 decoded string
     decoded_input_str = (char *)base64_decode(input_str, &decoded_input_str_length);
   }
@@ -295,16 +458,16 @@ Handle<Value> SecurityContext::InitalizeStep(const Arguments &args) {
   return scope.Close(Null());
 }
     
-Handle<Value> SecurityContext::EncryptMessage(const Arguments &args) {
+Handle<Value> SecurityContext::EncryptMessageSync(const Arguments &args) {
   HandleScope scope;
   SECURITY_STATUS status;
 
   if(args.Length() != 2)
-    return VException("EncryptMessage takes an instance of SecurityBufferDescriptor and an integer flag");  
+    return VException("EncryptMessageSync takes an instance of SecurityBufferDescriptor and an integer flag");  
   if(!SecurityBufferDescriptor::HasInstance(args[0]))
-    return VException("EncryptMessage takes an instance of SecurityBufferDescriptor and an integer flag");  
+    return VException("EncryptMessageSync takes an instance of SecurityBufferDescriptor and an integer flag");  
   if(!args[1]->IsUint32())
-    return VException("EncryptMessage takes an instance of SecurityBufferDescriptor and an integer flag");  
+    return VException("EncryptMessageSync takes an instance of SecurityBufferDescriptor and an integer flag");  
 
   // Unpack the security context
   SecurityContext *security_context = ObjectWrap::Unwrap<SecurityContext>(args.This());
@@ -340,15 +503,15 @@ Handle<Value> SecurityContext::EncryptMessage(const Arguments &args) {
   return scope.Close(Null());
 }
 
-Handle<Value> SecurityContext::DecryptMessage(const Arguments &args) {
+Handle<Value> SecurityContext::DecryptMessageSync(const Arguments &args) {
   HandleScope scope;
   unsigned long quality = 0;
   SECURITY_STATUS status;
 
   if(args.Length() != 1)
-    return VException("DecryptMessage takes an instance of SecurityBufferDescriptor");
+    return VException("DecryptMessageSync takes an instance of SecurityBufferDescriptor");
   if(!SecurityBufferDescriptor::HasInstance(args[0]))
-    return VException("DecryptMessage takes an instance of SecurityBufferDescriptor");
+    return VException("DecryptMessageSync takes an instance of SecurityBufferDescriptor");
 
   // Unpack the security context
   SecurityContext *security_context = ObjectWrap::Unwrap<SecurityContext>(args.This());
@@ -386,14 +549,14 @@ Handle<Value> SecurityContext::DecryptMessage(const Arguments &args) {
   return scope.Close(Null());
 }
 
-Handle<Value> SecurityContext::QueryContextAttributes(const Arguments &args) {
+Handle<Value> SecurityContext::QueryContextAttributesSync(const Arguments &args) {
   HandleScope scope;
   SECURITY_STATUS status;
 
   if(args.Length() != 1)
-    return VException("Decryption method takes a an integer Attribute specifier");
+    return VException("QueryContextAttributesSync method takes a an integer Attribute specifier");
   if(!args[0]->IsInt32())
-    return VException("Decryption method takes a an integer Attribute specifier");
+    return VException("QueryContextAttributesSync method takes a an integer Attribute specifier");
 
   // Unpack the security context
   SecurityContext *security_context = ObjectWrap::Unwrap<SecurityContext>(args.This());
@@ -441,13 +604,14 @@ void SecurityContext::Initialize(Handle<Object> target) {
   constructor_template->SetClassName(String::NewSymbol("SecurityContext"));
 
   // Class methods
-  NODE_SET_METHOD(constructor_template, "initializeSync", InitializeContext);
+  NODE_SET_METHOD(constructor_template, "initializeSync", InitializeContextSync);
+  NODE_SET_METHOD(constructor_template, "initialize", InitializeContext);
   
   // Set up method for the instance
-  NODE_SET_PROTOTYPE_METHOD(constructor_template, "initializeSync", InitalizeStep);
-  NODE_SET_PROTOTYPE_METHOD(constructor_template, "encryptMessageSync", EncryptMessage);
-  NODE_SET_PROTOTYPE_METHOD(constructor_template, "decryptMessageSync", DecryptMessage);
-  NODE_SET_PROTOTYPE_METHOD(constructor_template, "queryContextAttributesSync", QueryContextAttributes);
+  NODE_SET_PROTOTYPE_METHOD(constructor_template, "initializeSync", InitalizeStepSync);
+  NODE_SET_PROTOTYPE_METHOD(constructor_template, "encryptMessageSync", EncryptMessageSync);
+  NODE_SET_PROTOTYPE_METHOD(constructor_template, "decryptMessageSync", DecryptMessageSync);
+  NODE_SET_PROTOTYPE_METHOD(constructor_template, "queryContextAttributesSync", QueryContextAttributesSync);
 
   // Getters for correct serialization of the object  
   constructor_template->InstanceTemplate()->SetAccessor(String::NewSymbol("payload"), PayloadGetter);
@@ -468,7 +632,7 @@ static LPSTR DisplaySECError(DWORD ErrCode) {
       pszName = "SEC_E_CRYPTO_SYSTEM_INVALID - The cipher chosen for the security context is not supported. Used with the Digest SSP."; 
       break;
     case SEC_E_INCOMPLETE_MESSAGE:
-      pszName = "SEC_E_INCOMPLETE_MESSAGE - The data in the input buffer is incomplete. The application needs to read more data from the server and call DecryptMessage (General) again."; 
+      pszName = "SEC_E_INCOMPLETE_MESSAGE - The data in the input buffer is incomplete. The application needs to read more data from the server and call DecryptMessageSync (General) again."; 
       break;
 
     case SEC_E_INVALID_HANDLE:
@@ -512,4 +676,58 @@ static LPSTR DisplaySECError(DWORD ErrCode) {
   }
 
   return pszName;
+}
+
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// UV Lib callbacks
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void SecurityContext::Process(uv_work_t* work_req) {
+  // Grab the worker
+  Worker *worker = static_cast<Worker*>(work_req->data);
+  // Execute the worker code
+  worker->execute(worker);
+}
+
+void SecurityContext::After(uv_work_t* work_req) {
+  // Grab the scope of the call from Node
+  v8::HandleScope scope;
+
+  // Get the worker reference
+  Worker *worker = static_cast<Worker*>(work_req->data);
+
+  // If we have an error
+  if(worker->error) {
+    v8::Local<v8::Value> err = v8::Exception::Error(v8::String::New(worker->error_message));
+    Local<Object> obj = err->ToObject();
+    obj->Set(NODE_PSYMBOL("code"), Int32::New(worker->error_code));
+    v8::Local<v8::Value> args[2] = { err, v8::Local<v8::Value>::New(v8::Null()) };
+    // Execute the error
+    v8::TryCatch try_catch;
+    // Call the callback
+    worker->callback->Call(v8::Context::GetCurrent()->Global(), ARRAY_SIZE(args), args);
+    // If we have an exception handle it as a fatalexception
+    if (try_catch.HasCaught()) {
+      node::FatalException(try_catch);
+    }
+  } else {
+    // // Map the data
+    v8::Handle<v8::Value> result = worker->mapper(worker);
+    // Set up the callback with a null first
+    v8::Handle<v8::Value> args[2] = { v8::Local<v8::Value>::New(v8::Null()), result};
+    // Wrap the callback function call in a TryCatch so that we can call
+    // node's FatalException afterwards. This makes it possible to catch
+    // the exception from JavaScript land using the
+    // process.on('uncaughtException') event.
+    v8::TryCatch try_catch;
+    // Call the callback
+    worker->callback->Call(v8::Context::GetCurrent()->Global(), ARRAY_SIZE(args), args);
+    // If we have an exception handle it as a fatalexception
+    if (try_catch.HasCaught()) {
+      node::FatalException(try_catch);
+    }
+  }
+
+  // Clean up the memory
+  worker->callback.Dispose();
+  delete worker;
 }

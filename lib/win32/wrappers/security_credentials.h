@@ -53,11 +53,10 @@ class SecurityCredentials : public ObjectWrap {
 
     // Constructor used for creating new Long objects from C++
     static Persistent<FunctionTemplate> constructor_template;
-
-    // Create a new instance
-    static Handle<Value> New(const Arguments &args);
     
   private:
+    // Create a new instance
+    static Handle<Value> New(const Arguments &args);
     // Handles the uv calls
     static void Process(uv_work_t* work_req);
     // Called after work is done
