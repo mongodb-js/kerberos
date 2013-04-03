@@ -93,6 +93,9 @@ SecurityContext::SecurityContext() : ObjectWrap() {
 }
 
 SecurityContext::~SecurityContext() {
+  if(this->hasContext) {
+    _sspi_DeleteSecurityContext(&this->m_Context);
+  }
 }
 
 Handle<Value> SecurityContext::New(const Arguments &args) {
