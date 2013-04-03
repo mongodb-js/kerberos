@@ -47,10 +47,13 @@ class SecurityContext : public ObjectWrap {
 
     // Functions available from V8
     static void Initialize(Handle<Object> target);    
+
     static Handle<Value> InitializeContext(const Arguments &args);
     static Handle<Value> InitializeContextSync(const Arguments &args);
     
+    static Handle<Value> InitalizeStep(const Arguments &args);
     static Handle<Value> InitalizeStepSync(const Arguments &args);
+
     static Handle<Value> EncryptMessageSync(const Arguments &args);
     static Handle<Value> DecryptMessageSync(const Arguments &args);
     static Handle<Value> QueryContextAttributesSync(const Arguments &args);
@@ -64,10 +67,10 @@ class SecurityContext : public ObjectWrap {
   private:
     // Create a new instance
     static Handle<Value> New(const Arguments &args);
-    // Handles the uv calls
-    static void Process(uv_work_t* work_req);
-    // Called after work is done
-    static void After(uv_work_t* work_req);
+    // // Handles the uv calls
+    // static void Process(uv_work_t* work_req);
+    // // Called after work is done
+    // static void After(uv_work_t* work_req);
 };
 
 #endif

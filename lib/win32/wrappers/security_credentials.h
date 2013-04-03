@@ -11,6 +11,7 @@
 #include <sspi.h>
 #include <tchar.h>
 #include "../worker.h"
+#include <uv.h>
 
 extern "C" {
   #include "../kerberos_sspi.h"

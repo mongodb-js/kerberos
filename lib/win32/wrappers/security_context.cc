@@ -33,6 +33,60 @@ static Handle<Value> VExceptionErrNo(const char *msg, const int errorNumber) {
   return ThrowException(err);
 };
 
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// UV Lib callbacks
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+static void Process(uv_work_t* work_req) {
+  // Grab the worker
+  Worker *worker = static_cast<Worker*>(work_req->data);
+  // Execute the worker code
+  worker->execute(worker);
+}
+
+static void After(uv_work_t* work_req) {
+  // Grab the scope of the call from Node
+  v8::HandleScope scope;
+
+  // Get the worker reference
+  Worker *worker = static_cast<Worker*>(work_req->data);
+
+  // If we have an error
+  if(worker->error) {
+    v8::Local<v8::Value> err = v8::Exception::Error(v8::String::New(worker->error_message));
+    Local<Object> obj = err->ToObject();
+    obj->Set(NODE_PSYMBOL("code"), Int32::New(worker->error_code));
+    v8::Local<v8::Value> args[2] = { err, v8::Local<v8::Value>::New(v8::Null()) };
+    // Execute the error
+    v8::TryCatch try_catch;
+    // Call the callback
+    worker->callback->Call(v8::Context::GetCurrent()->Global(), ARRAY_SIZE(args), args);
+    // If we have an exception handle it as a fatalexception
+    if (try_catch.HasCaught()) {
+      node::FatalException(try_catch);
+    }
+  } else {
+    // // Map the data
+    v8::Handle<v8::Value> result = worker->mapper(worker);
+    // Set up the callback with a null first
+    v8::Handle<v8::Value> args[2] = { v8::Local<v8::Value>::New(v8::Null()), result};
+    // Wrap the callback function call in a TryCatch so that we can call
+    // node's FatalException afterwards. This makes it possible to catch
+    // the exception from JavaScript land using the
+    // process.on('uncaughtException') event.
+    v8::TryCatch try_catch;
+    // Call the callback
+    worker->callback->Call(v8::Context::GetCurrent()->Global(), ARRAY_SIZE(args), args);
+    // If we have an exception handle it as a fatalexception
+    if (try_catch.HasCaught()) {
+      node::FatalException(try_catch);
+    }
+  }
+
+  // Clean up the memory
+  worker->callback.Dispose();
+  delete worker;
+}
+
 Persistent<FunctionTemplate> SecurityContext::constructor_template;
 
 SecurityContext::SecurityContext() : ObjectWrap() {
@@ -174,7 +228,6 @@ Handle<Value> SecurityContext::InitializeContextSync(const Arguments &args) {
 //
 //  Async InitializeContext
 //
-// Call structs
 typedef struct SecurityContextStaticInitializeCall {
   char *service_principal_name_str;
   char *decoded_input_str;
@@ -268,8 +321,6 @@ Handle<Value> SecurityContext::InitializeContext(const Arguments &args) {
   int decoded_input_str_length = NULL;
   // Store reference to security credentials
   SecurityCredentials *security_credentials = NULL;
-  // Status of operation
-  SECURITY_STATUS status;
 
   // We need 3 parameters
   if(args.Length() != 4)
@@ -336,7 +387,7 @@ Handle<Value> SecurityContext::InitializeContext(const Arguments &args) {
   worker->mapper = _map_initializeContext;
 
   // Schedule the worker with lib_uv
-  uv_queue_work(uv_default_loop(), &worker->request, SecurityContext::Process, (uv_after_work_cb)SecurityContext::After);
+  uv_queue_work(uv_default_loop(), &worker->request, Process, (uv_after_work_cb)After);
 
   // Return no value
   return scope.Close(Undefined());  
@@ -349,6 +400,168 @@ Handle<Value> SecurityContext::PayloadGetter(Local<String> property, const Acces
   // Return the low bits
   return scope.Close(String::New(context->payload));
 }
+
+//
+//  Async InitializeContextStep
+//
+typedef struct SecurityContextStepStaticInitializeCall {
+  char *service_principal_name_str;
+  char *decoded_input_str;
+  int decoded_input_str_length;
+  SecurityContext *context;
+} SecurityContextStepStaticInitializeCall;
+
+static void _initializeContextStep(Worker *worker) {
+  // Outbound data array
+  BYTE *out_bound_data_str = NULL;
+  // Status of operation
+  SECURITY_STATUS status;
+  // Unpack data
+  SecurityContextStepStaticInitializeCall *call = (SecurityContextStepStaticInitializeCall *)worker->parameters;
+  SecurityContext *context = call->context;
+  // Structures used for c calls
+  SecBufferDesc ibd, obd;
+  SecBuffer ib, ob;
+  // package info
+  SecPkgInfo m_PkgInfo;
+
+  // 
+  // Prepare data structure for returned data from SSPI
+  ob.BufferType = SECBUFFER_TOKEN;
+  ob.cbBuffer = m_PkgInfo.cbMaxToken;
+  // Allocate space for return data
+  out_bound_data_str = new BYTE[ob.cbBuffer + sizeof(DWORD)];
+  ob.pvBuffer = out_bound_data_str;
+  // prepare buffer description
+  obd.cBuffers  = 1;
+  obd.ulVersion = SECBUFFER_VERSION;
+  obd.pBuffers  = &ob;
+
+  //
+  // Prepare the data we are passing to the SSPI method
+  if(call->decoded_input_str_length > 0) {
+    ib.BufferType = SECBUFFER_TOKEN;
+    ib.cbBuffer   = call->decoded_input_str_length;
+    ib.pvBuffer   = call->decoded_input_str;
+    // prepare buffer description
+    ibd.cBuffers  = 1;
+    ibd.ulVersion = SECBUFFER_VERSION;
+    ibd.pBuffers  = &ib;    
+  }
+
+  // Perform initialization step
+  status = _sspi_initializeSecurityContext(
+      &context->security_credentials->m_Credentials
+    , context->hasContext == true ? &context->m_Context : NULL
+    , const_cast<TCHAR*>(call->service_principal_name_str)
+    , 0x02  // MUTUAL
+    , 0
+    , 0     // Network
+    , call->decoded_input_str_length ? &ibd : NULL
+    , 0
+    , &context->m_Context
+    , &obd
+    , &context->CtxtAttr
+    , &context->Expiration
+  );
+
+  // If we have a ok or continue let's prepare the result
+  if(status == SEC_E_OK 
+    || status == SEC_I_COMPLETE_NEEDED
+    || status == SEC_I_CONTINUE_NEEDED
+    || status == SEC_I_COMPLETE_AND_CONTINUE
+  ) {
+    // Set the new payload
+    if(context->payload != NULL) free(context->payload);
+    context->payload = base64_encode((const unsigned char *)ob.pvBuffer, ob.cbBuffer);
+    worker->return_code = status;
+    worker->return_value = context;
+  } else {
+    worker->error = TRUE;
+    worker->error_code = status;
+    worker->error_message = DisplaySECError(status);
+  }
+}
+
+static Handle<Value> _map_initializeContextStep(Worker *worker) {
+  HandleScope scope;
+  // Unwrap the security context
+  SecurityContext *context = (SecurityContext *)worker->return_value;
+  // Return the value
+  return scope.Close(context->handle_);
+}
+
+Handle<Value> SecurityContext::InitalizeStep(const Arguments &args) {
+  HandleScope scope;
+
+  char *service_principal_name_str = NULL, *input_str = NULL, *decoded_input_str = NULL;
+  int decoded_input_str_length = NULL;
+
+  // We need 3 parameters
+  if(args.Length() != 3)
+    return VException("Initialize must be called with [servicePrincipalName:string, input:string, callback:function]");
+
+  // Second parameter must be a string
+  if(!args[0]->IsString())
+    return VException("First parameter for Initialize must be a string");
+
+  // Third parameter must be a base64 encoded string
+  if(!args[1]->IsString())
+    return VException("Second parameter for Initialize must be a string");
+
+  // Third parameter must be a base64 encoded string
+  if(!args[2]->IsFunction())
+    return VException("Third parameter for Initialize must be a callback function");
+
+  // Let's unpack the values
+  Local<String> service_principal_name = args[0]->ToString();
+  service_principal_name_str = (char *)calloc(service_principal_name->Utf8Length() + 1, sizeof(char));
+  service_principal_name->WriteUtf8(service_principal_name_str);
+
+  // Unpack the user name
+  Local<String> input = args[1]->ToString();
+
+  if(input->Utf8Length() > 0) {
+    input_str = (char *)calloc(input->Utf8Length() + 1, sizeof(char));
+    input->WriteUtf8(input_str);
+    // Now let's get the base64 decoded string
+    decoded_input_str = (char *)base64_decode(input_str, &decoded_input_str_length);
+  }
+
+  // Unwrap the security context
+  SecurityContext *security_context = ObjectWrap::Unwrap<SecurityContext>(args.This());
+
+  // Create call structure
+  SecurityContextStepStaticInitializeCall *call = (SecurityContextStepStaticInitializeCall *)calloc(1, sizeof(SecurityContextStepStaticInitializeCall));
+  call->context = security_context;
+  call->decoded_input_str = decoded_input_str;
+  call->decoded_input_str_length = decoded_input_str_length;
+  call->service_principal_name_str = service_principal_name_str;
+
+  // Callback
+  Local<Function> callback = Local<Function>::Cast(args[2]);
+
+  // Let's allocate some space
+  Worker *worker = new Worker();
+  worker->error = false;
+  worker->request.data = worker;
+  worker->callback = Persistent<Function>::New(callback);
+  worker->parameters = call;
+  worker->execute = _initializeContextStep;
+  worker->mapper = _map_initializeContextStep;
+
+  // Schedule the worker with lib_uv
+  uv_queue_work(uv_default_loop(), &worker->request, Process, (uv_after_work_cb)After);
+
+  // Return undefined
+  return scope.Close(Undefined());  
+}
+
+
+
+
+
+
 
 Handle<Value> SecurityContext::InitalizeStepSync(const Arguments &args) {
   HandleScope scope;
@@ -527,8 +740,6 @@ Handle<Value> SecurityContext::DecryptMessageSync(const Arguments &args) {
     , (unsigned long)&quality
   );
 
-  printf("================== quality :: %ul\n", quality);
-
   // We've got ok
   if(status == SEC_E_OK) {
     int bytesToAllocate = (int)descriptor->bufferSize();    
@@ -609,6 +820,7 @@ void SecurityContext::Initialize(Handle<Object> target) {
   
   // Set up method for the instance
   NODE_SET_PROTOTYPE_METHOD(constructor_template, "initializeSync", InitalizeStepSync);
+  NODE_SET_PROTOTYPE_METHOD(constructor_template, "initialize", InitalizeStep);
   NODE_SET_PROTOTYPE_METHOD(constructor_template, "encryptMessageSync", EncryptMessageSync);
   NODE_SET_PROTOTYPE_METHOD(constructor_template, "decryptMessageSync", DecryptMessageSync);
   NODE_SET_PROTOTYPE_METHOD(constructor_template, "queryContextAttributesSync", QueryContextAttributesSync);
@@ -678,56 +890,3 @@ static LPSTR DisplaySECError(DWORD ErrCode) {
   return pszName;
 }
 
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// UV Lib callbacks
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-void SecurityContext::Process(uv_work_t* work_req) {
-  // Grab the worker
-  Worker *worker = static_cast<Worker*>(work_req->data);
-  // Execute the worker code
-  worker->execute(worker);
-}
-
-void SecurityContext::After(uv_work_t* work_req) {
-  // Grab the scope of the call from Node
-  v8::HandleScope scope;
-
-  // Get the worker reference
-  Worker *worker = static_cast<Worker*>(work_req->data);
-
-  // If we have an error
-  if(worker->error) {
-    v8::Local<v8::Value> err = v8::Exception::Error(v8::String::New(worker->error_message));
-    Local<Object> obj = err->ToObject();
-    obj->Set(NODE_PSYMBOL("code"), Int32::New(worker->error_code));
-    v8::Local<v8::Value> args[2] = { err, v8::Local<v8::Value>::New(v8::Null()) };
-    // Execute the error
-    v8::TryCatch try_catch;
-    // Call the callback
-    worker->callback->Call(v8::Context::GetCurrent()->Global(), ARRAY_SIZE(args), args);
-    // If we have an exception handle it as a fatalexception
-    if (try_catch.HasCaught()) {
-      node::FatalException(try_catch);
-    }
-  } else {
-    // // Map the data
-    v8::Handle<v8::Value> result = worker->mapper(worker);
-    // Set up the callback with a null first
-    v8::Handle<v8::Value> args[2] = { v8::Local<v8::Value>::New(v8::Null()), result};
-    // Wrap the callback function call in a TryCatch so that we can call
-    // node's FatalException afterwards. This makes it possible to catch
-    // the exception from JavaScript land using the
-    // process.on('uncaughtException') event.
-    v8::TryCatch try_catch;
-    // Call the callback
-    worker->callback->Call(v8::Context::GetCurrent()->Global(), ARRAY_SIZE(args), args);
-    // If we have an exception handle it as a fatalexception
-    if (try_catch.HasCaught()) {
-      node::FatalException(try_catch);
-    }
-  }
-
-  // Clean up the memory
-  worker->callback.Dispose();
-  delete worker;
-}
