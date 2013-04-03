@@ -10,6 +10,7 @@
 #include <windows.h>
 #include <sspi.h>
 #include <tchar.h>
+#include "../worker.h"
 
 extern "C" {
   #include "../kerberos_sspi.h"
@@ -47,13 +48,20 @@ class SecurityCredentials : public ObjectWrap {
 
     // Functions available from V8
     static void Initialize(Handle<Object> target);    
+    static Handle<Value> AquireSync(const Arguments &args);
     static Handle<Value> Aquire(const Arguments &args);
 
     // Constructor used for creating new Long objects from C++
     static Persistent<FunctionTemplate> constructor_template;
+
+    // Create a new instance
+    static Handle<Value> New(const Arguments &args);
     
   private:
-    static Handle<Value> New(const Arguments &args);
+    // Handles the uv calls
+    static void Process(uv_work_t* work_req);
+    // Called after work is done
+    static void After(uv_work_t* work_req);
 };
 
 #endif

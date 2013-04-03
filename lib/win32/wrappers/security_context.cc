@@ -441,13 +441,13 @@ void SecurityContext::Initialize(Handle<Object> target) {
   constructor_template->SetClassName(String::NewSymbol("SecurityContext"));
 
   // Class methods
-  NODE_SET_METHOD(constructor_template, "initialize", InitializeContext);
+  NODE_SET_METHOD(constructor_template, "initializeSync", InitializeContext);
   
   // Set up method for the instance
-  NODE_SET_PROTOTYPE_METHOD(constructor_template, "initialize", InitalizeStep);
-  NODE_SET_PROTOTYPE_METHOD(constructor_template, "encryptMessage", EncryptMessage);
-  NODE_SET_PROTOTYPE_METHOD(constructor_template, "decryptMessage", DecryptMessage);
-  NODE_SET_PROTOTYPE_METHOD(constructor_template, "queryContextAttributes", QueryContextAttributes);
+  NODE_SET_PROTOTYPE_METHOD(constructor_template, "initializeSync", InitalizeStep);
+  NODE_SET_PROTOTYPE_METHOD(constructor_template, "encryptMessageSync", EncryptMessage);
+  NODE_SET_PROTOTYPE_METHOD(constructor_template, "decryptMessageSync", DecryptMessage);
+  NODE_SET_PROTOTYPE_METHOD(constructor_template, "queryContextAttributesSync", QueryContextAttributes);
 
   // Getters for correct serialization of the object  
   constructor_template->InstanceTemplate()->SetAccessor(String::NewSymbol("payload"), PayloadGetter);

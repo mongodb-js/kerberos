@@ -23,6 +23,7 @@
           'sources': [ 
             'lib/win32/kerberos.cc', 
             'lib/win32/base64.c', 
+            'lib/win32/worker.cc',
             'lib/win32/kerberos_sspi.c',
             'lib/win32/wrappers/security_buffer.cc',
             'lib/win32/wrappers/security_buffer_descriptor.cc',

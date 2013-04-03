@@ -553,7 +553,6 @@ void Kerberos::After(uv_work_t* work_req) {
   delete worker;
 }
 
-
 // Exporting function
 extern "C" void init(Handle<Object> target) {
   HandleScope scope;
