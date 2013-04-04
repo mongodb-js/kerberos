@@ -559,3 +559,5 @@ extern "C" void init(Handle<Object> target) {
   Kerberos::Initialize(target);
   KerberosContext::Initialize(target);
 }
+
+NODE_MODULE(kerberos, init);
