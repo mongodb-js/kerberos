@@ -21,23 +21,23 @@ static Handle<Value> VException(const char *msg) {
 
 Persistent<FunctionTemplate> SecurityBuffer::constructor_template;
 
-SecurityBuffer::SecurityBuffer(uint32_t security_type, uint32_t size) : ObjectWrap() {
+SecurityBuffer::SecurityBuffer(uint32_t security_type, size_t size) : ObjectWrap() {
   this->size = size;
   this->data = calloc(size, sizeof(char));
   this->security_type = security_type;
   // Set up the data in the sec_buffer
   this->sec_buffer.BufferType = security_type;
-  this->sec_buffer.cbBuffer = size;
+  this->sec_buffer.cbBuffer = (unsigned long)size;
   this->sec_buffer.pvBuffer = this->data;  
 }
 
-SecurityBuffer::SecurityBuffer(uint32_t security_type, uint32_t size, void *data) : ObjectWrap() {
+SecurityBuffer::SecurityBuffer(uint32_t security_type, size_t size, void *data) : ObjectWrap() {
   this->size = size;
   this->data = data;
   this->security_type = security_type;
   // Set up the data in the sec_buffer
   this->sec_buffer.BufferType = security_type;
-  this->sec_buffer.cbBuffer = size;
+  this->sec_buffer.cbBuffer = (unsigned long)size;
   this->sec_buffer.pvBuffer = this->data;  
 }
 
@@ -66,7 +66,7 @@ Handle<Value> SecurityBuffer::New(const Arguments &args) {
     security_obj = new SecurityBuffer(buffer_type, args[1]->ToUint32()->Value());
   } else {
     // Get the length of the Buffer
-    uint32_t length = Buffer::Length(args[1]->ToObject());
+    size_t length = Buffer::Length(args[1]->ToObject());
     // Allocate space for the internal void data pointer
     void *data = calloc(length, sizeof(char));
     // Write the data to out of V8 heap space

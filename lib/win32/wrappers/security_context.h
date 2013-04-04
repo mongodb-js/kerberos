@@ -25,6 +25,8 @@ class SecurityContext : public ObjectWrap {
     SecurityContext();
     ~SecurityContext();    
 
+    // Security info package
+    PSecPkgInfo m_PkgInfo;
     // Do we have a context
     bool hasContext;
     // Reference to security credentials

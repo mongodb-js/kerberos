@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 static HINSTANCE _sspi_security_dll = NULL; 
+static HINSTANCE _sspi_secur32_dll = NULL;
 
 /**
  * Encrypt A Message
@@ -38,7 +39,6 @@ SECURITY_STATUS SEC_ENTRY _sspi_AcquireCredentialsHandle(
   // Create function pointer instance
   acquireCredentialsHandle_fn pfn_acquireCredentialsHandle = NULL;
 
-  /*printf("======================================== 0\n");*/
   // Return error if library not loaded
   if(_sspi_security_dll == NULL) return -1;
 
@@ -49,22 +49,16 @@ SECURITY_STATUS SEC_ENTRY _sspi_AcquireCredentialsHandle(
       pfn_acquireCredentialsHandle = (acquireCredentialsHandle_fn)GetProcAddress(_sspi_security_dll, "AcquireCredentialsHandleA");
   #endif
 
-  /*printf("======================================== 1\n");*/
-
   // Check if the we managed to map function pointer
   if(!pfn_acquireCredentialsHandle) {
     printf("GetProcAddress failed.\n");
     return -2;
   }
 
-  /*printf("======================================== 2\n");*/
-
   // Status
   status = (*pfn_acquireCredentialsHandle)(pszPrincipal, pszPackage, fCredentialUse,
       pvLogonId, pAuthData, pGetKeyFn, pvGetKeyArgument, phCredential, ptsExpiry
     );
-
-  /*printf("======================================== 3 :: %d :: %d\n", status, SEC_E_OK);*/
 
   // Call the function
   return status;
@@ -152,8 +146,6 @@ SECURITY_STATUS SEC_ENTRY _sspi_initializeSecurityContext(
     phNewContext, pOutput, pfContextAttr, ptsExpiry
   );
 
-  printf("_sspi_initializeSecurityContext :: %d\n", status);
-
   // Call the function
   return status;
 }
@@ -188,6 +180,44 @@ SECURITY_STATUS SEC_ENTRY _sspi_QueryContextAttributes(
 }
 
 /**
+ * InitSecurityInterface
+ */
+PSecurityFunctionTable _ssip_InitSecurityInterface() {
+  INIT_SECURITY_INTERFACE InitSecurityInterface;
+  PSecurityFunctionTable pSecurityInterface = NULL;
+
+  // Return error if library not loaded
+  if(_sspi_security_dll == NULL) return NULL;
+
+  #ifdef _UNICODE
+    // Get the address of the InitSecurityInterface function.
+    InitSecurityInterface = (INIT_SECURITY_INTERFACE) GetProcAddress (
+                                          _sspi_secur32_dll, 
+                                          TEXT("InitSecurityInterfaceW"));
+  #else
+    // Get the address of the InitSecurityInterface function.
+    InitSecurityInterface = (INIT_SECURITY_INTERFACE) GetProcAddress (
+                                          _sspi_secur32_dll, 
+                                          TEXT("InitSecurityInterfaceA"));
+  #endif
+
+  if(!InitSecurityInterface) {
+    printf (TEXT("Failed in getting the function address, Error: %x"), GetLastError ());
+    return NULL;
+  }
+
+  // Use InitSecurityInterface to get the function table.
+  pSecurityInterface = (*InitSecurityInterface)();
+
+  if(!pSecurityInterface) {
+    printf (TEXT("Failed in getting the function table, Error: %x"), GetLastError ());
+    return NULL;
+  }
+
+  return pSecurityInterface;
+}
+
+/**
  * Load security.dll dynamically
  */
 int load_library() {
@@ -197,6 +227,15 @@ int load_library() {
 
   // Check if the library loaded
   if(_sspi_security_dll == NULL) {
+    err = GetLastError();
+    return err;
+  }
+
+  // Load the library
+  _sspi_secur32_dll = LoadLibrary("secur32.dll");
+
+  // Check if the library loaded
+  if(_sspi_secur32_dll == NULL) {
     err = GetLastError();
     return err;
   }

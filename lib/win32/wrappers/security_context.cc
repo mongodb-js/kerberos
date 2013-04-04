@@ -100,8 +100,24 @@ SecurityContext::~SecurityContext() {
 
 Handle<Value> SecurityContext::New(const Arguments &args) {
   HandleScope scope;    
+
+  PSecurityFunctionTable pSecurityInterface = NULL;
+  DWORD dwNumOfPkgs;
+  SECURITY_STATUS status;
+
   // Create code object
   SecurityContext *security_obj = new SecurityContext();
+  // Get security table interface
+  pSecurityInterface = _ssip_InitSecurityInterface();
+  // Call the security interface
+  status = (*pSecurityInterface->EnumerateSecurityPackages)(
+                                                    &dwNumOfPkgs, 
+                                                    &security_obj->m_PkgInfo);
+  if(status != SEC_E_OK) {
+    printf(TEXT("Failed in retrieving security packages, Error: %x"), GetLastError());
+    return VException("Failed in retrieving security packages");
+  }
+
   // Wrap it
   security_obj->Wrap(args.This());
   // Return the object
@@ -163,13 +179,11 @@ Handle<Value> SecurityContext::InitializeContextSync(const Arguments &args) {
   // Structures used for c calls
   SecBufferDesc ibd, obd;
   SecBuffer ib, ob;
-  // package info
-  SecPkgInfo m_PkgInfo;
 
   // 
   // Prepare data structure for returned data from SSPI
   ob.BufferType = SECBUFFER_TOKEN;
-  ob.cbBuffer = m_PkgInfo.cbMaxToken;
+  ob.cbBuffer = security_context->m_PkgInfo->cbMaxToken;
   // Allocate space for return data
   out_bound_data_str = new BYTE[ob.cbBuffer + sizeof(DWORD)];
   ob.pvBuffer = out_bound_data_str;
@@ -247,13 +261,11 @@ static void _initializeContext(Worker *worker) {
   // Structures used for c calls
   SecBufferDesc ibd, obd;
   SecBuffer ib, ob;
-  // package info
-  SecPkgInfo m_PkgInfo;
 
   // 
   // Prepare data structure for returned data from SSPI
   ob.BufferType = SECBUFFER_TOKEN;
-  ob.cbBuffer = m_PkgInfo.cbMaxToken;
+  ob.cbBuffer = call->context->m_PkgInfo->cbMaxToken;
   // Allocate space for return data
   out_bound_data_str = new BYTE[ob.cbBuffer + sizeof(DWORD)];
   ob.pvBuffer = out_bound_data_str;
@@ -425,13 +437,11 @@ static void _initializeContextStep(Worker *worker) {
   // Structures used for c calls
   SecBufferDesc ibd, obd;
   SecBuffer ib, ob;
-  // package info
-  SecPkgInfo m_PkgInfo;
 
   // 
   // Prepare data structure for returned data from SSPI
   ob.BufferType = SECBUFFER_TOKEN;
-  ob.cbBuffer = m_PkgInfo.cbMaxToken;
+  ob.cbBuffer = context->m_PkgInfo->cbMaxToken;
   // Allocate space for return data
   out_bound_data_str = new BYTE[ob.cbBuffer + sizeof(DWORD)];
   ob.pvBuffer = out_bound_data_str;
@@ -596,16 +606,18 @@ Handle<Value> SecurityContext::InitalizeStepSync(const Arguments &args) {
     decoded_input_str = (char *)base64_decode(input_str, &decoded_input_str_length);
   }
 
+  // Unpack the long object
+  SecurityContext *security_context = ObjectWrap::Unwrap<SecurityContext>(args.This());  
+  SecurityCredentials *security_credentials = security_context->security_credentials;
+
   // Structures used for c calls
   SecBufferDesc ibd, obd;
   SecBuffer ib, ob;
-  // package info
-  SecPkgInfo m_PkgInfo;
 
   // 
   // Prepare data structure for returned data from SSPI
   ob.BufferType = SECBUFFER_TOKEN;
-  ob.cbBuffer = m_PkgInfo.cbMaxToken;
+  ob.cbBuffer = security_context->m_PkgInfo->cbMaxToken;
   // Allocate space for return data
   out_bound_data_str = new BYTE[ob.cbBuffer + sizeof(DWORD)];
   ob.pvBuffer = out_bound_data_str;
@@ -625,10 +637,6 @@ Handle<Value> SecurityContext::InitalizeStepSync(const Arguments &args) {
     ibd.ulVersion = SECBUFFER_VERSION;
     ibd.pBuffers  = &ib;    
   }
-
-  // Unpack the long object
-  SecurityContext *security_context = ObjectWrap::Unwrap<SecurityContext>(args.This());  
-  SecurityCredentials *security_credentials = security_context->security_credentials;
 
   // Perform initialization step
   status = _sspi_initializeSecurityContext(

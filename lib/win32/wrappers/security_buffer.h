@@ -15,13 +15,13 @@ using namespace node;
 
 class SecurityBuffer : public ObjectWrap {  
   public:    
-    SecurityBuffer(uint32_t security_type, uint32_t size);
-    SecurityBuffer(uint32_t security_type, uint32_t size, void *data);
+    SecurityBuffer(uint32_t security_type, size_t size);
+    SecurityBuffer(uint32_t security_type, size_t size, void *data);
     ~SecurityBuffer();    
 
     // Internal values
     void *data;
-    uint32_t size;
+    size_t size;
     uint32_t security_type;
     SecBuffer sec_buffer;
 

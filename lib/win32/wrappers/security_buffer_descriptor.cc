@@ -40,19 +40,12 @@ SecurityBufferDescriptor::SecurityBufferDescriptor(Persistent<Array> arrayObject
     // Assign the buffer
     this->secBufferDesc.pBuffers = &security_obj->sec_buffer;
   } else {
-    printf("======================== CREATE SecurityBufferDescriptor :: %d\n", arrayObject->Length());
-    // SecBuffer **Buffers = (SecBuffer **)calloc(arrayObject->Length(), sizeof(SecBuffer));
     this->secBufferDesc.pBuffers = new SecBuffer[arrayObject->Length()];
     this->secBufferDesc.cBuffers = arrayObject->Length();
     
     // Assign the buffers
     for(uint32_t i = 0; i < arrayObject->Length(); i++) {
       security_obj = ObjectWrap::Unwrap<SecurityBuffer>(arrayObject->Get(i)->ToObject());
-
-      printf("============= ADDING ARRAY :: %d\n", i);
-      printf("type :: %d\n", security_obj->sec_buffer.BufferType);
-      printf("size :: %d\n", security_obj->sec_buffer.cbBuffer);
-
       this->secBufferDesc.pBuffers[i].BufferType = security_obj->sec_buffer.BufferType;
       this->secBufferDesc.pBuffers[i].pvBuffer = security_obj->sec_buffer.pvBuffer;
       this->secBufferDesc.pBuffers[i].cbBuffer = security_obj->sec_buffer.cbBuffer;
@@ -90,7 +83,7 @@ char *SecurityBufferDescriptor::toBuffer() {
     data = (char *)malloc(security_obj->size * sizeof(char));
     memcpy(data, security_obj->data, security_obj->size);
   } else {
-    int bytesToAllocate = this->bufferSize();
+    size_t bytesToAllocate = this->bufferSize();
     char *data = (char *)calloc(bytesToAllocate, sizeof(char));
     int offset = 0;
 

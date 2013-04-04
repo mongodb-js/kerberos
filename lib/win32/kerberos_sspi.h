@@ -92,6 +92,13 @@ typedef DWORD (WINAPI *queryContextAttributes_fn)(
   PCtxtHandle phContext, unsigned long ulAttribute, void * pBuffer);
 
 /**
+ * InitSecurityInterface
+ */
+PSecurityFunctionTable _ssip_InitSecurityInterface();
+
+typedef DWORD (WINAPI *initSecurityInterface_fn) ();
+
+/**
  * Load security.dll dynamically
  */
 int load_library();
