@@ -84,6 +84,7 @@ static void After(uv_work_t* work_req) {
 
   // Clean up the memory
   worker->callback.Dispose();
+  free(worker->parameters);
   delete worker;
 }
 
@@ -319,6 +320,10 @@ static void _initializeContext(Worker *worker) {
     worker->error_code = status;
     worker->error_message = DisplaySECError(status);
   }
+
+  // Clean up data
+  if(call->decoded_input_str != NULL) free(call->decoded_input_str);
+  if(call->service_principal_name_str != NULL) free(call->service_principal_name_str);
 }
 
 static Handle<Value> _map_initializeContext(Worker *worker) {
@@ -371,6 +376,8 @@ Handle<Value> SecurityContext::InitializeContext(const Arguments &args) {
 
     // Now let's get the base64 decoded string
     decoded_input_str = (char *)base64_decode(input_str, &decoded_input_str_length);
+    // Free original allocation
+    free(input_str);
   }
 
   // Unpack the Security credentials
@@ -414,6 +421,14 @@ Handle<Value> SecurityContext::PayloadGetter(Local<String> property, const Acces
   SecurityContext *context = ObjectWrap::Unwrap<SecurityContext>(info.Holder());
   // Return the low bits
   return scope.Close(String::New(context->payload));
+}
+
+Handle<Value> SecurityContext::HasContextGetter(Local<String> property, const AccessorInfo& info) {
+  HandleScope scope;
+  // Unpack the context object
+  SecurityContext *context = ObjectWrap::Unwrap<SecurityContext>(info.Holder());
+  // Return the low bits
+  return scope.Close(Boolean::New(context->hasContext));  
 }
 
 //
@@ -494,6 +509,10 @@ static void _initializeContextStep(Worker *worker) {
     worker->error_code = status;
     worker->error_message = DisplaySECError(status);
   }
+
+  // Clean up data
+  if(call->decoded_input_str != NULL) free(call->decoded_input_str);
+  if(call->service_principal_name_str != NULL) free(call->service_principal_name_str);
 }
 
 static Handle<Value> _map_initializeContextStep(Worker *worker) {
@@ -539,6 +558,8 @@ Handle<Value> SecurityContext::InitalizeStep(const Arguments &args) {
     input->WriteUtf8(input_str);
     // Now let's get the base64 decoded string
     decoded_input_str = (char *)base64_decode(input_str, &decoded_input_str_length);
+    // Free input string
+    free(input_str);
   }
 
   // Unwrap the security context
@@ -984,9 +1005,11 @@ static Handle<Value> _map_queryContextAttributes(Worker *worker) {
 
   // Cast to data structure
   SecurityContextQueryContextAttributesCall *call = (SecurityContextQueryContextAttributesCall *)worker->parameters;  
+  // Unpack the attribute
+  uint32_t attribute = call->attribute;
 
   // Convert data
-  if(call->attribute == SECPKG_ATTR_SIZES) {
+  if(attribute == SECPKG_ATTR_SIZES) {
     SecPkgContext_Sizes *sizes = (SecPkgContext_Sizes *)worker->return_value;
     // Create object
     Local<Object> value = Object::New();
@@ -1121,6 +1144,8 @@ void SecurityContext::Initialize(Handle<Object> target) {
 
   // Getters for correct serialization of the object  
   constructor_template->InstanceTemplate()->SetAccessor(String::NewSymbol("payload"), PayloadGetter);
+  // Getters for correct serialization of the object  
+  constructor_template->InstanceTemplate()->SetAccessor(String::NewSymbol("hasContext"), HasContextGetter);
 
   // Set template class name
   target->Set(String::NewSymbol("SecurityContext"), constructor_template->GetFunction());  

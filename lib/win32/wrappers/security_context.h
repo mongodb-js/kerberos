@@ -67,6 +67,8 @@ class SecurityContext : public ObjectWrap {
 
     // Payload getter
     static Handle<Value> PayloadGetter(Local<String> property, const AccessorInfo& info);
+    // hasContext getter
+    static Handle<Value> HasContextGetter(Local<String> property, const AccessorInfo& info);
 
     // Constructor used for creating new Long objects from C++
     static Persistent<FunctionTemplate> constructor_template;
