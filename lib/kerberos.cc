@@ -146,7 +146,7 @@ Handle<Value> Kerberos::AuthGSSClientInit(const Arguments &args) {
   worker->mapper = _map_authGSSClientInit;
 
   // Schedule the worker with lib_uv
-  uv_queue_work(uv_default_loop(), &worker->request, Kerberos::Process, Kerberos::After);
+  uv_queue_work(uv_default_loop(), &worker->request, Kerberos::Process, (uv_after_work_cb)Kerberos::After);
   // Return no value as it's callback based
   return scope.Close(Undefined());
 }
@@ -237,7 +237,7 @@ Handle<Value> Kerberos::AuthGSSClientStep(const Arguments &args) {
   worker->mapper = _map_authGSSClientStep;
 
   // Schedule the worker with lib_uv
-  uv_queue_work(uv_default_loop(), &worker->request, Kerberos::Process, Kerberos::After);
+  uv_queue_work(uv_default_loop(), &worker->request, Kerberos::Process, (uv_after_work_cb)Kerberos::After);
 
   // Return no value as it's callback based
   return scope.Close(Undefined());
@@ -326,7 +326,7 @@ Handle<Value> Kerberos::AuthGSSClientUnwrap(const Arguments &args) {
   worker->mapper = _map_authGSSClientUnwrap;
 
   // Schedule the worker with lib_uv
-  uv_queue_work(uv_default_loop(), &worker->request, Kerberos::Process, Kerberos::After);
+  uv_queue_work(uv_default_loop(), &worker->request, Kerberos::Process, (uv_after_work_cb)Kerberos::After);
 
   // Return no value as it's callback based
   return scope.Close(Undefined());
@@ -426,7 +426,7 @@ Handle<Value> Kerberos::AuthGSSClientWrap(const Arguments &args) {
   worker->mapper = _map_authGSSClientWrap;
 
   // Schedule the worker with lib_uv
-  uv_queue_work(uv_default_loop(), &worker->request, Kerberos::Process, Kerberos::After);
+  uv_queue_work(uv_default_loop(), &worker->request, Kerberos::Process, (uv_after_work_cb)Kerberos::After);
 
   // Return no value as it's callback based
   return scope.Close(Undefined());
@@ -493,7 +493,7 @@ Handle<Value> Kerberos::AuthGSSClientClean(const Arguments &args) {
   worker->mapper = _map_authGSSClientClean;
 
   // Schedule the worker with lib_uv
-  uv_queue_work(uv_default_loop(), &worker->request, Kerberos::Process, Kerberos::After);
+  uv_queue_work(uv_default_loop(), &worker->request, Kerberos::Process, (uv_after_work_cb)Kerberos::After);
 
   // Return no value as it's callback based
   return scope.Close(Undefined());
