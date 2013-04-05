@@ -7,6 +7,7 @@
 
 extern "C" {
   #include "kerberos_sspi.h"
+  #include "base64.h"
 }
 
 using namespace v8;
@@ -27,11 +28,9 @@ public:
   // Method available
   static Handle<Value> AcquireAlternateCredentials(const Arguments &args);
   static Handle<Value> PrepareOutboundPackage(const Arguments &args);
-  // static Handle<Value> AuthGSSClientInit(const Arguments &args);
-  // static Handle<Value> AuthGSSClientStep(const Arguments &args);
-  // static Handle<Value> AuthGSSClientUnwrap(const Arguments &args);
-  // static Handle<Value> AuthGSSClientWrap(const Arguments &args);
-  // static Handle<Value> AuthGSSClientClean(const Arguments &args);
+  static Handle<Value> DecryptMessage(const Arguments &args);
+  static Handle<Value> EncryptMessage(const Arguments &args);
+  static Handle<Value> QueryContextAttributes(const Arguments &args);
 
 private:
   static Handle<Value> New(const Arguments &args);  
@@ -46,6 +45,10 @@ private:
   SecPkgInfo m_PkgInfo;
   // context
   CtxtHandle m_Context;
+  // Do we have a context
+  bool m_HaveContext;
+  // Attributes
+  DWORD CtxtAttr;
 
   // Handles the uv calls
   static void Process(uv_work_t* work_req);
