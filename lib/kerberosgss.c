@@ -655,7 +655,7 @@ gss_client_response *gss_error(OM_uint32 err_maj, OM_uint32 err_min) {
   } while (!GSS_ERROR(maj_stat) && msg_ctx != 0);
 
   // Join the strings
-  message = calloc(1024, sizeof(1));
+  message = calloc(1026, 1);
   // Join the two messages
   sprintf(message, "%s, %s", buf_maj, buf_min);
   // Free data
