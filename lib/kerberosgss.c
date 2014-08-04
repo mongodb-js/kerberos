@@ -22,6 +22,20 @@
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <errno.h>
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+
+void die1(const char *message) {
+  if(errno) {
+    perror(message);
+  } else {
+    printf("ERROR: %s\n", message);
+  }
+
+  exit(1);
+}
 
 static void set_gss_error(OM_uint32 err_maj, OM_uint32 err_min);
 
@@ -133,6 +147,7 @@ gss_client_response *authenticate_gss_client_init(const char* service, long int 
 end:
   if(response == NULL) {
     response = calloc(1, sizeof(gss_client_response));
+    if(response == NULL) die1("Memory allocation failed");
     response->return_code = ret;    
   }
 
@@ -162,6 +177,7 @@ gss_client_response *authenticate_gss_client_clean(gss_client_state *state) {
   
   if(response == NULL) {
     response = calloc(1, sizeof(gss_client_response));
+    if(response == NULL) die1("Memory allocation failed");
     response->return_code = ret;    
   }
 
@@ -242,6 +258,7 @@ gss_client_response *authenticate_gss_client_step(gss_client_state* state, const
       goto end;
     } else {
       state->username = (char *)malloc(name_token.length + 1);
+      if(state->username == NULL) die1("Memory allocation failed");
       strncpy(state->username, (char*) name_token.value, name_token.length);
       state->username[name_token.length] = 0;
       gss_release_buffer(&min_stat, &name_token);
@@ -257,6 +274,7 @@ end:
 
   if(response == NULL) {
     response = calloc(1, sizeof(gss_client_response));
+    if(response == NULL) die1("Memory allocation failed");
     response->return_code = ret;
   }
 
@@ -314,6 +332,7 @@ end:
 
   if(response == NULL) {
     response = calloc(1, sizeof(gss_client_response));
+    if(response == NULL) die1("Memory allocation failed");
     response->return_code = ret;
   }
 
@@ -393,6 +412,7 @@ end:
 
   if(response == NULL) {
     response = calloc(1, sizeof(gss_client_response));
+    if(response == NULL) die1("Memory allocation failed");
     response->return_code = ret;
   }
 
@@ -623,9 +643,12 @@ gss_client_response *gss_error(OM_uint32 err_maj, OM_uint32 err_min) {
   OM_uint32 msg_ctx = 0;
   gss_buffer_desc status_string;
   char *buf_maj = calloc(512, sizeof(char));
+  if(buf_maj == NULL) die1("Memory allocation failed");
   char *buf_min = calloc(512, sizeof(char));
+  if(buf_min == NULL) die1("Memory allocation failed");
   char *message = NULL;
   gss_client_response *response = calloc(1, sizeof(gss_client_response));
+  if(response == NULL) die1("Memory allocation failed");
   
   do {
     maj_stat = gss_display_status (&min_stat,
@@ -654,6 +677,7 @@ gss_client_response *gss_error(OM_uint32 err_maj, OM_uint32 err_min) {
 
   // Join the strings
   message = calloc(1026, 1);
+  if(message == NULL) die1("Memory allocation failed");
   // Join the two messages
   sprintf(message, "%s, %s", buf_maj, buf_min);
   // Free data
@@ -664,3 +688,6 @@ gss_client_response *gss_error(OM_uint32 err_maj, OM_uint32 err_min) {
   // Return the message
   return response;
 }
+
+#pragma clang diagnostic pop
+

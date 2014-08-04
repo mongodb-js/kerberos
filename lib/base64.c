@@ -18,6 +18,18 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+#include <errno.h>
+
+void die2(const char *message) {
+  if(errno) {
+    perror(message);
+  } else {
+    printf("ERROR: %s\n", message);
+  }
+
+  exit(1);
+}
 
 // base64 tables
 static char basis_64[] =
@@ -43,6 +55,7 @@ static signed char index_64[128] =
 char *base64_encode(const unsigned char *value, int vlen)
 {
     char *result = (char *)malloc((vlen * 4) / 3 + 5);
+    if(result == NULL) die2("Memory allocation failed");
     char *out = result;
     while (vlen >= 3)
     {
@@ -79,6 +92,7 @@ unsigned char *base64_decode(const char *value, int *rlen)
 
     int vlen = strlen(value);
     unsigned char *result =(unsigned char *)malloc((vlen * 3) / 4 + 1);
+    if(result == NULL) die2("Memory allocation failed");    
     unsigned char *out = result;
 
     while (1)

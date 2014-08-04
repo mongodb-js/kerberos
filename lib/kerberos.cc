@@ -1,11 +1,22 @@
 #include "kerberos.h"
 #include <stdlib.h>
+#include <errno.h>
 #include "worker.h"
 #include "kerberos_context.h"
 
 #ifndef ARRAY_SIZE
 # define ARRAY_SIZE(a) (sizeof((a)) / sizeof((a)[0]))
 #endif
+
+void die(const char *message) {
+  if(errno) {
+    perror(message);
+  } else {
+    printf("ERROR: %s\n", message);
+  }
+
+  exit(1);
+}
 
 Persistent<FunctionTemplate> Kerberos::constructor_template;
 
@@ -81,6 +92,7 @@ static void _authGSSClientInit(Worker *worker) {
 
   // Allocate state
   state = (gss_client_state *)malloc(sizeof(gss_client_state));
+  if(state == NULL) die("Memory allocation failed");
   
   // Unpack the parameter data struct
   AuthGSSClientCall *call = (AuthGSSClientCall *)worker->parameters;
@@ -96,6 +108,7 @@ static void _authGSSClientInit(Worker *worker) {
     worker->error = TRUE;
     worker->error_code = response->return_code;
     worker->error_message = response->message;
+    free(state);
   } else {
     worker->return_value = state;
   }
@@ -125,11 +138,14 @@ Handle<Value> Kerberos::AuthGSSClientInit(const Arguments &args) {
   Local<String> service = args[0]->ToString();
   // Convert uri string to c-string
   char *service_str = (char *)calloc(service->Utf8Length() + 1, sizeof(char));
+  if(service_str == NULL) die("Memory allocation failed");
+
   // Write v8 string to c-string
   service->WriteUtf8(service_str);
 
   // Allocate a structure
   AuthGSSClientCall *call = (AuthGSSClientCall *)calloc(1, sizeof(AuthGSSClientCall));
+  if(call == NULL) die("Memory allocation failed");
   call->flags =args[1]->ToInt32()->Uint32Value();
   call->uri = service_str;
 
@@ -215,12 +231,14 @@ Handle<Value> Kerberos::AuthGSSClientStep(const Arguments &args) {
     Local<String> challenge = args[1]->ToString();
     // Convert uri string to c-string
     challenge_str = (char *)calloc(challenge->Utf8Length() + 1, sizeof(char));
+    if(challenge_str == NULL) die("Memory allocation failed");
     // Write v8 string to c-string
     challenge->WriteUtf8(challenge_str);    
   }
 
   // Allocate a structure
   AuthGSSClientStepCall *call = (AuthGSSClientStepCall *)calloc(1, sizeof(AuthGSSClientCall));
+  if(call == NULL) die("Memory allocation failed");
   call->context = kerberos_context;
   call->challenge = challenge_str;
 
@@ -304,12 +322,14 @@ Handle<Value> Kerberos::AuthGSSClientUnwrap(const Arguments &args) {
     Local<String> challenge = args[1]->ToString();
     // Convert uri string to c-string
     challenge_str = (char *)calloc(challenge->Utf8Length() + 1, sizeof(char));
+    if(challenge_str == NULL) die("Memory allocation failed");
     // Write v8 string to c-string
     challenge->WriteUtf8(challenge_str);    
   }
 
   // Allocate a structure
   AuthGSSClientUnwrapCall *call = (AuthGSSClientUnwrapCall *)calloc(1, sizeof(AuthGSSClientUnwrapCall));
+  if(call == NULL) die("Memory allocation failed");
   call->context = kerberos_context;
   call->challenge = challenge_str;
 
@@ -394,6 +414,7 @@ Handle<Value> Kerberos::AuthGSSClientWrap(const Arguments &args) {
   Local<String> challenge = args[1]->ToString();
   // Convert uri string to c-string
   challenge_str = (char *)calloc(challenge->Utf8Length() + 1, sizeof(char));
+  if(challenge_str == NULL) die("Memory allocation failed");
   // Write v8 string to c-string
   challenge->WriteUtf8(challenge_str);    
 
@@ -403,12 +424,14 @@ Handle<Value> Kerberos::AuthGSSClientWrap(const Arguments &args) {
     Local<String> user_name = args[2]->ToString();
     // Convert uri string to c-string
     user_name_str = (char *)calloc(user_name->Utf8Length() + 1, sizeof(char));
+    if(user_name_str == NULL) die("Memory allocation failed");
     // Write v8 string to c-string
     user_name->WriteUtf8(user_name_str);
   }
 
   // Allocate a structure
   AuthGSSClientWrapCall *call = (AuthGSSClientWrapCall *)calloc(1, sizeof(AuthGSSClientWrapCall));
+  if(call == NULL) die("Memory allocation failed");
   call->context = kerberos_context;
   call->challenge = challenge_str;
   call->user_name = user_name_str;
@@ -478,6 +501,7 @@ Handle<Value> Kerberos::AuthGSSClientClean(const Arguments &args) {
 
   // Allocate a structure
   AuthGSSClientCleanCall *call = (AuthGSSClientCleanCall *)calloc(1, sizeof(AuthGSSClientCleanCall));
+  if(call == NULL) die("Memory allocation failed");
   call->context = kerberos_context;
 
   // Unpack the callback
