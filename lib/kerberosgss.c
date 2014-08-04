@@ -322,7 +322,7 @@ gss_client_response *authenticate_gss_client_unwrap(gss_client_state *state, con
   // Grab the client response
   if(output_token.length) {
     state->response = base64_encode((const unsigned char *)output_token.value, output_token.length);
-    maj_stat = gss_release_buffer(&min_stat, &output_token);
+    gss_release_buffer(&min_stat, &output_token);
   }
 end:
   if(output_token.value)
@@ -404,7 +404,7 @@ gss_client_response *authenticate_gss_client_wrap(gss_client_state* state, const
   // Grab the client response to send back to the server
   if (output_token.length) {
     state->response = base64_encode((const unsigned char *)output_token.value, output_token.length);;
-    maj_stat = gss_release_buffer(&min_stat, &output_token);
+    gss_release_buffer(&min_stat, &output_token);
   }
 end:
   if (output_token.value)
