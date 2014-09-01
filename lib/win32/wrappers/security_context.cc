@@ -315,6 +315,46 @@ static void _initializeContext(Worker *worker) {
     // Set the context
     worker->return_code = status;
     worker->return_value = call->context;
+  } else if(status == SEC_E_INSUFFICIENT_MEMORY) {
+    worker->error = TRUE;
+    worker->error_code = status;
+    worker->error_message = "SEC_E_INSUFFICIENT_MEMORY There is not enough memory available to complete the requested action.";
+  } else if(status == SEC_E_INTERNAL_ERROR) {
+    worker->error = TRUE;
+    worker->error_code = status;
+    worker->error_message = "SEC_E_INTERNAL_ERROR An error occurred that did not map to an SSPI error code.";
+  } else if(status == SEC_E_INVALID_HANDLE) {
+    worker->error = TRUE;
+    worker->error_code = status;
+    worker->error_message = "SEC_E_INVALID_HANDLE The handle passed to the function is not valid.";
+  } else if(status == SEC_E_INVALID_TOKEN) {
+    worker->error = TRUE;
+    worker->error_code = status;
+    worker->error_message = "SEC_E_INVALID_TOKEN The error is due to a malformed input token, such as a token corrupted in transit, a token of incorrect size, or a token passed into the wrong security package. Passing a token to the wrong package can happen if the client and server did not negotiate the proper security package.";
+  } else if(status == SEC_E_LOGON_DENIED) {
+    worker->error = TRUE;
+    worker->error_code = status;
+    worker->error_message = "SEC_E_LOGON_DENIED The logon failed.";
+  } else if(status == SEC_E_NO_AUTHENTICATING_AUTHORITY) {
+    worker->error = TRUE;
+    worker->error_code = status;
+    worker->error_message = "SEC_E_NO_AUTHENTICATING_AUTHORITY No authority could be contacted for authentication. The domain name of the authenticating party could be wrong, the domain could be unreachable, or there might have been a trust relationship failure.";
+  } else if(status == SEC_E_NO_CREDENTIALS) {
+    worker->error = TRUE;
+    worker->error_code = status;
+    worker->error_message = "SEC_E_NO_CREDENTIALS No credentials are available in the security package.";
+  } else if(status == SEC_E_TARGET_UNKNOWN) {
+    worker->error = TRUE;
+    worker->error_code = status;
+    worker->error_message = "SEC_E_TARGET_UNKNOWN The target was not recognized.";
+  } else if(status == SEC_E_UNSUPPORTED_FUNCTION) {
+    worker->error = TRUE;
+    worker->error_code = status;
+    worker->error_message = "SEC_E_UNSUPPORTED_FUNCTION A context attribute flag that is not valid (ISC_REQ_DELEGATE or ISC_REQ_PROMPT_FOR_CREDS) was specified in the fContextReq parameter.";
+  } else if(status == SEC_E_WRONG_PRINCIPAL) {
+    worker->error = TRUE;
+    worker->error_code = status;
+    worker->error_message = "SEC_E_WRONG_PRINCIPAL The principal that received the authentication request is not the same as the one passed into the pszTargetName parameter. This indicates a failure in mutual authentication.";
   } else {
     worker->error = TRUE;
     worker->error_code = status;
