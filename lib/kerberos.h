@@ -6,6 +6,7 @@
 #include <gssapi/gssapi_generic.h>
 #include <gssapi/gssapi_krb5.h>
 
+#include "nan.h"
 #include <node_object_wrap.h>
 #include <v8.h>
 
@@ -31,15 +32,14 @@ public:
   static void Initialize(Handle<Object> target);
 
   // Method available
-  static Handle<Value> AuthGSSClientInit(const Arguments &args);
-  static Handle<Value> AuthGSSClientStep(const Arguments &args);
-  static Handle<Value> AuthGSSClientUnwrap(const Arguments &args);
-  static Handle<Value> AuthGSSClientWrap(const Arguments &args);
-  static Handle<Value> AuthGSSClientClean(const Arguments &args);
+  static NAN_METHOD(AuthGSSClientInit);
+  static NAN_METHOD(AuthGSSClientStep);
+  static NAN_METHOD(AuthGSSClientUnwrap);
+  static NAN_METHOD(AuthGSSClientWrap);
+  static NAN_METHOD(AuthGSSClientClean);
 
 private:
-  static Handle<Value> New(const Arguments &args);  
-
+  static NAN_METHOD(New);
   // Handles the uv calls
   static void Process(uv_work_t* work_req);
   // Called after work is done

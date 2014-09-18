@@ -3,6 +3,7 @@
 
 #include <node.h>
 #include <node_object_wrap.h>
+#include <nan.h>    
 #include <v8.h>
 
 using namespace node;
@@ -16,9 +17,7 @@ class Worker {
     // libuv's request struct.
     uv_work_t request;
     // Callback
-    v8::Persistent<v8::Function> callback;
-    // // Arguments
-    // v8::Persistent<v8::Array> arguments;
+    NanCallback *callback;
     // Parameters
     void *parameters;
     // Results

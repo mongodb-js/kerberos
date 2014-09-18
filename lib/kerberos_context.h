@@ -6,6 +6,7 @@
 #include <gssapi/gssapi_generic.h>
 #include <gssapi/gssapi_krb5.h>
 
+#include "nan.h"
 #include <node_object_wrap.h>
 #include <v8.h>
 
@@ -25,7 +26,7 @@ public:
   static inline bool HasInstance(Handle<Value> val) {
     if (!val->IsObject()) return false;
     Local<Object> obj = val->ToObject();
-    return constructor_template->HasInstance(obj);
+    return NanNew(constructor_template)->HasInstance(obj);
   };
 
   // Constructor used for creating new Kerberos objects from C++
@@ -41,8 +42,7 @@ public:
   gss_client_state *state;
 
 private:
-  static Handle<Value> New(const Arguments &args);  
-
-  static Handle<Value> ResponseGetter(Local<String> property, const AccessorInfo& info);  
+  static NAN_METHOD(New);
+  static NAN_GETTER(ResponseGetter);
 };
 #endif
