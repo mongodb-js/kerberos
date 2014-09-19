@@ -9,40 +9,40 @@
 
 Persistent<FunctionTemplate> Kerberos::constructor_template;
 
-// VException object (causes throw in calling code)
-static Handle<Value> VException(const char *msg) {
-  HandleScope scope;
-  return ThrowException(Exception::Error(String::New(msg)));
-}
-
 Kerberos::Kerberos() : ObjectWrap() {
 }
 
 void Kerberos::Initialize(v8::Handle<v8::Object> target) {
   // Grab the scope of the call from Node
-  HandleScope scope;
+  NanScope();
+
   // Define a new function template
-  Local<FunctionTemplate> t = FunctionTemplate::New(Kerberos::New);
-  constructor_template = Persistent<FunctionTemplate>::New(t);
-  constructor_template->InstanceTemplate()->SetInternalFieldCount(1);
-  constructor_template->SetClassName(String::NewSymbol("Kerberos"));
+  Local<FunctionTemplate> t = NanNew<FunctionTemplate>(New);
+  t->InstanceTemplate()->SetInternalFieldCount(1);
+  t->SetClassName(NanNew<String>("Kerberos"));
+
+  // Set persistent
+  NanAssignPersistent(constructor_template, t);
+
   // Set the symbol
-  target->ForceSet(String::NewSymbol("Kerberos"), constructor_template->GetFunction());
+  target->ForceSet(NanNew<String>("Kerberos"), t->GetFunction());
 }
 
-Handle<Value> Kerberos::New(const Arguments &args) {
+NAN_METHOD(Kerberos::New) {
+  NanScope();
   // Load the security.dll library
   load_library();
   // Create a Kerberos instance
   Kerberos *kerberos = new Kerberos();
   // Return the kerberos object
   kerberos->Wrap(args.This());
-  return args.This();
+  // Return the object
+  NanReturnValue(args.This());
 }
 
 // Exporting function
 extern "C" void init(Handle<Object> target) {
-  HandleScope scope;
+  NanScope();
   Kerberos::Initialize(target);
   SecurityContext::Initialize(target);
   SecurityBuffer::Initialize(target);

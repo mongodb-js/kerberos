@@ -7,24 +7,25 @@
 
 #include <windows.h>
 #include <sspi.h>
+#include "nan.h"
 
 using namespace v8;
 using namespace node;
 
 class SecurityBufferDescriptor : public ObjectWrap {  
   public:    
-    Persistent<Array> arrayObject;
+    Local<Array> arrayObject;
     SecBufferDesc secBufferDesc;
     
     SecurityBufferDescriptor();
-    SecurityBufferDescriptor(Persistent<Array> arrayObject);
+    SecurityBufferDescriptor(Persistent<Array> arrayObjectPersistent);
     ~SecurityBufferDescriptor();    
 
     // Has instance check
     static inline bool HasInstance(Handle<Value> val) {
       if (!val->IsObject()) return false;
       Local<Object> obj = val->ToObject();
-      return constructor_template->HasInstance(obj);
+      return NanNew(constructor_template)->HasInstance(obj);
     };
 
     char *toBuffer();
@@ -32,13 +33,13 @@ class SecurityBufferDescriptor : public ObjectWrap {
 
     // Functions available from V8
     static void Initialize(Handle<Object> target);    
-    static Handle<Value> ToBuffer(const Arguments &args);
+    static NAN_METHOD(ToBuffer);
 
     // Constructor used for creating new Long objects from C++
     static Persistent<FunctionTemplate> constructor_template;
     
   private:
-    static Handle<Value> New(const Arguments &args);
+    static NAN_METHOD(New);
 };
 
 #endif

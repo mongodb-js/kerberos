@@ -10,6 +10,7 @@
 #include <windows.h>
 #include <sspi.h>
 #include <tchar.h>
+#include "nan.h"
 #include "../worker.h"
 #include <uv.h>
 
@@ -44,20 +45,19 @@ class SecurityCredentials : public ObjectWrap {
     static inline bool HasInstance(Handle<Value> val) {
       if (!val->IsObject()) return false;
       Local<Object> obj = val->ToObject();
-      return constructor_template->HasInstance(obj);
+      return NanNew(constructor_template)->HasInstance(obj);
     };
 
     // Functions available from V8
     static void Initialize(Handle<Object> target);    
-    static Handle<Value> AquireSync(const Arguments &args);
-    static Handle<Value> Aquire(const Arguments &args);
+    static NAN_METHOD(Aquire);
 
     // Constructor used for creating new Long objects from C++
     static Persistent<FunctionTemplate> constructor_template;
     
   private:
     // Create a new instance
-    static Handle<Value> New(const Arguments &args);
+    static NAN_METHOD(New);
     // Handles the uv calls
     static void Process(uv_work_t* work_req);
     // Called after work is done

@@ -15,18 +15,16 @@
 #include "security_buffer_descriptor.h"
 #include "security_buffer.h"
 
-static Handle<Value> VException(const char *msg) {
-  HandleScope scope;
-  return ThrowException(Exception::Error(String::New(msg)));
-};
-
 Persistent<FunctionTemplate> SecurityBufferDescriptor::constructor_template;
 
 SecurityBufferDescriptor::SecurityBufferDescriptor() : ObjectWrap() {
 }
 
-SecurityBufferDescriptor::SecurityBufferDescriptor(Persistent<Array> arrayObject) : ObjectWrap() {
+SecurityBufferDescriptor::SecurityBufferDescriptor(Persistent<Array> arrayObjectPersistent) : ObjectWrap() {
   SecurityBuffer *security_obj = NULL;
+  // Get the Local value
+  Local<Array> arrayObject = NanNew(arrayObjectPersistent);
+
   // Safe reference to array
   this->arrayObject = arrayObject;
 
@@ -99,23 +97,23 @@ char *SecurityBufferDescriptor::toBuffer() {
   return data;
 }
 
-Handle<Value> SecurityBufferDescriptor::New(const Arguments &args) {
-  HandleScope scope;  
+NAN_METHOD(SecurityBufferDescriptor::New) {
+  NanScope();
   SecurityBufferDescriptor *security_obj;
   Persistent<Array> arrayObject;
 
   if(args.Length() != 1)
-    return VException("There must be 1 argument passed in where the first argument is a [int32 or an Array of SecurityBuffers]");
+    return NanThrowError("There must be 1 argument passed in where the first argument is a [int32 or an Array of SecurityBuffers]");
 
   if(!args[0]->IsInt32() && !args[0]->IsArray())
-    return VException("There must be 1 argument passed in where the first argument is a [int32 or an Array of SecurityBuffers]");
+    return NanThrowError("There must be 1 argument passed in where the first argument is a [int32 or an Array of SecurityBuffers]");
 
   if(args[0]->IsArray()) {
     Handle<Array> array = Handle<Array>::Cast(args[0]);
     // Iterate over all items and ensure we the right type
     for(uint32_t i = 0; i < array->Length(); i++) {
       if(!SecurityBuffer::HasInstance(array->Get(i))) {
-        return VException("There must be 1 argument passed in where the first argument is a [int32 or an Array of SecurityBuffers]");
+        return NanThrowError("There must be 1 argument passed in where the first argument is a [int32 or an Array of SecurityBuffers]");
       }
     }
   }
@@ -123,29 +121,35 @@ Handle<Value> SecurityBufferDescriptor::New(const Arguments &args) {
   // We have a single integer
   if(args[0]->IsInt32()) {
     // Create new SecurityBuffer instance
-    Local<Value> argv[] = {Int32::New(0x02), args[0]};
-    Handle<Value> security_buffer = SecurityBuffer::constructor_template->GetFunction()->NewInstance(2, argv);    
+    Local<Value> argv[] = {NanNew<Int32>(0x02), args[0]};
+    Handle<Value> security_buffer = NanNew(SecurityBuffer::constructor_template)->GetFunction()->NewInstance(2, argv);
     // Create a new array
-    Local<Array> array = Array::New(1);
+    Local<Array> array = NanNew<Array>(1);
     // Set the first value
     array->Set(0, security_buffer);
+
     // Create persistent handle
-    arrayObject = Persistent<Array>::New(array);
+    Persistent<Array> persistenHandler;
+    NanAssignPersistent(persistenHandler, array);
+
     // Create descriptor
-    security_obj = new SecurityBufferDescriptor(arrayObject);
+    security_obj = new SecurityBufferDescriptor(persistenHandler);
   } else {
-    arrayObject = Persistent<Array>::New(Handle<Array>::Cast(args[0]));
-    security_obj = new SecurityBufferDescriptor(arrayObject);
+    // Create a persistent handler
+    Persistent<Array> persistenHandler;
+    NanAssignPersistent(persistenHandler, Handle<Array>::Cast(args[0]));
+    // Create a descriptor
+    security_obj = new SecurityBufferDescriptor(persistenHandler);
   }
 
   // Wrap it
   security_obj->Wrap(args.This());
   // Return the object
-  return args.This();    
+  NanReturnValue(args.This());
 }
 
-Handle<Value> SecurityBufferDescriptor::ToBuffer(const Arguments &args) {
-  HandleScope scope; 
+NAN_METHOD(SecurityBufferDescriptor::ToBuffer) {
+  NanScope();
 
   // Unpack the Security Buffer object
   SecurityBufferDescriptor *security_obj = ObjectWrap::Unwrap<SecurityBufferDescriptor>(args.This());
@@ -155,23 +159,27 @@ Handle<Value> SecurityBufferDescriptor::ToBuffer(const Arguments &args) {
   size_t buffer_size = security_obj->bufferSize();
 
   // Create a Buffer
-  Buffer *buffer = Buffer::New(buffer_data, buffer_size);
+  Local<Object> buffer = NanNewBufferHandle(buffer_data, buffer_size);
 
   // Return the buffer
-  return scope.Close(buffer->handle_);  
+  NanReturnValue(buffer);
 }
 
 void SecurityBufferDescriptor::Initialize(Handle<Object> target) {
   // Grab the scope of the call from Node
-  HandleScope scope;
+  NanScope();
+
   // Define a new function template
-  Local<FunctionTemplate> t = FunctionTemplate::New(New);
-  constructor_template = Persistent<FunctionTemplate>::New(t);
-  constructor_template->InstanceTemplate()->SetInternalFieldCount(1);
-  constructor_template->SetClassName(String::NewSymbol("SecurityBufferDescriptor"));
+  Local<FunctionTemplate> t = NanNew<FunctionTemplate>(New);
+  t->InstanceTemplate()->SetInternalFieldCount(1);
+  t->SetClassName(NanNew<String>("SecurityBufferDescriptor"));
 
-  // Set up method for the Kerberos instance
-  NODE_SET_PROTOTYPE_METHOD(constructor_template, "toBuffer", ToBuffer);
+  // Class methods
+  NODE_SET_PROTOTYPE_METHOD(t, "toBuffer", ToBuffer);
 
-  target->Set(String::NewSymbol("SecurityBufferDescriptor"), constructor_template->GetFunction());
+  // Set persistent
+  NanAssignPersistent(constructor_template, t);
+
+  // Set the symbol
+  target->ForceSet(NanNew<String>("SecurityBufferDescriptor"), t->GetFunction());
 }

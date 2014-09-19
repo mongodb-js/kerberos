@@ -4,6 +4,7 @@
 #include <node.h>
 #include <node_object_wrap.h>
 #include <v8.h>
+#include "nan.h"
 
 extern "C" {
   #include "kerberos_sspi.h"
@@ -26,14 +27,14 @@ public:
   static void Initialize(Handle<Object> target);
 
   // Method available
-  static Handle<Value> AcquireAlternateCredentials(const Arguments &args);
-  static Handle<Value> PrepareOutboundPackage(const Arguments &args);
-  static Handle<Value> DecryptMessage(const Arguments &args);
-  static Handle<Value> EncryptMessage(const Arguments &args);
-  static Handle<Value> QueryContextAttributes(const Arguments &args);
+  static NAN_METHOD(AcquireAlternateCredentials);
+  static NAN_METHOD(PrepareOutboundPackage);
+  static NAN_METHOD(DecryptMessage);
+  static NAN_METHOD(EncryptMessage);
+  static NAN_METHOD(QueryContextAttributes);
 
 private:
-  static Handle<Value> New(const Arguments &args);  
+  static NAN_METHOD(New);
 
   // Pointer to context object
   SEC_WINNT_AUTH_IDENTITY m_Identity;
