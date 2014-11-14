@@ -72,6 +72,7 @@ void Kerberos::Initialize(v8::Handle<v8::Object> target) {
 }
 
 NAN_METHOD(Kerberos::New) {
+  NanScope();
   // Create a Kerberos instance
   Kerberos *kerberos = new Kerberos();
   // Return the kerberos object
