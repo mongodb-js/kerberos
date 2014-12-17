@@ -5,7 +5,6 @@
       'cflags!': [ '-fno-exceptions' ],
       'cflags_cc!': [ '-fno-exceptions' ],
       'include_dirs': [ '<!(node -e "require(\'nan\')")', '/usr/include/mit-krb5' ],
-      'sources': [ 'lib/kerberos.cc', 'lib/worker.cc', 'lib/kerberosgss.c', 'lib/base64.c', 'lib/kerberos_context.cc' ],
       'conditions': [
         ['OS=="mac"', {
           'sources': [ 'lib/kerberos.cc', 'lib/worker.cc', 'lib/kerberosgss.c', 'lib/base64.c', 'lib/kerberos_context.cc' ],
@@ -20,6 +19,9 @@
               "-lkrb5"
             ]
           }
+        }],
+        ['OS=="linux"', {
+          'sources': [ 'lib/kerberos.cc', 'lib/worker.cc', 'lib/kerberosgss.c', 'lib/base64.c', 'lib/kerberos_context.cc' ]
         }],
         ['OS=="win"',  {
           'sources': [ 
