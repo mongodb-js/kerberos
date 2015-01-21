@@ -30,7 +30,8 @@ void KerberosContext::Initialize(v8::Handle<v8::Object> target) {
   NanScope();
 
   // Define a new function template
-  Local<FunctionTemplate> t = NanNew<FunctionTemplate>(New);
+  // Local<FunctionTemplate> t = NanNew<FunctionTemplate>(New);
+  Local<FunctionTemplate> t = NanNew<v8::FunctionTemplate>(static_cast<NAN_METHOD((*))>(New));
   t->InstanceTemplate()->SetInternalFieldCount(1);
   t->SetClassName(NanNew<String>("KerberosContext"));
 
