@@ -5,6 +5,7 @@
 #include <node_object_wrap.h>
 #include <v8.h>
 
+#include <winsock2.h>
 #include <windows.h>
 #include <sspi.h>
 #include "nan.h"
