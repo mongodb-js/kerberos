@@ -18,7 +18,7 @@ class SecurityBufferDescriptor : public ObjectWrap {
     SecBufferDesc secBufferDesc;
     
     SecurityBufferDescriptor();
-    SecurityBufferDescriptor(Persistent<Array> arrayObjectPersistent);
+    SecurityBufferDescriptor(const Persistent<Array>& arrayObjectPersistent);
     ~SecurityBufferDescriptor();    
 
     // Has instance check

@@ -20,7 +20,7 @@ Persistent<FunctionTemplate> SecurityBufferDescriptor::constructor_template;
 SecurityBufferDescriptor::SecurityBufferDescriptor() : ObjectWrap() {
 }
 
-SecurityBufferDescriptor::SecurityBufferDescriptor(Persistent<Array> arrayObjectPersistent) : ObjectWrap() {
+SecurityBufferDescriptor::SecurityBufferDescriptor(const Persistent<Array>& arrayObjectPersistent) : ObjectWrap() {
   SecurityBuffer *security_obj = NULL;
   // Get the Local value
   Local<Array> arrayObject = NanNew(arrayObjectPersistent);

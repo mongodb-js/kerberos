@@ -1,8 +1,8 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
-#include <v8.h>
 #include <node.h>
+#include <v8.h>
 #include <node_buffer.h>
 #include <cstring>
 #include <cmath>
@@ -292,7 +292,7 @@ NAN_METHOD(SecurityContext::InitializeContext) {
   // Unpack the Security credentials
   security_credentials = ObjectWrap::Unwrap<SecurityCredentials>(args[0]->ToObject());
   // Create Security context instance
-  Local<Object> security_context_value = constructor_template->GetFunction()->NewInstance();
+  Local<Object> security_context_value = NanNew(constructor_template)->GetFunction()->NewInstance();
   // Unwrap the security context
   SecurityContext *security_context = ObjectWrap::Unwrap<SecurityContext>(security_context_value);
   // Add a reference to the security_credentials
@@ -712,8 +712,6 @@ static void _queryContextAttributes(Worker *worker) {
 }
 
 static Handle<Value> _map_queryContextAttributes(Worker *worker) {
-  NanScope();
-
   // Cast to data structure
   SecurityContextQueryContextAttributesCall *call = (SecurityContextQueryContextAttributesCall *)worker->parameters;  
   // Unpack the attribute
@@ -723,16 +721,16 @@ static Handle<Value> _map_queryContextAttributes(Worker *worker) {
   if(attribute == SECPKG_ATTR_SIZES) {
     SecPkgContext_Sizes *sizes = (SecPkgContext_Sizes *)worker->return_value;
     // Create object
-    Local<Object> value = Object::New();
-    value->Set(String::New("maxToken"), Integer::New(sizes->cbMaxToken));
-    value->Set(String::New("maxSignature"), Integer::New(sizes->cbMaxSignature));
-    value->Set(String::New("blockSize"), Integer::New(sizes->cbBlockSize));
-    value->Set(String::New("securityTrailer"), Integer::New(sizes->cbSecurityTrailer));
-    NanReturnValue(value);
+    Local<Object> value = NanNew<Object>();
+    value->Set(NanNew("maxToken"), NanNew<Integer>(uint32_t(sizes->cbMaxToken)));
+    value->Set(NanNew("maxSignature"), NanNew<Integer>(uint32_t(sizes->cbMaxSignature)));
+    value->Set(NanNew("blockSize"), NanNew<Integer>(uint32_t(sizes->cbBlockSize)));
+    value->Set(NanNew("securityTrailer"), NanNew<Integer>(uint32_t(sizes->cbSecurityTrailer)));
+    return value;
   }
 
   // Return the value
-  NanReturnValue(NanNull());
+  return NanNull();
 }
 
 NAN_METHOD(SecurityContext::QueryContextAttributes) {
