@@ -81,7 +81,7 @@ NAN_METHOD(SecurityBuffer::ToBuffer) {
   // Unpack the Security Buffer object
   SecurityBuffer *security_obj = ObjectWrap::Unwrap<SecurityBuffer>(args.This());
   // Create a Buffer
-  Local<Object> buffer = NanNewBufferHandle((char *)security_obj->data, (size_t)security_obj->size);
+  Local<Object> buffer = NanNewBufferHandle((char *)security_obj->data, (uint32_t)security_obj->size);
   // Return the buffer
   NanReturnValue(buffer);
 }

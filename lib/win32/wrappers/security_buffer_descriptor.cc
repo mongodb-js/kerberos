@@ -159,7 +159,7 @@ NAN_METHOD(SecurityBufferDescriptor::ToBuffer) {
   size_t buffer_size = security_obj->bufferSize();
 
   // Create a Buffer
-  Local<Object> buffer = NanNewBufferHandle(buffer_data, buffer_size);
+  Local<Object> buffer = NanNewBufferHandle(buffer_data, (uint32_t)buffer_size);
 
   // Return the buffer
   NanReturnValue(buffer);
