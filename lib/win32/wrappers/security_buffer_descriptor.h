@@ -5,6 +5,7 @@
 #include <node_object_wrap.h>
 #include <v8.h>
 
+#include <WinSock2.h>
 #include <windows.h>
 #include <sspi.h>
 #include "nan.h"
@@ -18,7 +19,7 @@ class SecurityBufferDescriptor : public ObjectWrap {
     SecBufferDesc secBufferDesc;
     
     SecurityBufferDescriptor();
-    SecurityBufferDescriptor(Persistent<Array> arrayObjectPersistent);
+    SecurityBufferDescriptor(const Persistent<Array>& arrayObjectPersistent);
     ~SecurityBufferDescriptor();    
 
     // Has instance check

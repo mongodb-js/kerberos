@@ -7,6 +7,8 @@
 
 #define SECURITY_WIN32 1
 
+#include <winsock2.h>
+#include <windows.h>
 #include <sspi.h>
 #include <tchar.h>
 #include "security_credentials.h"
