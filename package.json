@@ -1,6 +1,6 @@
 {
   "name": "kerberos",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "Kerberos library for Node.js",
   "main": "index.js",
   "repository": {
@@ -13,7 +13,7 @@
     "authentication"
   ],
   "dependencies": {
-    "nan": "1.7.0"
+    "nan": "~1.8"
   },
   "devDependencies": {
     "nodeunit": "latest"
