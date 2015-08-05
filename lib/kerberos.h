@@ -35,6 +35,9 @@ public:
   static NAN_METHOD(AuthGSSClientUnwrap);
   static NAN_METHOD(AuthGSSClientWrap);
   static NAN_METHOD(AuthGSSClientClean);
+  static NAN_METHOD(AuthGSSServerInit);
+  static NAN_METHOD(AuthGSSServerClean);
+  static NAN_METHOD(AuthGSSServerStep);
 
 private:
   static NAN_METHOD(New);

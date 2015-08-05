@@ -52,18 +52,25 @@ void KerberosContext::Initialize(v8::Handle<v8::Object> target) {
 // Response Setter / Getter
 NAN_GETTER(KerberosContext::ResponseGetter) {
   NanScope();
-  gss_client_state *state;
+  gss_client_state *client_state;
+  gss_server_state *server_state;
 
   // Unpack the object
   KerberosContext *context = ObjectWrap::Unwrap<KerberosContext>(args.This());
-  // Let's grab the response
-  state = context->state;
-  // No state no response
-  if(state == NULL || state->response == NULL) {
+
+  // Let's grab the two possible responses
+  client_state = context->state;
+  server_state = context->server_state;
+
+  // the non-NULL provides a response string, which could be NULL, otherwise NULL.
+  char *response = client_state != NULL ? client_state->response :
+	  server_state != NULL ? server_state->response : NULL;
+
+  if(response == NULL) {
     NanReturnValue(NanNull());
   } else {
     // Return the response
-    NanReturnValue(NanNew<String>(state->response));
+    NanReturnValue(NanNew<String>(response));
   }
 }
 

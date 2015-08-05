@@ -38,8 +38,11 @@ public:
   // Public constructor
   static KerberosContext* New();
 
-  // Handle to the kerberos context
+  // Handle to the kerberos client context
   gss_client_state *state;
+
+  // Handle to the kerberos server context
+  gss_server_state *server_state;
 
 private:
   static NAN_METHOD(New);

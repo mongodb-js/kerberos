@@ -573,7 +573,7 @@ gss_client_response *authenticate_gss_server_step(gss_server_state *state, const
     // Grab the server response to send back to the client
     if (output_token.length)
     {
-        state->response = base64_encode((const unsigned char *)output_token.value, output_token.length);;
+        state->response = base64_encode((const unsigned char *)output_token.value, output_token.length);
         maj_stat = gss_release_buffer(&min_stat, &output_token);
     }
     
