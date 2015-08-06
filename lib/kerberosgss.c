@@ -434,7 +434,7 @@ gss_client_response *authenticate_gss_server_init(const char *service, gss_serve
     state->username = NULL;
     state->targetname = NULL;
     state->response = NULL;
-    
+
     // Server name may be empty which means we aren't going to create our own creds
     size_t service_len = strlen(service);
     if (service_len != 0)
