@@ -90,7 +90,7 @@ NAN_GETTER(KerberosContext::UsernameGetter) {
   gss_client_state *client_state = context->state;
   gss_server_state *server_state = context->server_state;
 
-  // the non-NULL provides a response string, which could be NULL, otherwise NULL.
+  // If client state is in use, take response from there, otherwise from server
   char *username = client_state != NULL ? client_state->username :
 	  server_state != NULL ? server_state->username : NULL;
 
@@ -110,7 +110,6 @@ NAN_GETTER(KerberosContext::TargetnameGetter) {
 
   gss_server_state *server_state = context->server_state;
 
-  // the non-NULL provides a response string, which could be NULL, otherwise NULL.
   char *targetname = server_state != NULL ? server_state->targetname : NULL;
 
   if(targetname == NULL) {
