@@ -29,6 +29,14 @@ public:
     return NanNew(constructor_template)->HasInstance(obj);
   };
 
+  inline bool IsClientInstance() {
+      return state != NULL;
+  }
+
+  inline bool IsServerInstance() {
+      return server_state != NULL;
+  }
+
   // Constructor used for creating new Kerberos objects from C++
   static Persistent<FunctionTemplate> constructor_template;
 
