@@ -41,6 +41,12 @@ void KerberosContext::Initialize(v8::Handle<v8::Object> target) {
   // Getter for the response
   proto->SetAccessor(NanNew<String>("response"), KerberosContext::ResponseGetter);
 
+  // Getter for the username - server side only
+  proto->SetAccessor(NanNew<String>("username"), KerberosContext::UsernameGetter);
+
+  // Getter for the targetname - server side only
+  proto->SetAccessor(NanNew<String>("targetname"), KerberosContext::TargetnameGetter);
+
   // Set persistent
   NanAssignPersistent(constructor_template, t);
 
@@ -48,7 +54,7 @@ void KerberosContext::Initialize(v8::Handle<v8::Object> target) {
   target->ForceSet(NanNew<String>("KerberosContext"), t->GetFunction());
 }
 
-//
+
 // Response Setter / Getter
 NAN_GETTER(KerberosContext::ResponseGetter) {
   NanScope();
@@ -71,6 +77,44 @@ NAN_GETTER(KerberosContext::ResponseGetter) {
   } else {
     // Return the response
     NanReturnValue(NanNew<String>(response));
+  }
+}
+
+// username Getter - server side only
+NAN_GETTER(KerberosContext::UsernameGetter) {
+  NanScope();
+
+  // Unpack the object
+  KerberosContext *context = ObjectWrap::Unwrap<KerberosContext>(args.This());
+
+  gss_server_state *server_state = context->server_state;
+
+  // the non-NULL provides a response string, which could be NULL, otherwise NULL.
+  char *username = server_state != NULL ? server_state->username : NULL;
+
+  if(username == NULL) {
+    NanReturnValue(NanNull());
+  } else {
+    NanReturnValue(NanNew<String>(username));
+  }
+}
+
+// targetname Getter - server side only
+NAN_GETTER(KerberosContext::TargetnameGetter) {
+  NanScope();
+
+  // Unpack the object
+  KerberosContext *context = ObjectWrap::Unwrap<KerberosContext>(args.This());
+
+  gss_server_state *server_state = context->server_state;
+
+  // the non-NULL provides a response string, which could be NULL, otherwise NULL.
+  char *targetname = server_state != NULL ? server_state->targetname : NULL;
+
+  if(targetname == NULL) {
+    NanReturnValue(NanNull());
+  } else {
+    NanReturnValue(NanNew<String>(targetname));
   }
 }
 
