@@ -64,11 +64,11 @@ NAN_GETTER(KerberosContext::ResponseGetter) {
   // Unpack the object
   KerberosContext *context = ObjectWrap::Unwrap<KerberosContext>(args.This());
 
-  // Let's grab the two possible responses
+  // Response could come from client or server state...
   client_state = context->state;
   server_state = context->server_state;
 
-  // the non-NULL provides a response string, which could be NULL, otherwise NULL.
+  // If client state is in use, take response from there, otherwise from server
   char *response = client_state != NULL ? client_state->response :
 	  server_state != NULL ? server_state->response : NULL;
 
