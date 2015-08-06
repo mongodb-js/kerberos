@@ -37,11 +37,9 @@ void die1(const char *message) {
   exit(1);
 }
 
-/*static void set_gss_error(OM_uint32 err_maj, OM_uint32 err_min); */
+static gss_client_response *gss_error(const char *func, const char *op, OM_uint32 err_maj, OM_uint32 err_min);
 
-/*extern PyObject *GssException_class;
-extern PyObject *KrbException_class;
-
+/*
 char* server_principal_details(const char* service, const char* hostname)
 {
     char match[1024];
@@ -139,7 +137,7 @@ gss_client_response *authenticate_gss_client_init(const char* service, long int 
   maj_stat = gss_import_name(&min_stat, &name_token, gss_krb5_nt_service_name, &state->server_name);
   
   if (GSS_ERROR(maj_stat)) {
-    response = gss_error(maj_stat, min_stat);
+    response = gss_error(__func__, "gss_import_name", maj_stat, min_stat);
     response->return_code = AUTH_GSS_ERROR;
     goto end;
   }
@@ -221,7 +219,7 @@ gss_client_response *authenticate_gss_client_step(gss_client_state* state, const
                                   NULL);
 
   if ((maj_stat != GSS_S_COMPLETE) && (maj_stat != GSS_S_CONTINUE_NEEDED)) {
-    response = gss_error(maj_stat, min_stat);
+    response = gss_error(__func__, "gss_init_sec_context", maj_stat, min_stat);
     response->return_code = AUTH_GSS_ERROR;
     goto end;
   }
@@ -239,7 +237,7 @@ gss_client_response *authenticate_gss_client_step(gss_client_state* state, const
     maj_stat = gss_inquire_context(&min_stat, state->context, &gssuser, NULL, NULL, NULL,  NULL, NULL, NULL);
     
     if(GSS_ERROR(maj_stat)) {
-      response = gss_error(maj_stat, min_stat);
+      response = gss_error(__func__, "gss_inquire_context", maj_stat, min_stat);
       response->return_code = AUTH_GSS_ERROR;
       goto end;
     }
@@ -253,7 +251,7 @@ gss_client_response *authenticate_gss_client_step(gss_client_state* state, const
         gss_release_buffer(&min_stat, &name_token);
       gss_release_name(&min_stat, &gssuser);
       
-      response = gss_error(maj_stat, min_stat);
+      response = gss_error(__func__, "gss_display_name", maj_stat, min_stat);
       response->return_code = AUTH_GSS_ERROR;
       goto end;
     } else {
@@ -312,7 +310,7 @@ gss_client_response *authenticate_gss_client_unwrap(gss_client_state *state, con
                           NULL);
     
   if(maj_stat != GSS_S_COMPLETE) {
-    response = gss_error(maj_stat, min_stat);
+    response = gss_error(__func__, "gss_unwrap", maj_stat, min_stat);
     response->return_code = AUTH_GSS_ERROR;
     goto end;
   } else {
@@ -396,7 +394,7 @@ gss_client_response *authenticate_gss_client_wrap(gss_client_state* state, const
             &output_token);
     
   if (maj_stat != GSS_S_COMPLETE) {
-    response = gss_error(maj_stat, min_stat);
+    response = gss_error(__func__, "gss_wrap", maj_stat, min_stat);
     response->return_code = AUTH_GSS_ERROR;
     goto end;
   } else
@@ -449,7 +447,7 @@ gss_client_response *authenticate_gss_server_init(const char *service, gss_serve
         
         if (GSS_ERROR(maj_stat))
         {
-            response = gss_error(maj_stat, min_stat);
+            response = gss_error(__func__, "gss_import_name", maj_stat, min_stat);
             response->return_code = AUTH_GSS_ERROR;
             goto end;
         }
@@ -460,7 +458,7 @@ gss_client_response *authenticate_gss_server_init(const char *service, gss_serve
         
         if (GSS_ERROR(maj_stat))
         {
-            response = gss_error(maj_stat, min_stat);
+            response = gss_error(__func__, "gss_acquire_cred", maj_stat, min_stat);
             response->return_code = AUTH_GSS_ERROR;
             goto end;
         }
@@ -565,7 +563,7 @@ gss_client_response *authenticate_gss_server_step(gss_server_state *state, const
     
     if (GSS_ERROR(maj_stat))
     {
-        response = gss_error(maj_stat, min_stat);
+        response = gss_error(__func__, "gss_accept_sec_context", maj_stat, min_stat);
         response->return_code = AUTH_GSS_ERROR;
         goto end;
     }
@@ -581,7 +579,7 @@ gss_client_response *authenticate_gss_server_step(gss_server_state *state, const
     maj_stat = gss_display_name(&min_stat, state->client_name, &output_token, NULL);
     if (GSS_ERROR(maj_stat))
     {
-        response = gss_error(maj_stat, min_stat);
+        response = gss_error(__func__, "gss_display_name", maj_stat, min_stat);
         response->return_code = AUTH_GSS_ERROR;
         goto end;
     }
@@ -596,14 +594,14 @@ gss_client_response *authenticate_gss_server_step(gss_server_state *state, const
         maj_stat = gss_inquire_context(&min_stat, state->context, NULL, &target_name, NULL, NULL, NULL, NULL, NULL);
         if (GSS_ERROR(maj_stat))
         {
-            response = gss_error(maj_stat, min_stat);
+            response = gss_error(__func__, "gss_inquire_context", maj_stat, min_stat);
             response->return_code = AUTH_GSS_ERROR;
             goto end;
         }
         maj_stat = gss_display_name(&min_stat, target_name, &output_token, NULL);
         if (GSS_ERROR(maj_stat))
         {
-            response = gss_error(maj_stat, min_stat);
+            response = gss_error(__func__, "gss_display_name", maj_stat, min_stat);
             response->return_code = AUTH_GSS_ERROR;
             goto end;
         }
@@ -630,54 +628,27 @@ end:
     return response;
 }
 
-/*
-static void set_gss_error(OM_uint32 err_maj, OM_uint32 err_min) {
+gss_client_response *gss_error(const char *func, const char *op, OM_uint32 err_maj, OM_uint32 err_min) {
   OM_uint32 maj_stat, min_stat;
   OM_uint32 msg_ctx = 0;
   gss_buffer_desc status_string;
-  char buf_maj[512];
-  char buf_min[512];
 
-  do {
-    maj_stat = gss_display_status (&min_stat,
-                                   err_maj,
-                                   GSS_C_GSS_CODE,
-                                   GSS_C_NO_OID,
-                                   &msg_ctx,
-                                   &status_string);
-    if(GSS_ERROR(maj_stat))
-      break;
-
-    strncpy(buf_maj, (char*) status_string.value, sizeof(buf_maj));
-    gss_release_buffer(&min_stat, &status_string);
-
-    maj_stat = gss_display_status (&min_stat,
-                                   err_min,
-                                   GSS_C_MECH_CODE,
-                                   GSS_C_NULL_OID,
-                                   &msg_ctx,
-                                   &status_string);
-    if (!GSS_ERROR(maj_stat)) {
-
-      strncpy(buf_min, (char*) status_string.value , sizeof(buf_min));
-      gss_release_buffer(&min_stat, &status_string);
-    }
-  } while (!GSS_ERROR(maj_stat) && msg_ctx != 0);
-}
-*/
-
-gss_client_response *gss_error(OM_uint32 err_maj, OM_uint32 err_min) {
-  OM_uint32 maj_stat, min_stat;
-  OM_uint32 msg_ctx = 0;
-  gss_buffer_desc status_string;
-  char *buf_maj = calloc(512, sizeof(char));
-  if(buf_maj == NULL) die1("Memory allocation failed");
-  char *buf_min = calloc(512, sizeof(char));
-  if(buf_min == NULL) die1("Memory allocation failed");
-  char *message = NULL;
   gss_client_response *response = calloc(1, sizeof(gss_client_response));
   if(response == NULL) die1("Memory allocation failed");
   
+  char *message = NULL;
+  message = calloc(1024, 1);
+  if(message == NULL) die1("Memory allocation failed");
+
+  response->message = message;
+
+  int nleft = 1024;
+  int n;
+
+  n = snprintf(message, nleft, "%s(%s)", func, op);
+  message += n;
+  nleft -= n;
+
   do {
     maj_stat = gss_display_status (&min_stat,
                                    err_maj,
@@ -688,7 +659,11 @@ gss_client_response *gss_error(OM_uint32 err_maj, OM_uint32 err_min) {
     if(GSS_ERROR(maj_stat))
       break;
     
-    strncpy(buf_maj, (char*) status_string.value, 512);
+    n = snprintf(message, nleft, ": %.*s",
+	    (int)status_string.length, (char*)status_string.value);
+    message += n;
+    nleft -= n;
+
     gss_release_buffer(&min_stat, &status_string);
     
     maj_stat = gss_display_status (&min_stat,
@@ -698,22 +673,15 @@ gss_client_response *gss_error(OM_uint32 err_maj, OM_uint32 err_min) {
                                    &msg_ctx,
                                    &status_string);
     if(!GSS_ERROR(maj_stat)) {
-      strncpy(buf_min, (char*) status_string.value , 512);
+	n = snprintf(message, nleft, ": %.*s",
+		(int)status_string.length, (char*)status_string.value);
+	message += n;
+	nleft -= n;
+
       gss_release_buffer(&min_stat, &status_string);
     }
   } while (!GSS_ERROR(maj_stat) && msg_ctx != 0);
 
-  // Join the strings
-  message = calloc(1026, 1);
-  if(message == NULL) die1("Memory allocation failed");
-  // Join the two messages
-  sprintf(message, "%s, %s", buf_maj, buf_min);
-  // Free data
-  free(buf_min);
-  free(buf_maj);
-  // Set the message
-  response->message = message;
-  // Return the message
   return response;
 }
 
