@@ -236,6 +236,10 @@ NAN_METHOD(Kerberos::AuthGSSClientStep) {
   Local<Object> object = args[0]->ToObject();
   KerberosContext *kerberos_context = KerberosContext::Unwrap<KerberosContext>(object);
 
+  if (!kerberos_context->IsClientInstance()) {
+      return NanThrowError("GSS context is not a client instance");
+  }
+
   int callbackArg = 1;
 
   // If we have a challenge string
@@ -331,6 +335,10 @@ NAN_METHOD(Kerberos::AuthGSSClientUnwrap) {
   // Let's unpack the parameters
   Local<Object> object = args[0]->ToObject();
   KerberosContext *kerberos_context = KerberosContext::Unwrap<KerberosContext>(object);
+
+  if (!kerberos_context->IsClientInstance()) {
+      return NanThrowError("GSS context is not a client instance");
+  }
 
   // If we have a challenge string
   if(args.Length() == 3) {
@@ -428,6 +436,10 @@ NAN_METHOD(Kerberos::AuthGSSClientWrap) {
   Local<Object> object = args[0]->ToObject();
   KerberosContext *kerberos_context = KerberosContext::Unwrap<KerberosContext>(object);
 
+  if (!kerberos_context->IsClientInstance()) {
+      return NanThrowError("GSS context is not a client instance");
+  }
+
   // Unpack the challenge string
   Local<String> challenge = args[1]->ToString();
   // Convert uri string to c-string
@@ -517,6 +529,10 @@ NAN_METHOD(Kerberos::AuthGSSClientClean) {
   // Let's unpack the kerberos context
   Local<Object> object = args[0]->ToObject();
   KerberosContext *kerberos_context = KerberosContext::Unwrap<KerberosContext>(object);
+
+  if (!kerberos_context->IsClientInstance()) {
+      return NanThrowError("GSS context is not a client instance");
+  }
 
   // Allocate a structure
   AuthGSSClientCleanCall *call = (AuthGSSClientCleanCall *)calloc(1, sizeof(AuthGSSClientCleanCall));
@@ -667,6 +683,10 @@ NAN_METHOD(Kerberos::AuthGSSServerClean) {
   Local<Object> object = args[0]->ToObject();
   KerberosContext *kerberos_context = KerberosContext::Unwrap<KerberosContext>(object);
 
+  if (!kerberos_context->IsServerInstance()) {
+      return NanThrowError("GSS context is not a server instance");
+  }
+
   // Allocate a structure
   AuthGSSServerCleanCall *call = (AuthGSSServerCleanCall *)calloc(1, sizeof(AuthGSSServerCleanCall));
   if(call == NULL) die("Memory allocation failed");
@@ -750,6 +770,10 @@ NAN_METHOD(Kerberos::AuthGSSServerStep) {
   // Let's unpack the parameters
   Local<Object> object = args[0]->ToObject();
   KerberosContext *kerberos_context = KerberosContext::Unwrap<KerberosContext>(object);
+
+  if (!kerberos_context->IsServerInstance()) {
+      return NanThrowError("GSS context is not a server instance");
+  }
 
   // Unpack the auth_data string
   Local<String> auth_data = args[1]->ToString();
