@@ -79,7 +79,7 @@ void Kerberos::Initialize(v8::Handle<v8::Object> target) {
   NODE_SET_PROTOTYPE_METHOD(t, "authGSSClientClean", AuthGSSClientClean);
   NODE_SET_PROTOTYPE_METHOD(t, "authGSSServerInit", AuthGSSServerInit);
   NODE_SET_PROTOTYPE_METHOD(t, "authGSSServerClean", AuthGSSServerClean);
-  NODE_SET_PROTOTYPE_METHOD(t, "authGSSServerInit", AuthGSSServerInit);
+  NODE_SET_PROTOTYPE_METHOD(t, "authGSSServerStep", AuthGSSServerStep);
 
   NanAssignPersistent(constructor_template, t);
 
@@ -740,29 +740,24 @@ NAN_METHOD(Kerberos::AuthGSSServerStep) {
   NanScope();
 
   // Ensure valid call
-  if(args.Length() != 2 && args.Length() != 3) return NanThrowError("Requires a GSS context, optional challenge string and callback function");
-  if(args.Length() == 2 && (!KerberosContext::HasInstance(args[0]) || !args[1]->IsFunction())) return NanThrowError("Requires a GSS context, optional challenge string and callback function");
-  if(args.Length() == 3 && (!KerberosContext::HasInstance(args[0]) || !args[1]->IsString() || !args[2]->IsFunction())) return NanThrowError("Requires a GSS context, optional challenge string and callback function");
+  if(args.Length() != 3) return NanThrowError("Requires a GSS context, challenge string and callback function");
+  if(!KerberosContext::HasInstance(args[0]))  return NanThrowError("1st arg must be a GSS context");
+  if (!args[1]->IsString())  return NanThrowError("2nd arg must be authentication string");
+  if (!args[2]->IsFunction())  return NanThrowError("3rd arg must be a callback function");
 
   // Challenge string
   char *challenge_str = NULL;
   // Let's unpack the parameters
   Local<Object> object = args[0]->ToObject();
   KerberosContext *kerberos_context = KerberosContext::Unwrap<KerberosContext>(object);
-  int callbackArg = 1;
 
-  // If we have a challenge string
-  if(args.Length() == 3) {
-    // Unpack the challenge string
-    Local<String> challenge = args[1]->ToString();
-    // Convert uri string to c-string
-    challenge_str = (char *)calloc(challenge->Utf8Length() + 1, sizeof(char));
-    if(challenge_str == NULL) die("Memory allocation failed");
-    // Write v8 string to c-string
-    challenge->WriteUtf8(challenge_str);
-
-    callbackArg = 2;
-  }
+  // Unpack the challenge string
+  Local<String> challenge = args[1]->ToString();
+  // Convert uri string to c-string
+  challenge_str = (char *)calloc(challenge->Utf8Length() + 1, sizeof(char));
+  if(challenge_str == NULL) die("Memory allocation failed");
+  // Write v8 string to c-string
+  challenge->WriteUtf8(challenge_str);
 
   // Allocate a structure
   AuthGSSServerStepCall *call = (AuthGSSServerStepCall *)calloc(1, sizeof(AuthGSSServerStepCall));
@@ -771,7 +766,7 @@ NAN_METHOD(Kerberos::AuthGSSServerStep) {
   call->challenge = challenge_str;
 
   // Unpack the callback
-  Local<Function> callbackHandle = Local<Function>::Cast(args[callbackArg]);
+  Local<Function> callbackHandle = Local<Function>::Cast(args[2]);
   NanCallback *callback = new NanCallback(callbackHandle);
 
   // Let's allocate some space
