@@ -46,10 +46,10 @@ public:
 
 private:
   static NAN_METHOD(New);
-  // in either client state or server state
+  // In either client state or server state
   static NAN_GETTER(ResponseGetter);
-  // these are only in the "server_state"
   static NAN_GETTER(UsernameGetter);
+  // Only in the "server_state"
   static NAN_GETTER(TargetnameGetter);
 };
 #endif

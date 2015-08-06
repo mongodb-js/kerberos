@@ -80,17 +80,19 @@ NAN_GETTER(KerberosContext::ResponseGetter) {
   }
 }
 
-// username Getter - server side only
+// username Getter
 NAN_GETTER(KerberosContext::UsernameGetter) {
   NanScope();
 
   // Unpack the object
   KerberosContext *context = ObjectWrap::Unwrap<KerberosContext>(args.This());
 
+  gss_client_state *client_state = context->state;
   gss_server_state *server_state = context->server_state;
 
   // the non-NULL provides a response string, which could be NULL, otherwise NULL.
-  char *username = server_state != NULL ? server_state->username : NULL;
+  char *username = client_state != NULL ? client_state->username :
+	  server_state != NULL ? server_state->username : NULL;
 
   if(username == NULL) {
     NanReturnValue(NanNull());
@@ -117,12 +119,3 @@ NAN_GETTER(KerberosContext::TargetnameGetter) {
     NanReturnValue(NanNew<String>(targetname));
   }
 }
-
-
-
-
-
-
-
-
-
