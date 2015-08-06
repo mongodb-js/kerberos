@@ -41,7 +41,7 @@ void KerberosContext::Initialize(v8::Handle<v8::Object> target) {
   // Getter for the response
   proto->SetAccessor(NanNew<String>("response"), KerberosContext::ResponseGetter);
 
-  // Getter for the username - server side only
+  // Getter for the username
   proto->SetAccessor(NanNew<String>("username"), KerberosContext::UsernameGetter);
 
   // Getter for the targetname - server side only
