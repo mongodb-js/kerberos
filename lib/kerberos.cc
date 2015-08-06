@@ -54,7 +54,7 @@ typedef struct AuthGSSServerCleanCall {
 
 typedef struct AuthGSSServerStepCall {
   KerberosContext *context;
-  char *challenge;
+  char *auth_data;
 } AuthGSSServerStepCall;
 
 Kerberos::Kerberos() : ObjectWrap() {
@@ -698,21 +698,21 @@ NAN_METHOD(Kerberos::AuthGSSServerClean) {
 static void _authGSSServerStep(Worker *worker) {
   gss_server_state *state;
   gss_client_response *response;
-  char *challenge;
+  char *auth_data;
 
   // Unpack the parameter data struct
   AuthGSSServerStepCall *call = (AuthGSSServerStepCall *)worker->parameters;
   // Get the state
   state = call->context->server_state;
-  challenge = call->challenge;
+  auth_data = call->auth_data;
 
-  // Check what kind of challenge we have
-  if(call->challenge == NULL) {
-    challenge = (char *)"";
+  // Check if we got auth_data or not
+  if(call->auth_data == NULL) {
+    auth_data = (char *)"";
   }
 
   // Perform authentication step
-  response = authenticate_gss_server_step(state, challenge);
+  response = authenticate_gss_server_step(state, auth_data);
 
   // If we have an error mark worker as having had an error
   if(response->return_code == AUTH_GSS_ERROR) {
@@ -724,7 +724,7 @@ static void _authGSSServerStep(Worker *worker) {
   }
 
   // Free up structure
-  if(call->challenge != NULL) free(call->challenge);
+  if(call->auth_data != NULL) free(call->auth_data);
   free(call);
   free(response);
 }
@@ -740,30 +740,30 @@ NAN_METHOD(Kerberos::AuthGSSServerStep) {
   NanScope();
 
   // Ensure valid call
-  if(args.Length() != 3) return NanThrowError("Requires a GSS context, challenge string and callback function");
+  if(args.Length() != 3) return NanThrowError("Requires a GSS context, auth-data string and callback function");
   if(!KerberosContext::HasInstance(args[0]))  return NanThrowError("1st arg must be a GSS context");
-  if (!args[1]->IsString())  return NanThrowError("2nd arg must be authentication string");
+  if (!args[1]->IsString())  return NanThrowError("2nd arg must be auth-data string");
   if (!args[2]->IsFunction())  return NanThrowError("3rd arg must be a callback function");
 
-  // Challenge string
-  char *challenge_str = NULL;
+  // Auth-data string
+  char *auth_data_str = NULL;
   // Let's unpack the parameters
   Local<Object> object = args[0]->ToObject();
   KerberosContext *kerberos_context = KerberosContext::Unwrap<KerberosContext>(object);
 
-  // Unpack the challenge string
-  Local<String> challenge = args[1]->ToString();
+  // Unpack the auth_data string
+  Local<String> auth_data = args[1]->ToString();
   // Convert uri string to c-string
-  challenge_str = (char *)calloc(challenge->Utf8Length() + 1, sizeof(char));
-  if(challenge_str == NULL) die("Memory allocation failed");
+  auth_data_str = (char *)calloc(auth_data->Utf8Length() + 1, sizeof(char));
+  if(auth_data_str == NULL) die("Memory allocation failed");
   // Write v8 string to c-string
-  challenge->WriteUtf8(challenge_str);
+  auth_data->WriteUtf8(auth_data_str);
 
   // Allocate a structure
   AuthGSSServerStepCall *call = (AuthGSSServerStepCall *)calloc(1, sizeof(AuthGSSServerStepCall));
   if(call == NULL) die("Memory allocation failed");
   call->context = kerberos_context;
-  call->challenge = challenge_str;
+  call->auth_data = auth_data_str;
 
   // Unpack the callback
   Local<Function> callbackHandle = Local<Function>::Cast(args[2]);

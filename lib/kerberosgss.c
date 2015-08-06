@@ -517,7 +517,7 @@ gss_client_response *authenticate_gss_server_clean(gss_server_state *state)
     return response;
 }
 
-gss_client_response *authenticate_gss_server_step(gss_server_state *state, const char *challenge)
+gss_client_response *authenticate_gss_server_step(gss_server_state *state, const char *auth_data)
 {
     OM_uint32 maj_stat;
     OM_uint32 min_stat;
@@ -533,18 +533,17 @@ gss_client_response *authenticate_gss_server_step(gss_server_state *state, const
         state->response = NULL;
     }
     
-    // If there is a challenge (data from the server) we need to give it to GSS
-    if (challenge && *challenge)
+    if (auth_data && *auth_data)
     {
         int len;
-        input_token.value = base64_decode(challenge, &len);
+        input_token.value = base64_decode(auth_data, &len);
         input_token.length = len;
     }
     else
     {
 	response = calloc(1, sizeof(gss_client_response));
 	if(response == NULL) die1("Memory allocation failed");
-        response->message = strdup("No challenge parameter in request from client");
+        response->message = strdup("No auth_data value in request from client");
         response->return_code = AUTH_GSS_ERROR;
         goto end;
     }
