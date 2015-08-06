@@ -3,6 +3,8 @@
 Persistent<FunctionTemplate> KerberosContext::constructor_template;
 
 KerberosContext::KerberosContext() : ObjectWrap() {
+    state = NULL;
+    server_state = NULL;
 }
 
 KerberosContext::~KerberosContext() {
