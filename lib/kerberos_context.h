@@ -17,7 +17,7 @@ extern "C" {
 using namespace v8;
 using namespace node;
 
-class KerberosContext : public ObjectWrap {
+class KerberosContext : public Nan::ObjectWrap {
 
 public:
   KerberosContext();
@@ -26,11 +26,11 @@ public:
   static inline bool HasInstance(Handle<Value> val) {
     if (!val->IsObject()) return false;
     Local<Object> obj = val->ToObject();
-    return NanNew(constructor_template)->HasInstance(obj);
+    return Nan::New(constructor_template)->HasInstance(obj);
   };
 
   // Constructor used for creating new Kerberos objects from C++
-  static Persistent<FunctionTemplate> constructor_template;
+  static Nan::Persistent<FunctionTemplate> constructor_template;
 
   // Initialize function for the object
   static void Initialize(Handle<Object> target);

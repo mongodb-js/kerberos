@@ -17,7 +17,7 @@ class Worker {
     // libuv's request struct.
     uv_work_t request;
     // Callback
-    NanCallback *callback;
+    Nan::Callback *callback;
     // Parameters
     void *parameters;
     // Results
