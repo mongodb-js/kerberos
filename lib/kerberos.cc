@@ -159,6 +159,7 @@ NAN_METHOD(Kerberos::AuthGSSClientInit) {
   // Schedule the worker with lib_uv
   uv_queue_work(uv_default_loop(), &worker->request, Kerberos::Process, (uv_after_work_cb)Kerberos::After);
   // Return no value as it's callback based
+  info.GetReturnValue().Set(Nan::Undefined());
 }
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -253,6 +254,7 @@ NAN_METHOD(Kerberos::AuthGSSClientStep) {
   uv_queue_work(uv_default_loop(), &worker->request, Kerberos::Process, (uv_after_work_cb)Kerberos::After);
 
   // Return no value as it's callback based
+  info.GetReturnValue().Set(Nan::Undefined());
 }
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -344,7 +346,7 @@ NAN_METHOD(Kerberos::AuthGSSClientUnwrap) {
   uv_queue_work(uv_default_loop(), &worker->request, Kerberos::Process, (uv_after_work_cb)Kerberos::After);
 
   // Return no value as it's callback based
-  // return scope.Close(NanUndefined());
+  info.GetReturnValue().Set(Nan::Undefined());
 }
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -448,6 +450,7 @@ NAN_METHOD(Kerberos::AuthGSSClientWrap) {
   uv_queue_work(uv_default_loop(), &worker->request, Kerberos::Process, (uv_after_work_cb)Kerberos::After);
 
   // Return no value as it's callback based
+  info.GetReturnValue().Set(Nan::Undefined());
 }
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -516,6 +519,7 @@ NAN_METHOD(Kerberos::AuthGSSClientClean) {
   uv_queue_work(uv_default_loop(), &worker->request, Kerberos::Process, (uv_after_work_cb)Kerberos::After);
 
   // Return no value as it's callback based
+  info.GetReturnValue().Set(Nan::Undefined());
 }
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
