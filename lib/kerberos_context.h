@@ -59,5 +59,6 @@ private:
   static NAN_GETTER(UsernameGetter);
   // Only in the "server_state"
   static NAN_GETTER(TargetnameGetter);
+  static NAN_GETTER(DelegatedCredentialsCacheGetter);
 };
 #endif

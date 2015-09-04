@@ -12,7 +12,13 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  **/
+/*
+ * S4U2Proxy implementation
+ * Copyright (C) 2015 David Mansfield
+ * Code inspired by mod_auth_kerb.
+ */
 
 #include "kerberosgss.h"
 
@@ -23,6 +29,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <errno.h>
+#include <stdarg.h>
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
@@ -38,6 +45,11 @@ void die1(const char *message) {
 }
 
 static gss_client_response *gss_error(const char *func, const char *op, OM_uint32 err_maj, OM_uint32 err_min);
+static gss_client_response *other_error(const char *fmt, ...);
+static gss_client_response *krb5_ctx_error(krb5_context context, krb5_error_code problem);
+
+static gss_client_response *store_gss_creds(gss_server_state *state);
+static gss_client_response *create_krb5_ccache(gss_server_state *state, krb5_context context, krb5_principal princ, krb5_ccache *ccache);
 
 /*
 char* server_principal_details(const char* service, const char* hostname)
@@ -418,14 +430,15 @@ end:
   return response;
 }
 
-gss_client_response *authenticate_gss_server_init(const char *service, gss_server_state *state)
+gss_client_response *authenticate_gss_server_init(const char *service, bool constrained_delegation, gss_server_state *state)
 {
     OM_uint32 maj_stat;
     OM_uint32 min_stat;
     gss_buffer_desc name_token = GSS_C_EMPTY_BUFFER;
     int ret = AUTH_GSS_COMPLETE;
     gss_client_response *response = NULL;
-    
+    gss_cred_usage_t usage = GSS_C_ACCEPT;
+
     state->context = GSS_C_NO_CONTEXT;
     state->server_name = GSS_C_NO_NAME;
     state->client_name = GSS_C_NO_NAME;
@@ -434,7 +447,9 @@ gss_client_response *authenticate_gss_server_init(const char *service, gss_serve
     state->username = NULL;
     state->targetname = NULL;
     state->response = NULL;
-
+    state->constrained_delegation = constrained_delegation;
+    state->delegated_credentials_cache = NULL;
+    
     // Server name may be empty which means we aren't going to create our own creds
     size_t service_len = strlen(service);
     if (service_len != 0)
@@ -452,10 +467,15 @@ gss_client_response *authenticate_gss_server_init(const char *service, gss_serve
             goto end;
         }
         
+        if (state->constrained_delegation)
+        {
+            usage = GSS_C_BOTH;
+        }
+
         // Get credentials
         maj_stat = gss_acquire_cred(&min_stat, state->server_name, GSS_C_INDEFINITE,
-                                    GSS_C_NO_OID_SET, GSS_C_ACCEPT, &state->server_creds, NULL, NULL);
-        
+                                    GSS_C_NO_OID_SET, usage, &state->server_creds, NULL, NULL);
+
         if (GSS_ERROR(maj_stat))
         {
             response = gss_error(__func__, "gss_acquire_cred", maj_stat, min_stat);
@@ -505,6 +525,12 @@ gss_client_response *authenticate_gss_server_clean(gss_server_state *state)
     {
         free(state->response);
         state->response = NULL;
+    }
+    if (state->delegated_credentials_cache)
+    {
+	// TODO: what about actually destroying the cache? It can't be done now as
+	// the whole point is having it around for the lifetime of the "session"
+	free(state->delegated_credentials_cache);
     }
     
     if(response == NULL) {
@@ -609,6 +635,14 @@ gss_client_response *authenticate_gss_server_step(gss_server_state *state, const
         state->targetname[output_token.length] = 0;
     }
 
+    if (state->constrained_delegation && state->client_creds != GSS_C_NO_CREDENTIAL)
+    {
+	if ((response = store_gss_creds(state)) != NULL)
+	{
+	    goto end;
+	}
+    }
+
     ret = AUTH_GSS_COMPLETE;
     
 end:
@@ -626,6 +660,111 @@ end:
     // Return the response
     return response;
 }
+
+static gss_client_response *store_gss_creds(gss_server_state *state)
+{
+    OM_uint32 maj_stat, min_stat;
+    krb5_principal princ = NULL;
+    krb5_ccache ccache = NULL;
+    krb5_error_code problem;
+    krb5_context context;
+    gss_client_response *response = NULL;
+
+    problem = krb5_init_context(&context);
+    if (problem) {
+	response = other_error("No auth_data value in request from client");
+        return response;
+    }
+
+    problem = krb5_parse_name(context, state->username, &princ);
+    if (problem) {
+	response = krb5_ctx_error(context, problem);
+	goto end;
+    }
+
+    if ((response = create_krb5_ccache(state, context, princ, &ccache)))
+    {
+	goto end;
+    }
+
+    maj_stat = gss_krb5_copy_ccache(&min_stat, state->client_creds, ccache);
+    if (GSS_ERROR(maj_stat)) {
+        response = gss_error(__func__, "gss_krb5_copy_ccache", maj_stat, min_stat);
+        response->return_code = AUTH_GSS_ERROR;
+        goto end;
+    }
+
+    krb5_cc_close(context, ccache);
+    ccache = NULL;
+
+    response = calloc(1, sizeof(gss_client_response));
+    if(response == NULL) die1("Memory allocation failed");
+    // TODO: something other than AUTH_GSS_COMPLETE?
+    response->return_code = AUTH_GSS_COMPLETE;
+
+ end:
+    if (princ)
+	krb5_free_principal(context, princ);
+    if (ccache)
+	krb5_cc_destroy(context, ccache);
+    krb5_free_context(context);
+
+    return response;
+}
+
+static gss_client_response *create_krb5_ccache(gss_server_state *state, krb5_context kcontext, krb5_principal princ, krb5_ccache *ccache)
+{
+    char *ccname = NULL;
+    int fd;
+    krb5_error_code problem;
+    krb5_ccache tmp_ccache = NULL;
+    gss_client_response *error = NULL;
+
+    // TODO: mod_auth_kerb used a temp file under /run/httpd/krbcache. what can we do?
+    ccname = strdup("FILE:/tmp/krb5cc_nodekerberos_XXXXXX");
+    if (!ccname) die1("Memory allocation failed");
+
+    fd = mkstemp(ccname + strlen("FILE:"));
+    if (fd < 0) {
+	error = other_error("mkstemp() failed: %s", strerror(errno));
+	goto end;
+    }
+
+    close(fd);
+
+    problem = krb5_cc_resolve(kcontext, ccname, &tmp_ccache);
+    if (problem) {
+       error = krb5_ctx_error(kcontext, problem);
+       goto end;
+    }
+
+    problem = krb5_cc_initialize(kcontext, tmp_ccache, princ);
+    if (problem) {
+	error = krb5_ctx_error(kcontext, problem);
+	goto end;
+    }
+
+    state->delegated_credentials_cache = strdup(ccname);
+
+    // TODO: how/when to cleanup the creds cache file?
+    // TODO: how to expose the credentials expiration time?
+
+    *ccache = tmp_ccache;
+    tmp_ccache = NULL;
+
+ end:
+    if (tmp_ccache)
+	krb5_cc_destroy(kcontext, tmp_ccache);
+
+    if (ccname && error)
+	unlink(ccname);
+
+    if (ccname)
+	free(ccname);
+
+    return error;
+}
+
 
 gss_client_response *gss_error(const char *func, const char *op, OM_uint32 err_maj, OM_uint32 err_min) {
   OM_uint32 maj_stat, min_stat;
@@ -683,6 +822,49 @@ gss_client_response *gss_error(const char *func, const char *op, OM_uint32 err_m
 
   return response;
 }
+
+static gss_client_response *krb5_ctx_error(krb5_context context, krb5_error_code problem)
+{
+    gss_client_response *response = NULL;
+    char *error_text = krb5_get_err_text(context, problem);
+    response = calloc(1, sizeof(gss_client_response));
+    if(response == NULL) die1("Memory allocation failed");
+    response->message = strdup(error_text);
+    // TODO: something other than AUTH_GSS_ERROR? AUTH_KRB5_ERROR ?
+    response->return_code = AUTH_GSS_ERROR;
+    krb5_free_error_string(context, error_text);
+    return response;
+}
+
+static gss_client_response *other_error(const char *fmt, ...)
+{
+    size_t needed;
+    char *msg;
+    gss_client_response *response = NULL;
+    va_list ap, aps;
+
+    va_start(ap, fmt);
+
+    va_copy(aps, ap);
+    needed = snprintf(NULL, 0, fmt, aps);
+    va_end(aps);
+
+    msg = malloc(needed);
+    if (!msg) die1("Memory allocation failed");
+
+    vsnprintf(msg, needed, fmt, ap);
+    va_end(ap);
+
+    response = calloc(1, sizeof(gss_client_response));
+    if(response == NULL) die1("Memory allocation failed");
+    response->message = msg;
+
+    // TODO: something other than AUTH_GSS_ERROR?
+    response->return_code = AUTH_GSS_ERROR;
+
+    return response;
+}
+
 
 #pragma clang diagnostic pop
 

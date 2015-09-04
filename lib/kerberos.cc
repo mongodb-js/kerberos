@@ -46,6 +46,7 @@ typedef struct AuthGSSClientCleanCall {
 
 typedef struct AuthGSSServerInitCall {
   char *service;
+  bool constrained_delegation;
 } AuthGSSServerInitCall;
 
 typedef struct AuthGSSServerCleanCall {
@@ -561,7 +562,7 @@ static void _authGSSServerInit(Worker *worker) {
   // Unpack the parameter data struct
   AuthGSSServerInitCall *call = (AuthGSSServerInitCall *)worker->parameters;
   // Start the kerberos service
-  response = authenticate_gss_server_init(call->service, state);
+  response = authenticate_gss_server_init(call->service, call->constrained_delegation, state);
 
   // Release the parameter struct memory
   free(call->service);
@@ -590,8 +591,12 @@ static Local<Value> _map_authGSSServerInit(Worker *worker) {
 // Server Initialize method
 NAN_METHOD(Kerberos::AuthGSSServerInit) {
   // Ensure valid call
-  if(info.Length() != 2) return Nan::ThrowError("Requires a service string service and a callback function");
-  if(!info[0]->IsString() || !info[1]->IsFunction()) return Nan::ThrowError("Requires a service string service and a callback function");
+  if(args.Length() != 3) return Nan::ThrowError("Requires a service string service, constrained delegation boolean and a callback function");
+  if(!args[0]->IsString() || !args[1]->IsBoolean() || !args[2]->IsFunction()) return Nan::ThrowError("Requires a service string service, constrained delegation boolean and a callback function");
+
+  // Allocate a structure
+  AuthGSSServerInitCall *call = (AuthGSSServerInitCall *)calloc(1, sizeof(AuthGSSServerInitCall));
+  if(call == NULL) die("Memory allocation failed");
 
   Local<String> service = info[0]->ToString();
   // Convert service string to c-string
@@ -601,13 +606,12 @@ NAN_METHOD(Kerberos::AuthGSSServerInit) {
   // Write v8 string to c-string
   service->WriteUtf8(service_str);
 
-  // Allocate a structure
-  AuthGSSServerInitCall *call = (AuthGSSServerInitCall *)calloc(1, sizeof(AuthGSSServerInitCall));
-  if(call == NULL) die("Memory allocation failed");
   call->service = service_str;
 
+  call->constrained_delegation = args[1]->BooleanValue();
+
   // Unpack the callback
-  Local<Function> callbackHandle = Local<Function>::Cast(info[1]);
+  Local<Function> callbackHandle = Local<Function>::Cast(info[2]);
   Nan::Callback *callback = new Nan::Callback(callbackHandle);
 
   // Let's allocate some space
