@@ -3,6 +3,8 @@
 Persistent<FunctionTemplate> KerberosContext::constructor_template;
 
 KerberosContext::KerberosContext() : ObjectWrap() {
+    state = NULL;
+    server_state = NULL;
 }
 
 KerberosContext::~KerberosContext() {
@@ -41,6 +43,12 @@ void KerberosContext::Initialize(v8::Handle<v8::Object> target) {
   // Getter for the response
   proto->SetAccessor(NanNew<String>("response"), KerberosContext::ResponseGetter);
 
+  // Getter for the username
+  proto->SetAccessor(NanNew<String>("username"), KerberosContext::UsernameGetter);
+
+  // Getter for the targetname - server side only
+  proto->SetAccessor(NanNew<String>("targetname"), KerberosContext::TargetnameGetter);
+
   // Set persistent
   NanAssignPersistent(constructor_template, t);
 
@@ -48,30 +56,67 @@ void KerberosContext::Initialize(v8::Handle<v8::Object> target) {
   target->ForceSet(NanNew<String>("KerberosContext"), t->GetFunction());
 }
 
-//
+
 // Response Setter / Getter
 NAN_GETTER(KerberosContext::ResponseGetter) {
   NanScope();
-  gss_client_state *state;
+  gss_client_state *client_state;
+  gss_server_state *server_state;
 
   // Unpack the object
   KerberosContext *context = ObjectWrap::Unwrap<KerberosContext>(args.This());
-  // Let's grab the response
-  state = context->state;
-  // No state no response
-  if(state == NULL || state->response == NULL) {
+
+  // Response could come from client or server state...
+  client_state = context->state;
+  server_state = context->server_state;
+
+  // If client state is in use, take response from there, otherwise from server
+  char *response = client_state != NULL ? client_state->response :
+	  server_state != NULL ? server_state->response : NULL;
+
+  if(response == NULL) {
     NanReturnValue(NanNull());
   } else {
     // Return the response
-    NanReturnValue(NanNew<String>(state->response));
+    NanReturnValue(NanNew<String>(response));
   }
 }
 
+// username Getter
+NAN_GETTER(KerberosContext::UsernameGetter) {
+  NanScope();
 
+  // Unpack the object
+  KerberosContext *context = ObjectWrap::Unwrap<KerberosContext>(args.This());
 
+  gss_client_state *client_state = context->state;
+  gss_server_state *server_state = context->server_state;
 
+  // If client state is in use, take response from there, otherwise from server
+  char *username = client_state != NULL ? client_state->username :
+	  server_state != NULL ? server_state->username : NULL;
 
+  if(username == NULL) {
+    NanReturnValue(NanNull());
+  } else {
+    NanReturnValue(NanNew<String>(username));
+  }
+}
 
+// targetname Getter - server side only
+NAN_GETTER(KerberosContext::TargetnameGetter) {
+  NanScope();
 
+  // Unpack the object
+  KerberosContext *context = ObjectWrap::Unwrap<KerberosContext>(args.This());
 
+  gss_server_state *server_state = context->server_state;
 
+  char *targetname = server_state != NULL ? server_state->targetname : NULL;
+
+  if(targetname == NULL) {
+    NanReturnValue(NanNull());
+  } else {
+    NanReturnValue(NanNew<String>(targetname));
+  }
+}
