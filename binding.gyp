@@ -21,7 +21,8 @@
           }
         }],
         ['OS=="linux"', {
-          'sources': [ 'lib/kerberos.cc', 'lib/worker.cc', 'lib/kerberosgss.c', 'lib/base64.c', 'lib/kerberos_context.cc' ]
+          'sources': [ 'lib/kerberos.cc', 'lib/worker.cc', 'lib/kerberosgss.c', 'lib/base64.c', 'lib/kerberos_context.cc' ],
+          'libraries': ['-lkrb5', '-lgssapi_krb5']
         }],
         ['OS=="win"',  {
           'sources': [ 
