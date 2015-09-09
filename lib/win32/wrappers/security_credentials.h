@@ -11,7 +11,7 @@
 #include <windows.h>
 #include <sspi.h>
 #include <tchar.h>
-#include "nan.h"
+#include <nan.h>
 #include "../worker.h"
 #include <uv.h>
 
@@ -30,7 +30,7 @@ extern "C" {
 using namespace v8;
 using namespace node;
 
-class SecurityCredentials : public ObjectWrap {  
+class SecurityCredentials : public Nan::ObjectWrap {  
   public:    
     SecurityCredentials();
     ~SecurityCredentials();    
@@ -46,7 +46,7 @@ class SecurityCredentials : public ObjectWrap {
     static inline bool HasInstance(Handle<Value> val) {
       if (!val->IsObject()) return false;
       Local<Object> obj = val->ToObject();
-      return NanNew(constructor_template)->HasInstance(obj);
+      return Nan::New(constructor_template)->HasInstance(obj);
     };
 
     // Functions available from V8
@@ -54,7 +54,7 @@ class SecurityCredentials : public ObjectWrap {
     static NAN_METHOD(Aquire);
 
     // Constructor used for creating new Long objects from C++
-    static Persistent<FunctionTemplate> constructor_template;
+    static Nan::Persistent<FunctionTemplate> constructor_template;
     
   private:
     // Create a new instance

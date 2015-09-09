@@ -8,25 +8,25 @@
 #include <WinSock2.h>
 #include <windows.h>
 #include <sspi.h>
-#include "nan.h"
+#include <nan.h>
 
 using namespace v8;
 using namespace node;
 
-class SecurityBufferDescriptor : public ObjectWrap {  
+class SecurityBufferDescriptor : public Nan::ObjectWrap {  
   public:    
     Local<Array> arrayObject;
     SecBufferDesc secBufferDesc;
     
     SecurityBufferDescriptor();
-    SecurityBufferDescriptor(const Persistent<Array>& arrayObjectPersistent);
+    SecurityBufferDescriptor(const Nan::Persistent<Array>& arrayObjectPersistent);
     ~SecurityBufferDescriptor();    
 
     // Has instance check
     static inline bool HasInstance(Handle<Value> val) {
       if (!val->IsObject()) return false;
       Local<Object> obj = val->ToObject();
-      return NanNew(constructor_template)->HasInstance(obj);
+      return Nan::New(constructor_template)->HasInstance(obj);
     };
 
     char *toBuffer();
@@ -37,7 +37,7 @@ class SecurityBufferDescriptor : public ObjectWrap {
     static NAN_METHOD(ToBuffer);
 
     // Constructor used for creating new Long objects from C++
-    static Persistent<FunctionTemplate> constructor_template;
+    static Nan::Persistent<FunctionTemplate> constructor_template;
     
   private:
     static NAN_METHOD(New);

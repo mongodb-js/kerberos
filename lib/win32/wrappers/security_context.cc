@@ -31,44 +31,44 @@ static void Process(uv_work_t* work_req) {
 
 static void After(uv_work_t* work_req) {
   // Grab the scope of the call from Node
-  NanScope();
+  Nan::HandleScope scope;
 
   // Get the worker reference
   Worker *worker = static_cast<Worker*>(work_req->data);
 
   // If we have an error
   if(worker->error) {
-    Local<Value> err = v8::Exception::Error(NanNew<String>(worker->error_message));
+    Local<Value> err = v8::Exception::Error(Nan::New<String>(worker->error_message).ToLocalChecked());
     Local<Object> obj = err->ToObject();
-    obj->Set(NanNew("code"), NanNew<Int32>(worker->error_code));
-    Local<Value> args[2] = { err, NanNull() };
+    obj->Set(Nan::New<String>("code").ToLocalChecked(), Nan::New<Int32>(worker->error_code));
+    Local<Value> info[2] = { err, Nan::Null() };
     // Execute the error
-    v8::TryCatch try_catch;
+    Nan::TryCatch try_catch;
 
     // Call the callback
-    worker->callback->Call(ARRAY_SIZE(args), args);
+    worker->callback->Call(ARRAY_SIZE(info), info);
 
     // If we have an exception handle it as a fatalexception
     if (try_catch.HasCaught()) {
-      node::FatalException(try_catch);
+      Nan::FatalException(try_catch);
     }
   } else {
     // // Map the data
     Handle<Value> result = worker->mapper(worker);
     // Set up the callback with a null first
-    Handle<Value> args[2] = { NanNull(), result};
+    Handle<Value> info[2] = { Nan::Null(), result};
     // Wrap the callback function call in a TryCatch so that we can call
     // node's FatalException afterwards. This makes it possible to catch
     // the exception from JavaScript land using the
     // process.on('uncaughtException') event.
-    v8::TryCatch try_catch;
+    Nan::TryCatch try_catch;
 
     // Call the callback
-    worker->callback->Call(ARRAY_SIZE(args), args);
+    worker->callback->Call(ARRAY_SIZE(info), info);
 
     // If we have an exception handle it as a fatalexception
     if (try_catch.HasCaught()) {
-      node::FatalException(try_catch);
+      Nan::FatalException(try_catch);
     }
   }
 
@@ -77,9 +77,9 @@ static void After(uv_work_t* work_req) {
   delete worker;
 }
 
-Persistent<FunctionTemplate> SecurityContext::constructor_template;
+Nan::Persistent<FunctionTemplate> SecurityContext::constructor_template;
 
-SecurityContext::SecurityContext() : ObjectWrap() {
+SecurityContext::SecurityContext() : Nan::ObjectWrap() {
 }
 
 SecurityContext::~SecurityContext() {
@@ -89,7 +89,7 @@ SecurityContext::~SecurityContext() {
 }
 
 NAN_METHOD(SecurityContext::New) {
-  NanScope();
+  Nan::HandleScope scope;
 
   PSecurityFunctionTable pSecurityInterface = NULL;
   DWORD dwNumOfPkgs;
@@ -105,13 +105,13 @@ NAN_METHOD(SecurityContext::New) {
                                                     &security_obj->m_PkgInfo);
   if(status != SEC_E_OK) {
     printf(TEXT("Failed in retrieving security packages, Error: %x"), GetLastError());
-    return NanThrowError("Failed in retrieving security packages");
+    return Nan::ThrowError("Failed in retrieving security packages");
   }
 
   // Wrap it
-  security_obj->Wrap(args.This());
+  security_obj->Wrap(info.This());
   // Return the object
-  NanReturnValue(args.This());
+  info.GetReturnValue().Set(info.This());
 }
 
 //
@@ -241,43 +241,43 @@ static Handle<Value> _map_initializeContext(Worker *worker) {
   // Unwrap the security context
   SecurityContext *context = (SecurityContext *)worker->return_value;
   // Return the value
-  return NanObjectWrapHandle(context);
+  return context->handle();
 }
 
 NAN_METHOD(SecurityContext::InitializeContext) {
-  NanScope();
+  Nan::HandleScope scope;
   char *service_principal_name_str = NULL, *input_str = NULL, *decoded_input_str = NULL;
   int decoded_input_str_length = NULL;
   // Store reference to security credentials
   SecurityCredentials *security_credentials = NULL;
 
   // We need 3 parameters
-  if(args.Length() != 4)
-    return NanThrowError("Initialize must be called with [credential:SecurityCredential, servicePrincipalName:string, input:string, callback:function]");
+  if(info.Length() != 4)
+    return Nan::ThrowError("Initialize must be called with [credential:SecurityCredential, servicePrincipalName:string, input:string, callback:function]");
 
   // First parameter must be an instance of SecurityCredentials
-  if(!SecurityCredentials::HasInstance(args[0]))
-    return NanThrowError("First parameter for Initialize must be an instance of SecurityCredentials");
+  if(!SecurityCredentials::HasInstance(info[0]))
+    return Nan::ThrowError("First parameter for Initialize must be an instance of SecurityCredentials");
 
   // Second parameter must be a string
-  if(!args[1]->IsString())
-    return NanThrowError("Second parameter for Initialize must be a string");
+  if(!info[1]->IsString())
+    return Nan::ThrowError("Second parameter for Initialize must be a string");
 
   // Third parameter must be a base64 encoded string
-  if(!args[2]->IsString())
-    return NanThrowError("Second parameter for Initialize must be a string");
+  if(!info[2]->IsString())
+    return Nan::ThrowError("Second parameter for Initialize must be a string");
 
   // Third parameter must be a callback
-  if(!args[3]->IsFunction())
-    return NanThrowError("Third parameter for Initialize must be a callback function");
+  if(!info[3]->IsFunction())
+    return Nan::ThrowError("Third parameter for Initialize must be a callback function");
 
   // Let's unpack the values
-  Local<String> service_principal_name = args[1]->ToString();
+  Local<String> service_principal_name = info[1]->ToString();
   service_principal_name_str = (char *)calloc(service_principal_name->Utf8Length() + 1, sizeof(char));
   service_principal_name->WriteUtf8(service_principal_name_str);
 
   // Unpack the user name
-  Local<String> input = args[2]->ToString();
+  Local<String> input = info[2]->ToString();
 
   if(input->Utf8Length() > 0) {
     input_str = (char *)calloc(input->Utf8Length() + 1, sizeof(char));
@@ -290,11 +290,11 @@ NAN_METHOD(SecurityContext::InitializeContext) {
   }
 
   // Unpack the Security credentials
-  security_credentials = ObjectWrap::Unwrap<SecurityCredentials>(args[0]->ToObject());
+  security_credentials = Nan::ObjectWrap::Unwrap<SecurityCredentials>(info[0]->ToObject());
   // Create Security context instance
-  Local<Object> security_context_value = NanNew(constructor_template)->GetFunction()->NewInstance();
+  Local<Object> security_context_value = Nan::New(constructor_template)->GetFunction()->NewInstance();
   // Unwrap the security context
-  SecurityContext *security_context = ObjectWrap::Unwrap<SecurityContext>(security_context_value);
+  SecurityContext *security_context = Nan::ObjectWrap::Unwrap<SecurityContext>(security_context_value);
   // Add a reference to the security_credentials
   security_context->security_credentials = security_credentials;
 
@@ -306,13 +306,13 @@ NAN_METHOD(SecurityContext::InitializeContext) {
   call->service_principal_name_str = service_principal_name_str;
 
   // Callback
-  Local<Function> callback = Local<Function>::Cast(args[3]);
+  Local<Function> callback = Local<Function>::Cast(info[3]);
 
   // Let's allocate some space
   Worker *worker = new Worker();
   worker->error = false;
   worker->request.data = worker;
-  worker->callback = new NanCallback(callback);
+  worker->callback = new Nan::Callback(callback);
   worker->parameters = call;
   worker->execute = _initializeContext;
   worker->mapper = _map_initializeContext;
@@ -321,23 +321,23 @@ NAN_METHOD(SecurityContext::InitializeContext) {
   uv_queue_work(uv_default_loop(), &worker->request, Process, (uv_after_work_cb)After);
 
   // Return no value as it's callback based
-  NanReturnValue(NanUndefined());
+  info.GetReturnValue().Set(Nan::Undefined());
 }
 
 NAN_GETTER(SecurityContext::PayloadGetter) {
-  NanScope();
+  Nan::HandleScope scope;
   // Unpack the context object
-  SecurityContext *context = ObjectWrap::Unwrap<SecurityContext>(args.This());
+  SecurityContext *context = Nan::ObjectWrap::Unwrap<SecurityContext>(info.This());
   // Return the low bits
-  NanReturnValue(NanNew<String>(context->payload));
+  info.GetReturnValue().Set(Nan::New<String>(context->payload).ToLocalChecked());
 }
 
 NAN_GETTER(SecurityContext::HasContextGetter) {
-  NanScope();
+  Nan::HandleScope scope;
   // Unpack the context object
-  SecurityContext *context = ObjectWrap::Unwrap<SecurityContext>(args.This());
+  SecurityContext *context = Nan::ObjectWrap::Unwrap<SecurityContext>(info.This());
   // Return the low bits
-  NanReturnValue(NanNew<Boolean>(context->hasContext));
+  info.GetReturnValue().Set(Nan::New<Boolean>(context->hasContext));
 }
 
 //
@@ -428,38 +428,38 @@ static Handle<Value> _map_initializeContextStep(Worker *worker) {
   // Unwrap the security context
   SecurityContext *context = (SecurityContext *)worker->return_value;
   // Return the value
-  return NanObjectWrapHandle(context);
+  return context->handle();
 }
 
 NAN_METHOD(SecurityContext::InitalizeStep) {
-  NanScope();
+  Nan::HandleScope scope;
 
   char *service_principal_name_str = NULL, *input_str = NULL, *decoded_input_str = NULL;
   int decoded_input_str_length = NULL;
 
   // We need 3 parameters
-  if(args.Length() != 3)
-    return NanThrowError("Initialize must be called with [servicePrincipalName:string, input:string, callback:function]");
+  if(info.Length() != 3)
+    return Nan::ThrowError("Initialize must be called with [servicePrincipalName:string, input:string, callback:function]");
 
   // Second parameter must be a string
-  if(!args[0]->IsString())
-    return NanThrowError("First parameter for Initialize must be a string");
+  if(!info[0]->IsString())
+    return Nan::ThrowError("First parameter for Initialize must be a string");
 
   // Third parameter must be a base64 encoded string
-  if(!args[1]->IsString())
-    return NanThrowError("Second parameter for Initialize must be a string");
+  if(!info[1]->IsString())
+    return Nan::ThrowError("Second parameter for Initialize must be a string");
 
   // Third parameter must be a base64 encoded string
-  if(!args[2]->IsFunction())
-    return NanThrowError("Third parameter for Initialize must be a callback function");
+  if(!info[2]->IsFunction())
+    return Nan::ThrowError("Third parameter for Initialize must be a callback function");
 
   // Let's unpack the values
-  Local<String> service_principal_name = args[0]->ToString();
+  Local<String> service_principal_name = info[0]->ToString();
   service_principal_name_str = (char *)calloc(service_principal_name->Utf8Length() + 1, sizeof(char));
   service_principal_name->WriteUtf8(service_principal_name_str);
 
   // Unpack the user name
-  Local<String> input = args[1]->ToString();
+  Local<String> input = info[1]->ToString();
 
   if(input->Utf8Length() > 0) {
     input_str = (char *)calloc(input->Utf8Length() + 1, sizeof(char));
@@ -471,7 +471,7 @@ NAN_METHOD(SecurityContext::InitalizeStep) {
   }
 
   // Unwrap the security context
-  SecurityContext *security_context = ObjectWrap::Unwrap<SecurityContext>(args.This());
+  SecurityContext *security_context = Nan::ObjectWrap::Unwrap<SecurityContext>(info.This());
 
   // Create call structure
   SecurityContextStepStaticInitializeCall *call = (SecurityContextStepStaticInitializeCall *)calloc(1, sizeof(SecurityContextStepStaticInitializeCall));
@@ -481,13 +481,13 @@ NAN_METHOD(SecurityContext::InitalizeStep) {
   call->service_principal_name_str = service_principal_name_str;
 
   // Callback
-  Local<Function> callback = Local<Function>::Cast(args[2]);
+  Local<Function> callback = Local<Function>::Cast(info[2]);
 
   // Let's allocate some space
   Worker *worker = new Worker();
   worker->error = false;
   worker->request.data = worker;
-  worker->callback = new NanCallback(callback);
+  worker->callback = new Nan::Callback(callback);
   worker->parameters = call;
   worker->execute = _initializeContextStep;
   worker->mapper = _map_initializeContextStep;
@@ -496,7 +496,7 @@ NAN_METHOD(SecurityContext::InitalizeStep) {
   uv_queue_work(uv_default_loop(), &worker->request, Process, (uv_after_work_cb)After);
 
   // Return no value as it's callback based
-  NanReturnValue(NanUndefined());
+  info.GetReturnValue().Set(Nan::Undefined());
 }
 
 //
@@ -545,41 +545,41 @@ static Handle<Value> _map_encryptMessage(Worker *worker) {
   // Unwrap the security context
   SecurityContext *context = (SecurityContext *)worker->return_value;
   // Return the value
-  return NanObjectWrapHandle(context);
+  return context->handle();
 }
 
 NAN_METHOD(SecurityContext::EncryptMessage) {
-  NanScope();
+  Nan::HandleScope scope;
 
-  if(args.Length() != 3)
-    return NanThrowError("EncryptMessage takes an instance of SecurityBufferDescriptor, an integer flag and a callback function");  
-  if(!SecurityBufferDescriptor::HasInstance(args[0]))
-    return NanThrowError("EncryptMessage takes an instance of SecurityBufferDescriptor, an integer flag and a callback function");  
-  if(!args[1]->IsUint32())
-    return NanThrowError("EncryptMessage takes an instance of SecurityBufferDescriptor, an integer flag and a callback function");  
-  if(!args[2]->IsFunction())
-    return NanThrowError("EncryptMessage takes an instance of SecurityBufferDescriptor, an integer flag and a callback function");  
+  if(info.Length() != 3)
+    return Nan::ThrowError("EncryptMessage takes an instance of SecurityBufferDescriptor, an integer flag and a callback function");  
+  if(!SecurityBufferDescriptor::HasInstance(info[0]))
+    return Nan::ThrowError("EncryptMessage takes an instance of SecurityBufferDescriptor, an integer flag and a callback function");  
+  if(!info[1]->IsUint32())
+    return Nan::ThrowError("EncryptMessage takes an instance of SecurityBufferDescriptor, an integer flag and a callback function");  
+  if(!info[2]->IsFunction())
+    return Nan::ThrowError("EncryptMessage takes an instance of SecurityBufferDescriptor, an integer flag and a callback function");  
 
   // Unpack the security context
-  SecurityContext *security_context = ObjectWrap::Unwrap<SecurityContext>(args.This());
+  SecurityContext *security_context = Nan::ObjectWrap::Unwrap<SecurityContext>(info.This());
 
   // Unpack the descriptor
-  SecurityBufferDescriptor *descriptor = ObjectWrap::Unwrap<SecurityBufferDescriptor>(args[0]->ToObject());
+  SecurityBufferDescriptor *descriptor = Nan::ObjectWrap::Unwrap<SecurityBufferDescriptor>(info[0]->ToObject());
 
   // Create call structure
   SecurityContextEncryptMessageCall *call = (SecurityContextEncryptMessageCall *)calloc(1, sizeof(SecurityContextEncryptMessageCall));
   call->context = security_context;
   call->descriptor = descriptor;
-  call->flags = (unsigned long)args[1]->ToInteger()->Value();
+  call->flags = (unsigned long)info[1]->ToInteger()->Value();
 
   // Callback
-  Local<Function> callback = Local<Function>::Cast(args[2]);
+  Local<Function> callback = Local<Function>::Cast(info[2]);
 
   // Let's allocate some space
   Worker *worker = new Worker();
   worker->error = false;
   worker->request.data = worker;
-  worker->callback = new NanCallback(callback);
+  worker->callback = new Nan::Callback(callback);
   worker->parameters = call;
   worker->execute = _encryptMessage;
   worker->mapper = _map_encryptMessage;
@@ -588,7 +588,7 @@ NAN_METHOD(SecurityContext::EncryptMessage) {
   uv_queue_work(uv_default_loop(), &worker->request, Process, (uv_after_work_cb)After);
 
   // Return no value as it's callback based
-  NanReturnValue(NanUndefined());
+  info.GetReturnValue().Set(Nan::Undefined());
 }
 
 //
@@ -637,36 +637,36 @@ static Handle<Value> _map_decryptMessage(Worker *worker) {
   // Unwrap the security context
   SecurityContext *context = (SecurityContext *)worker->return_value;
   // Return the value
-  return NanObjectWrapHandle(context);
+  return context->handle();
 }
 
 NAN_METHOD(SecurityContext::DecryptMessage) {
-  NanScope();
+  Nan::HandleScope scope;
 
-  if(args.Length() != 2)
-    return NanThrowError("DecryptMessage takes an instance of SecurityBufferDescriptor and a callback function");
-  if(!SecurityBufferDescriptor::HasInstance(args[0]))
-    return NanThrowError("DecryptMessage takes an instance of SecurityBufferDescriptor and a callback function");
-  if(!args[1]->IsFunction())
-    return NanThrowError("DecryptMessage takes an instance of SecurityBufferDescriptor and a callback function");
+  if(info.Length() != 2)
+    return Nan::ThrowError("DecryptMessage takes an instance of SecurityBufferDescriptor and a callback function");
+  if(!SecurityBufferDescriptor::HasInstance(info[0]))
+    return Nan::ThrowError("DecryptMessage takes an instance of SecurityBufferDescriptor and a callback function");
+  if(!info[1]->IsFunction())
+    return Nan::ThrowError("DecryptMessage takes an instance of SecurityBufferDescriptor and a callback function");
 
   // Unpack the security context
-  SecurityContext *security_context = ObjectWrap::Unwrap<SecurityContext>(args.This());
+  SecurityContext *security_context = Nan::ObjectWrap::Unwrap<SecurityContext>(info.This());
   // Unpack the descriptor
-  SecurityBufferDescriptor *descriptor = ObjectWrap::Unwrap<SecurityBufferDescriptor>(args[0]->ToObject());
+  SecurityBufferDescriptor *descriptor = Nan::ObjectWrap::Unwrap<SecurityBufferDescriptor>(info[0]->ToObject());
   // Create call structure
   SecurityContextDecryptMessageCall *call = (SecurityContextDecryptMessageCall *)calloc(1, sizeof(SecurityContextDecryptMessageCall));
   call->context = security_context;
   call->descriptor = descriptor;
 
   // Callback
-  Local<Function> callback = Local<Function>::Cast(args[1]);
+  Local<Function> callback = Local<Function>::Cast(info[1]);
 
   // Let's allocate some space
   Worker *worker = new Worker();
   worker->error = false;
   worker->request.data = worker;
-  worker->callback = new NanCallback(callback);
+  worker->callback = new Nan::Callback(callback);
   worker->parameters = call;
   worker->execute = _decryptMessage;
   worker->mapper = _map_decryptMessage;
@@ -675,7 +675,7 @@ NAN_METHOD(SecurityContext::DecryptMessage) {
   uv_queue_work(uv_default_loop(), &worker->request, Process, (uv_after_work_cb)After);
 
   // Return no value as it's callback based
-  NanReturnValue(NanUndefined());
+  info.GetReturnValue().Set(Nan::Undefined());
 }
 
 //
@@ -721,37 +721,37 @@ static Handle<Value> _map_queryContextAttributes(Worker *worker) {
   if(attribute == SECPKG_ATTR_SIZES) {
     SecPkgContext_Sizes *sizes = (SecPkgContext_Sizes *)worker->return_value;
     // Create object
-    Local<Object> value = NanNew<Object>();
-    value->Set(NanNew("maxToken"), NanNew<Integer>(uint32_t(sizes->cbMaxToken)));
-    value->Set(NanNew("maxSignature"), NanNew<Integer>(uint32_t(sizes->cbMaxSignature)));
-    value->Set(NanNew("blockSize"), NanNew<Integer>(uint32_t(sizes->cbBlockSize)));
-    value->Set(NanNew("securityTrailer"), NanNew<Integer>(uint32_t(sizes->cbSecurityTrailer)));
+    Local<Object> value = Nan::New<Object>();
+    value->Set(Nan::New<String>("maxToken").ToLocalChecked(), Nan::New<Integer>(uint32_t(sizes->cbMaxToken)));
+    value->Set(Nan::New<String>("maxSignature").ToLocalChecked(), Nan::New<Integer>(uint32_t(sizes->cbMaxSignature)));
+    value->Set(Nan::New<String>("blockSize").ToLocalChecked(), Nan::New<Integer>(uint32_t(sizes->cbBlockSize)));
+    value->Set(Nan::New<String>("securityTrailer").ToLocalChecked(), Nan::New<Integer>(uint32_t(sizes->cbSecurityTrailer)));
     return value;
   }
 
   // Return the value
-  return NanNull();
+  return Nan::Null();
 }
 
 NAN_METHOD(SecurityContext::QueryContextAttributes) {
-  NanScope();
+  Nan::HandleScope scope;
 
-  if(args.Length() != 2)
-    return NanThrowError("QueryContextAttributes method takes a an integer Attribute specifier and a callback function");
-  if(!args[0]->IsInt32())
-    return NanThrowError("QueryContextAttributes method takes a an integer Attribute specifier and a callback function");
-  if(!args[1]->IsFunction())
-    return NanThrowError("QueryContextAttributes method takes a an integer Attribute specifier and a callback function");
+  if(info.Length() != 2)
+    return Nan::ThrowError("QueryContextAttributes method takes a an integer Attribute specifier and a callback function");
+  if(!info[0]->IsInt32())
+    return Nan::ThrowError("QueryContextAttributes method takes a an integer Attribute specifier and a callback function");
+  if(!info[1]->IsFunction())
+    return Nan::ThrowError("QueryContextAttributes method takes a an integer Attribute specifier and a callback function");
 
   // Unpack the security context
-  SecurityContext *security_context = ObjectWrap::Unwrap<SecurityContext>(args.This());
+  SecurityContext *security_context = Nan::ObjectWrap::Unwrap<SecurityContext>(info.This());
 
   // Unpack the int value
-  uint32_t attribute = args[0]->ToInt32()->Value();  
+  uint32_t attribute = info[0]->ToInt32()->Value();  
 
   // Check that we have a supported attribute
   if(attribute != SECPKG_ATTR_SIZES) 
-    return NanThrowError("QueryContextAttributes only supports the SECPKG_ATTR_SIZES attribute");
+    return Nan::ThrowError("QueryContextAttributes only supports the SECPKG_ATTR_SIZES attribute");
 
   // Create call structure
   SecurityContextQueryContextAttributesCall *call = (SecurityContextQueryContextAttributesCall *)calloc(1, sizeof(SecurityContextQueryContextAttributesCall));
@@ -759,13 +759,13 @@ NAN_METHOD(SecurityContext::QueryContextAttributes) {
   call->context = security_context;
 
   // Callback
-  Local<Function> callback = Local<Function>::Cast(args[1]);
+  Local<Function> callback = Local<Function>::Cast(info[1]);
 
   // Let's allocate some space
   Worker *worker = new Worker();
   worker->error = false;
   worker->request.data = worker;
-  worker->callback = new NanCallback(callback);
+  worker->callback = new Nan::Callback(callback);
   worker->parameters = call;
   worker->execute = _queryContextAttributes;
   worker->mapper = _map_queryContextAttributes;
@@ -774,39 +774,39 @@ NAN_METHOD(SecurityContext::QueryContextAttributes) {
   uv_queue_work(uv_default_loop(), &worker->request, Process, (uv_after_work_cb)After);
 
   // Return no value as it's callback based
-  NanReturnValue(NanUndefined());
+  info.GetReturnValue().Set(Nan::Undefined());
 }
 
 void SecurityContext::Initialize(Handle<Object> target) {
   // Grab the scope of the call from Node
-  NanScope();
+  Nan::HandleScope scope;
 
   // Define a new function template
-  Local<FunctionTemplate> t = NanNew<FunctionTemplate>(New);
+  Local<FunctionTemplate> t = Nan::New<FunctionTemplate>(New);
   t->InstanceTemplate()->SetInternalFieldCount(1);
-  t->SetClassName(NanNew<String>("SecurityContext"));
+  t->SetClassName(Nan::New<String>("SecurityContext").ToLocalChecked());
 
   // Class methods
   NODE_SET_METHOD(t, "initialize", InitializeContext);
 
   // Set up method for the instance
-  NODE_SET_PROTOTYPE_METHOD(t, "initialize", InitalizeStep);
-  NODE_SET_PROTOTYPE_METHOD(t, "decryptMessage", DecryptMessage);
-  NODE_SET_PROTOTYPE_METHOD(t, "queryContextAttributes", QueryContextAttributes);
-  NODE_SET_PROTOTYPE_METHOD(t, "encryptMessage", EncryptMessage);
+  Nan::SetPrototypeMethod(t, "initialize", InitalizeStep);
+  Nan::SetPrototypeMethod(t, "decryptMessage", DecryptMessage);
+  Nan::SetPrototypeMethod(t, "queryContextAttributes", QueryContextAttributes);
+  Nan::SetPrototypeMethod(t, "encryptMessage", EncryptMessage);
 
   // Get prototype
   Local<ObjectTemplate> proto = t->PrototypeTemplate();
 
   // Getter for the response
-  proto->SetAccessor(NanNew<String>("payload"), SecurityContext::PayloadGetter);
-  proto->SetAccessor(NanNew<String>("hasContext"), SecurityContext::HasContextGetter);
+  proto->SetAccessor(Nan::New<String>("payload").ToLocalChecked(), SecurityContext::PayloadGetter);
+  proto->SetAccessor(Nan::New<String>("hasContext").ToLocalChecked(), SecurityContext::HasContextGetter);
 
   // Set persistent
-  NanAssignPersistent(constructor_template, t);
+  constructor_template.Reset(t);
 
   // Set the symbol
-  target->ForceSet(NanNew<String>("SecurityContext"), t->GetFunction());
+  target->ForceSet(Nan::New<String>("SecurityContext").ToLocalChecked(), t->GetFunction());
 }
 
 static LPSTR DisplaySECError(DWORD ErrCode) {

@@ -18,22 +18,22 @@
 
 static LPSTR DisplaySECError(DWORD ErrCode);
 
-Persistent<FunctionTemplate> SecurityCredentials::constructor_template;
+Nan::Persistent<FunctionTemplate> SecurityCredentials::constructor_template;
 
-SecurityCredentials::SecurityCredentials() : ObjectWrap() {
+SecurityCredentials::SecurityCredentials() : Nan::ObjectWrap() {
 }
 
 SecurityCredentials::~SecurityCredentials() {
 }
 
 NAN_METHOD(SecurityCredentials::New) {
-  NanScope();
+  Nan::HandleScope scope;
   // Create security credentials instance
   SecurityCredentials *security_credentials = new SecurityCredentials();
   // Wrap it
-  security_credentials->Wrap(args.This());
+  security_credentials->Wrap(info.This());
   // Return the object
-  NanReturnValue(args.This());
+  info.GetReturnValue().Set(info.This());
 }
 
 // Call structs
@@ -116,63 +116,63 @@ static void _authSSPIAquire(Worker *worker) {
 }
 
 static Handle<Value> _map_authSSPIAquire(Worker *worker) {
-  return NanNull();
+  return Nan::Null();
 }
 
 NAN_METHOD(SecurityCredentials::Aquire) {
-  NanScope();
+  Nan::HandleScope scope;
 
   char *package_str = NULL, *username_str = NULL, *password_str = NULL, *domain_str = NULL;
   // Unpack the variables
-  if(args.Length() != 2 && args.Length() != 3 && args.Length() != 4 && args.Length() != 5)
-    return NanThrowError("Aquire must be called with either [package:string, username:string, [password:string, domain:string], callback:function]");
+  if(info.Length() != 2 && info.Length() != 3 && info.Length() != 4 && info.Length() != 5)
+    return Nan::ThrowError("Aquire must be called with either [package:string, username:string, [password:string, domain:string], callback:function]");
 
-  if(!args[0]->IsString())
-    return NanThrowError("Aquire must be called with either [package:string, username:string, [password:string, domain:string], callback:function]");
+  if(!info[0]->IsString())
+    return Nan::ThrowError("Aquire must be called with either [package:string, username:string, [password:string, domain:string], callback:function]");
 
-  if(!args[1]->IsString())
-    return NanThrowError("Aquire must be called with either [package:string, username:string, [password:string, domain:string], callback:function]");
+  if(!info[1]->IsString())
+    return Nan::ThrowError("Aquire must be called with either [package:string, username:string, [password:string, domain:string], callback:function]");
 
-  if(args.Length() == 3 && (!args[2]->IsString() && !args[2]->IsFunction()))
-    return NanThrowError("Aquire must be called with either [package:string, username:string, [password:string, domain:string], callback:function]");
+  if(info.Length() == 3 && (!info[2]->IsString() && !info[2]->IsFunction()))
+    return Nan::ThrowError("Aquire must be called with either [package:string, username:string, [password:string, domain:string], callback:function]");
 
-  if(args.Length() == 4 && (!args[3]->IsString() && !args[3]->IsUndefined() && !args[3]->IsNull()) && !args[3]->IsFunction())
-    return NanThrowError("Aquire must be called with either [package:string, username:string, [password:string, domain:string], callback:function]");
+  if(info.Length() == 4 && (!info[3]->IsString() && !info[3]->IsUndefined() && !info[3]->IsNull()) && !info[3]->IsFunction())
+    return Nan::ThrowError("Aquire must be called with either [package:string, username:string, [password:string, domain:string], callback:function]");
 
-  if(args.Length() == 5 && !args[4]->IsFunction())
-    return NanThrowError("Aquire must be called with either [package:string, username:string, [password:string, domain:string], callback:function]");
+  if(info.Length() == 5 && !info[4]->IsFunction())
+    return Nan::ThrowError("Aquire must be called with either [package:string, username:string, [password:string, domain:string], callback:function]");
 
   Local<Function> callbackHandle;
 
   // Figure out which parameter is the callback
-  if(args.Length() == 5) {
-    callbackHandle = Local<Function>::Cast(args[4]);
-  } else if(args.Length() == 4) {
-    callbackHandle = Local<Function>::Cast(args[3]);
-  } else if(args.Length() == 3) {
-    callbackHandle = Local<Function>::Cast(args[2]);
+  if(info.Length() == 5) {
+    callbackHandle = Local<Function>::Cast(info[4]);
+  } else if(info.Length() == 4) {
+    callbackHandle = Local<Function>::Cast(info[3]);
+  } else if(info.Length() == 3) {
+    callbackHandle = Local<Function>::Cast(info[2]);
   }
 
   // Unpack the package
-  Local<String> package = args[0]->ToString();
+  Local<String> package = info[0]->ToString();
   package_str = (char *)calloc(package->Utf8Length() + 1, sizeof(char));
   package->WriteUtf8(package_str);
 
   // Unpack the user name
-  Local<String> username = args[1]->ToString();
+  Local<String> username = info[1]->ToString();
   username_str = (char *)calloc(username->Utf8Length() + 1, sizeof(char));
   username->WriteUtf8(username_str);
 
   // If we have a password
-  if(args.Length() == 3 || args.Length() == 4 || args.Length() == 5) {
-    Local<String> password = args[2]->ToString();
+  if(info.Length() == 3 || info.Length() == 4 || info.Length() == 5) {
+    Local<String> password = info[2]->ToString();
     password_str = (char *)calloc(password->Utf8Length() + 1, sizeof(char));
     password->WriteUtf8(password_str);    
   }
 
   // If we have a domain
-  if((args.Length() == 4 || args.Length() == 5) && args[3]->IsString()) {
-    Local<String> domain = args[3]->ToString();
+  if((info.Length() == 4 || info.Length() == 5) && info[3]->IsString()) {
+    Local<String> domain = info[3]->ToString();
     domain_str = (char *)calloc(domain->Utf8Length() + 1, sizeof(char));
     domain->WriteUtf8(domain_str);    
   }
@@ -185,7 +185,7 @@ NAN_METHOD(SecurityCredentials::Aquire) {
   call->username_str = username_str;
 
   // Unpack the callback
-  NanCallback *callback = new NanCallback(callbackHandle);
+  Nan::Callback *callback = new Nan::Callback(callbackHandle);
 
   // Let's allocate some space
   Worker *worker = new Worker();
@@ -200,26 +200,26 @@ NAN_METHOD(SecurityCredentials::Aquire) {
   uv_queue_work(uv_default_loop(), &worker->request, SecurityCredentials::Process, (uv_after_work_cb)SecurityCredentials::After);
 
   // Return no value as it's callback based
-  NanReturnValue(NanUndefined());
+  info.GetReturnValue().Set(Nan::Undefined());
 }
 
 void SecurityCredentials::Initialize(Handle<Object> target) {
   // Grab the scope of the call from Node
-  NanScope();
+  Nan::HandleScope scope;
 
   // Define a new function template
-  Local<FunctionTemplate> t = NanNew<FunctionTemplate>(New);
+  Local<FunctionTemplate> t = Nan::New<FunctionTemplate>(New);
   t->InstanceTemplate()->SetInternalFieldCount(1);
-  t->SetClassName(NanNew<String>("SecurityCredentials"));
+  t->SetClassName(Nan::New<String>("SecurityCredentials").ToLocalChecked());
 
   // Class methods
   NODE_SET_METHOD(t, "aquire", Aquire);
 
   // Set persistent
-  NanAssignPersistent(constructor_template, t);
+  constructor_template.Reset(t);
 
   // Set the symbol
-  target->ForceSet(NanNew<String>("SecurityCredentials"), t->GetFunction());
+  target->ForceSet(Nan::New<String>("SecurityCredentials").ToLocalChecked(), t->GetFunction());
 
   // Attempt to load the security.dll library
   load_library();
@@ -296,51 +296,51 @@ void SecurityCredentials::Process(uv_work_t* work_req) {
 
 void SecurityCredentials::After(uv_work_t* work_req) {
   // Grab the scope of the call from Node
-  NanScope();
+  Nan::HandleScope scope;
 
   // Get the worker reference
   Worker *worker = static_cast<Worker*>(work_req->data);
 
   // If we have an error
   if(worker->error) {
-    Local<Value> err = v8::Exception::Error(NanNew<String>(worker->error_message));
+    Local<Value> err = v8::Exception::Error(Nan::New<String>(worker->error_message).ToLocalChecked());
     Local<Object> obj = err->ToObject();
-    obj->Set(NanNew("code"), NanNew<Int32>(worker->error_code));
-    Local<Value> args[2] = { err, NanNull() };
+    obj->Set(Nan::New<String>("code").ToLocalChecked(), Nan::New<Int32>(worker->error_code));
+    Local<Value> info[2] = { err, Nan::Null() };
     // Execute the error
-    v8::TryCatch try_catch;
+    Nan::TryCatch try_catch;
 
     // Call the callback
-    worker->callback->Call(ARRAY_SIZE(args), args);
+    worker->callback->Call(ARRAY_SIZE(info), info);
 
     // If we have an exception handle it as a fatalexception
     if (try_catch.HasCaught()) {
-      node::FatalException(try_catch);
+      Nan::FatalException(try_catch);
     }
   } else {
     SecurityCredentials *return_value = (SecurityCredentials *)worker->return_value;
     // Create a new instance
-    Local<Object> result = NanNew(constructor_template)->GetFunction()->NewInstance();
+    Local<Object> result = Nan::New(constructor_template)->GetFunction()->NewInstance();
     // Unwrap the credentials
-    SecurityCredentials *security_credentials = ObjectWrap::Unwrap<SecurityCredentials>(result);
+    SecurityCredentials *security_credentials = Nan::ObjectWrap::Unwrap<SecurityCredentials>(result);
     // Set the values
     security_credentials->m_Identity = return_value->m_Identity;
     security_credentials->m_Credentials = return_value->m_Credentials;
     security_credentials->Expiration = return_value->Expiration;
     // Set up the callback with a null first
-    Handle<Value> args[2] = { NanNull(), result};
+    Handle<Value> info[2] = { Nan::Null(), result};
     // Wrap the callback function call in a TryCatch so that we can call
     // node's FatalException afterwards. This makes it possible to catch
     // the exception from JavaScript land using the
     // process.on('uncaughtException') event.
-    v8::TryCatch try_catch;
+    Nan::TryCatch try_catch;
     
     // Call the callback
-    worker->callback->Call(ARRAY_SIZE(args), args);
+    worker->callback->Call(ARRAY_SIZE(info), info);
     
     // If we have an exception handle it as a fatalexception
     if (try_catch.HasCaught()) {
-      node::FatalException(try_catch);
+      Nan::FatalException(try_catch);
     }
   }
 
