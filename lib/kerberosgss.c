@@ -430,7 +430,7 @@ end:
   return response;
 }
 
-gss_client_response *authenticate_gss_server_init(const char *service, bool constrained_delegation, gss_server_state *state)
+gss_client_response *authenticate_gss_server_init(const char *service, bool constrained_delegation, const char *username, gss_server_state *state)
 {
     OM_uint32 maj_stat;
     OM_uint32 min_stat;
@@ -484,6 +484,60 @@ gss_client_response *authenticate_gss_server_init(const char *service, bool cons
         }
     }
     
+    // If a username was passed, perform the S4U2Self protocol transition to acquire
+    // a credentials from that user as if we had done gss_accept_sec_context.
+    // In this scenario, the passed username is assumed to be already authenticated
+    // by some external mechanism, and we are here to "bootstrap" some gss credentials.
+    // In authenticate_gss_server_step we will bypass the actual authentication step.
+    if (username != NULL)
+    {
+	gss_name_t gss_username;
+
+	name_token.length = strlen(username);
+	name_token.value = username;
+
+	maj_stat = gss_import_name(&min_stat, &name_token, GSS_C_NT_USER_NAME, &gss_username);
+	if (GSS_ERROR(maj_stat))
+	{
+	    response = gss_error(__func__, "gss_import_name", maj_stat, min_stat);
+	    response->return_code = AUTH_GSS_ERROR;
+	    goto end;
+	}
+
+	maj_stat = gss_acquire_cred_impersonate_name(&min_stat,
+		state->server_creds,
+		gss_username,
+		GSS_C_INDEFINITE,
+		GSS_C_NO_OID_SET,
+		GSS_C_INITIATE,
+		&state->client_creds,
+		NULL,
+		NULL);
+
+	if (GSS_ERROR(maj_stat))
+	{
+	    response = gss_error(__func__, "gss_acquire_cred_impersonate_name", maj_stat, min_stat);
+	    response->return_code = AUTH_GSS_ERROR;
+	}
+
+	gss_release_name(&min_stat, &gss_username);
+
+	if (response != NULL)
+	{
+	    goto end;
+	}
+
+	// because the username MAY be a "local" username,
+	// we want get the canonical name from the acquired creds.
+	maj_stat = gss_inquire_cred(&min_stat, state->client_creds, &state->client_name, NULL, NULL, NULL);
+	if (GSS_ERROR(maj_stat))
+	{
+	    response = gss_error(__func__, "gss_inquire_cred", maj_stat, min_stat);
+	    response->return_code = AUTH_GSS_ERROR;
+	    goto end;
+	}
+    }
+
 end:
     if(response == NULL) {
       response = calloc(1, sizeof(gss_client_response));
@@ -559,80 +613,85 @@ gss_client_response *authenticate_gss_server_step(gss_server_state *state, const
         state->response = NULL;
     }
     
-    if (auth_data && *auth_data)
+    // we don't need to check the authentication token if S4U2Self protocol
+    // transition was done, because we already have the client credentials.
+    if (state->client_creds == GSS_C_NO_CREDENTIAL)
     {
-        int len;
-        input_token.value = base64_decode(auth_data, &len);
-        input_token.length = len;
+	if (auth_data && *auth_data)
+	{
+	    int len;
+	    input_token.value = base64_decode(auth_data, &len);
+	    input_token.length = len;
+	}
+	else
+	{
+	    response = calloc(1, sizeof(gss_client_response));
+	    if(response == NULL) die1("Memory allocation failed");
+	    response->message = strdup("No auth_data value in request from client");
+	    response->return_code = AUTH_GSS_ERROR;
+	    goto end;
+	}
+
+	maj_stat = gss_accept_sec_context(&min_stat,
+					  &state->context,
+					  state->server_creds,
+					  &input_token,
+					  GSS_C_NO_CHANNEL_BINDINGS,
+					  &state->client_name,
+					  NULL,
+					  &output_token,
+					  NULL,
+					  NULL,
+					  &state->client_creds);
+
+	if (GSS_ERROR(maj_stat))
+	{
+	    response = gss_error(__func__, "gss_accept_sec_context", maj_stat, min_stat);
+	    response->return_code = AUTH_GSS_ERROR;
+	    goto end;
+	}
+
+	// Grab the server response to send back to the client
+	if (output_token.length)
+	{
+	    state->response = base64_encode((const unsigned char *)output_token.value, output_token.length);
+	    maj_stat = gss_release_buffer(&min_stat, &output_token);
+	}
     }
-    else
-    {
-	response = calloc(1, sizeof(gss_client_response));
-	if(response == NULL) die1("Memory allocation failed");
-        response->message = strdup("No auth_data value in request from client");
-        response->return_code = AUTH_GSS_ERROR;
-        goto end;
-    }
-    
-    maj_stat = gss_accept_sec_context(&min_stat,
-                                      &state->context,
-                                      state->server_creds,
-                                      &input_token,
-                                      GSS_C_NO_CHANNEL_BINDINGS,
-                                      &state->client_name,
-                                      NULL,
-                                      &output_token,
-                                      NULL,
-                                      NULL,
-                                      &state->client_creds);
-    
-    if (GSS_ERROR(maj_stat))
-    {
-        response = gss_error(__func__, "gss_accept_sec_context", maj_stat, min_stat);
-        response->return_code = AUTH_GSS_ERROR;
-        goto end;
-    }
-    
-    // Grab the server response to send back to the client
-    if (output_token.length)
-    {
-        state->response = base64_encode((const unsigned char *)output_token.value, output_token.length);
-        maj_stat = gss_release_buffer(&min_stat, &output_token);
-    }
-    
+
     // Get the user name
     maj_stat = gss_display_name(&min_stat, state->client_name, &output_token, NULL);
     if (GSS_ERROR(maj_stat))
     {
-        response = gss_error(__func__, "gss_display_name", maj_stat, min_stat);
-        response->return_code = AUTH_GSS_ERROR;
-        goto end;
+	response = gss_error(__func__, "gss_display_name", maj_stat, min_stat);
+	response->return_code = AUTH_GSS_ERROR;
+	goto end;
     }
     state->username = (char *)malloc(output_token.length + 1);
     strncpy(state->username, (char*) output_token.value, output_token.length);
     state->username[output_token.length] = 0;
-    
+
     // Get the target name if no server creds were supplied
     if (state->server_creds == GSS_C_NO_CREDENTIAL)
     {
-        gss_name_t target_name = GSS_C_NO_NAME;
-        maj_stat = gss_inquire_context(&min_stat, state->context, NULL, &target_name, NULL, NULL, NULL, NULL, NULL);
-        if (GSS_ERROR(maj_stat))
-        {
-            response = gss_error(__func__, "gss_inquire_context", maj_stat, min_stat);
-            response->return_code = AUTH_GSS_ERROR;
-            goto end;
-        }
-        maj_stat = gss_display_name(&min_stat, target_name, &output_token, NULL);
-        if (GSS_ERROR(maj_stat))
-        {
-            response = gss_error(__func__, "gss_display_name", maj_stat, min_stat);
-            response->return_code = AUTH_GSS_ERROR;
-            goto end;
-        }
-        state->targetname = (char *)malloc(output_token.length + 1);
-        strncpy(state->targetname, (char*) output_token.value, output_token.length);
-        state->targetname[output_token.length] = 0;
+	gss_name_t target_name = GSS_C_NO_NAME;
+	maj_stat = gss_inquire_context(&min_stat, state->context, NULL, &target_name, NULL, NULL, NULL, NULL, NULL);
+	if (GSS_ERROR(maj_stat))
+	{
+	    response = gss_error(__func__, "gss_inquire_context", maj_stat, min_stat);
+	    response->return_code = AUTH_GSS_ERROR;
+	    goto end;
+	}
+	maj_stat = gss_display_name(&min_stat, target_name, &output_token, NULL);
+	if (GSS_ERROR(maj_stat))
+	{
+	    response = gss_error(__func__, "gss_display_name", maj_stat, min_stat);
+	    response->return_code = AUTH_GSS_ERROR;
+	    goto end;
+	}
+	state->targetname = (char *)malloc(output_token.length + 1);
+	strncpy(state->targetname, (char*) output_token.value, output_token.length);
+	state->targetname[output_token.length] = 0;
     }
 
     if (state->constrained_delegation && state->client_creds != GSS_C_NO_CREDENTIAL)
