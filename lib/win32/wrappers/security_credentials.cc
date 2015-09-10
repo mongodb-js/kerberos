@@ -213,7 +213,7 @@ void SecurityCredentials::Initialize(Handle<Object> target) {
   t->SetClassName(Nan::New<String>("SecurityCredentials").ToLocalChecked());
 
   // Class methods
-  NODE_SET_METHOD(t, "aquire", Aquire);
+  Nan::SetMethod(t, "aquire", Aquire);
 
   // Set persistent
   constructor_template.Reset(t);

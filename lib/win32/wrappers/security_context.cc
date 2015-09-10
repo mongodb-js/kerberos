@@ -787,7 +787,7 @@ void SecurityContext::Initialize(Handle<Object> target) {
   t->SetClassName(Nan::New<String>("SecurityContext").ToLocalChecked());
 
   // Class methods
-  NODE_SET_METHOD(t, "initialize", InitializeContext);
+  Nan::SetMethod(t, "initialize", InitializeContext);
 
   // Set up method for the instance
   Nan::SetPrototypeMethod(t, "initialize", InitalizeStep);
