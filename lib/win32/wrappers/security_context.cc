@@ -799,8 +799,8 @@ void SecurityContext::Initialize(Handle<Object> target) {
   Local<ObjectTemplate> proto = t->PrototypeTemplate();
 
   // Getter for the response
-  proto->SetAccessor(Nan::New<String>("payload").ToLocalChecked(), SecurityContext::PayloadGetter);
-  proto->SetAccessor(Nan::New<String>("hasContext").ToLocalChecked(), SecurityContext::HasContextGetter);
+  Nan::SetAccessor(proto, Nan::New<String>("payload").ToLocalChecked(), SecurityContext::PayloadGetter);
+  Nan::SetAccessor(proto, Nan::New<String>("hasContext").ToLocalChecked(), SecurityContext::HasContextGetter);
 
   // Set persistent
   constructor_template.Reset(t);
