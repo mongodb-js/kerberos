@@ -62,9 +62,8 @@ gss_client_response *authenticate_gss_client_step(gss_client_state *state, const
 gss_client_response *authenticate_gss_client_unwrap(gss_client_state* state, const char* challenge);
 gss_client_response *authenticate_gss_client_wrap(gss_client_state* state, const char* challenge, const char* user);
 
-int authenticate_gss_server_init(const char* service, gss_server_state* state);
-int authenticate_gss_server_clean(gss_server_state *state);
-// int authenticate_gss_server_step(gss_server_state *state, const char *challenge);
+gss_client_response *authenticate_gss_server_init(const char* service, gss_server_state* state);
+gss_client_response *authenticate_gss_server_clean(gss_server_state *state);
+gss_client_response *authenticate_gss_server_step(gss_server_state *state, const char *challenge);
 
-gss_client_response *gss_error(OM_uint32 err_maj, OM_uint32 err_min);
 #endif
