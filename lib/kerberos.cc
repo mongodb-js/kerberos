@@ -845,7 +845,12 @@ void Kerberos::After(uv_work_t* work_req) {
     // // Map the data
     Handle<Value> result = worker->mapper(worker);
     // Set up the callback with a null first
-    Handle<Value> info[2] = { Nan::Null(), result};
+    #if defined(V8_MAJOR_VERSION) && (V8_MAJOR_VERSION > 4 ||                      \
+      (V8_MAJOR_VERSION == 4 && defined(V8_MINOR_VERSION) && V8_MINOR_VERSION >= 3))
+    Local<Value> info[2] = { Nan::Null(), result};
+    #else
+    Local<Value> info[2] = { Nan::Null(), Nan::New<v8::Value>(result)};
+    #endif
 
     // Wrap the callback function call in a TryCatch so that we can call
     // node's FatalException afterwards. This makes it possible to catch
