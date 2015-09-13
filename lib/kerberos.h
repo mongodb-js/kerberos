@@ -27,7 +27,7 @@ public:
   static Nan::Persistent<FunctionTemplate> constructor_template;
 
   // Initialize function for the object
-  static void Initialize(Handle<Object> target);
+  static void Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target);
 
   // Method available
   static NAN_METHOD(AuthGSSClientInit);

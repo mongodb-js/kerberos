@@ -23,7 +23,7 @@ SecurityBuffer::SecurityBuffer(uint32_t security_type, size_t size) : Nan::Objec
   // Set up the data in the sec_buffer
   this->sec_buffer.BufferType = security_type;
   this->sec_buffer.cbBuffer = (unsigned long)size;
-  this->sec_buffer.pvBuffer = this->data;  
+  this->sec_buffer.pvBuffer = this->data;
 }
 
 SecurityBuffer::SecurityBuffer(uint32_t security_type, size_t size, void *data) : Nan::ObjectWrap() {
@@ -33,7 +33,7 @@ SecurityBuffer::SecurityBuffer(uint32_t security_type, size_t size, void *data) 
   // Set up the data in the sec_buffer
   this->sec_buffer.BufferType = security_type;
   this->sec_buffer.cbBuffer = (unsigned long)size;
-  this->sec_buffer.pvBuffer = this->data;  
+  this->sec_buffer.pvBuffer = this->data;
 }
 
 SecurityBuffer::~SecurityBuffer() {
@@ -41,7 +41,6 @@ SecurityBuffer::~SecurityBuffer() {
 }
 
 NAN_METHOD(SecurityBuffer::New) {
-  Nan::HandleScope scope;
   SecurityBuffer *security_obj;
 
   if(info.Length() != 2)
@@ -69,7 +68,7 @@ NAN_METHOD(SecurityBuffer::New) {
     // Create new SecurityBuffer
     security_obj = new SecurityBuffer(buffer_type, length, data);
   }
-  
+
   // Wrap it
   security_obj->Wrap(info.This());
   // Return the object
@@ -77,7 +76,6 @@ NAN_METHOD(SecurityBuffer::New) {
 }
 
 NAN_METHOD(SecurityBuffer::ToBuffer) {
-  Nan::HandleScope scope;
   // Unpack the Security Buffer object
   SecurityBuffer *security_obj = Nan::ObjectWrap::Unwrap<SecurityBuffer>(info.This());
   // Create a Buffer
@@ -86,10 +84,7 @@ NAN_METHOD(SecurityBuffer::ToBuffer) {
   info.GetReturnValue().Set(buffer);
 }
 
-void SecurityBuffer::Initialize(Handle<Object> target) {
-  // Grab the scope of the call from Node
-  Nan::HandleScope scope;
-
+void SecurityBuffer::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
   // Define a new function template
   Local<FunctionTemplate> t = Nan::New<FunctionTemplate>(New);
   t->InstanceTemplate()->SetInternalFieldCount(1);

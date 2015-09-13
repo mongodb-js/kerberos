@@ -23,7 +23,7 @@ public:
   KerberosContext();
   ~KerberosContext();
 
-  static inline bool HasInstance(Handle<Value> val) {
+  static inline bool HasInstance(Local<Value> val) {
     if (!val->IsObject()) return false;
     Local<Object> obj = val->ToObject();
     return Nan::New(constructor_template)->HasInstance(obj);
@@ -41,7 +41,7 @@ public:
   static Nan::Persistent<FunctionTemplate> constructor_template;
 
   // Initialize function for the object
-  static void Initialize(Handle<Object> target);
+  static void Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target);
 
   // Public constructor
   static KerberosContext* New();

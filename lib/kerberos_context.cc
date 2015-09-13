@@ -11,14 +11,13 @@ KerberosContext::~KerberosContext() {
 }
 
 KerberosContext* KerberosContext::New() {
-  Nan::HandleScope scope; 
+  Nan::HandleScope scope;
   Local<Object> obj = Nan::New(constructor_template)->GetFunction()->NewInstance();
-  KerberosContext *kerberos_context = Nan::ObjectWrap::Unwrap<KerberosContext>(obj);  
+  KerberosContext *kerberos_context = Nan::ObjectWrap::Unwrap<KerberosContext>(obj);
   return kerberos_context;
 }
 
 NAN_METHOD(KerberosContext::New) {
-  Nan::HandleScope scope;
   // Create code object
   KerberosContext *kerberos_context = new KerberosContext();
   // Wrap it
@@ -27,7 +26,7 @@ NAN_METHOD(KerberosContext::New) {
   info.GetReturnValue().Set(info.This());
 }
 
-void KerberosContext::Initialize(v8::Handle<v8::Object> target) {
+void KerberosContext::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
   // Grab the scope of the call from Node
   Nan::HandleScope scope;
 
@@ -60,7 +59,6 @@ void KerberosContext::Initialize(v8::Handle<v8::Object> target) {
 
 // Response Setter / Getter
 NAN_GETTER(KerberosContext::ResponseGetter) {
-  Nan::HandleScope scope;
   gss_client_state *client_state;
   gss_server_state *server_state;
 
@@ -85,8 +83,6 @@ NAN_GETTER(KerberosContext::ResponseGetter) {
 
 // username Getter
 NAN_GETTER(KerberosContext::UsernameGetter) {
-  Nan::HandleScope scope;
-
   // Unpack the object
   KerberosContext *context = Nan::ObjectWrap::Unwrap<KerberosContext>(info.This());
 
@@ -106,8 +102,6 @@ NAN_GETTER(KerberosContext::UsernameGetter) {
 
 // targetname Getter - server side only
 NAN_GETTER(KerberosContext::TargetnameGetter) {
-  Nan::HandleScope scope;
-
   // Unpack the object
   KerberosContext *context = Nan::ObjectWrap::Unwrap<KerberosContext>(info.This());
 

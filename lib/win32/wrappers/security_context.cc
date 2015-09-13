@@ -54,9 +54,9 @@ static void After(uv_work_t* work_req) {
     }
   } else {
     // // Map the data
-    Handle<Value> result = worker->mapper(worker);
+    Local<Value> result = worker->mapper(worker);
     // Set up the callback with a null first
-    Handle<Value> info[2] = { Nan::Null(), result};
+    Local<Value> info[2] = { Nan::Null(), result};
     // Wrap the callback function call in a TryCatch so that we can call
     // node's FatalException afterwards. This makes it possible to catch
     // the exception from JavaScript land using the
@@ -89,8 +89,6 @@ SecurityContext::~SecurityContext() {
 }
 
 NAN_METHOD(SecurityContext::New) {
-  Nan::HandleScope scope;
-
   PSecurityFunctionTable pSecurityInterface = NULL;
   DWORD dwNumOfPkgs;
   SECURITY_STATUS status;
@@ -101,7 +99,7 @@ NAN_METHOD(SecurityContext::New) {
   pSecurityInterface = _ssip_InitSecurityInterface();
   // Call the security interface
   status = (*pSecurityInterface->EnumerateSecurityPackages)(
-                                                    &dwNumOfPkgs, 
+                                                    &dwNumOfPkgs,
                                                     &security_obj->m_PkgInfo);
   if(status != SEC_E_OK) {
     printf(TEXT("Failed in retrieving security packages, Error: %x"), GetLastError());
@@ -134,7 +132,7 @@ static void _initializeContext(Worker *worker) {
   SecBufferDesc ibd, obd;
   SecBuffer ib, ob;
 
-  // 
+  //
   // Prepare data structure for returned data from SSPI
   ob.BufferType = SECBUFFER_TOKEN;
   ob.cbBuffer = call->context->m_PkgInfo->cbMaxToken;
@@ -155,7 +153,7 @@ static void _initializeContext(Worker *worker) {
     // prepare buffer description
     ibd.cBuffers  = 1;
     ibd.ulVersion = SECBUFFER_VERSION;
-    ibd.pBuffers  = &ib;    
+    ibd.pBuffers  = &ib;
   }
 
   // Perform initialization step
@@ -175,7 +173,7 @@ static void _initializeContext(Worker *worker) {
   );
 
   // If we have a ok or continue let's prepare the result
-  if(status == SEC_E_OK 
+  if(status == SEC_E_OK
     || status == SEC_I_COMPLETE_NEEDED
     || status == SEC_I_CONTINUE_NEEDED
     || status == SEC_I_COMPLETE_AND_CONTINUE
@@ -237,7 +235,7 @@ static void _initializeContext(Worker *worker) {
   if(call->service_principal_name_str != NULL) free(call->service_principal_name_str);
 }
 
-static Handle<Value> _map_initializeContext(Worker *worker) {
+static Local<Value> _map_initializeContext(Worker *worker) {
   // Unwrap the security context
   SecurityContext *context = (SecurityContext *)worker->return_value;
   // Return the value
@@ -245,7 +243,6 @@ static Handle<Value> _map_initializeContext(Worker *worker) {
 }
 
 NAN_METHOD(SecurityContext::InitializeContext) {
-  Nan::HandleScope scope;
   char *service_principal_name_str = NULL, *input_str = NULL, *decoded_input_str = NULL;
   int decoded_input_str_length = NULL;
   // Store reference to security credentials
@@ -325,7 +322,6 @@ NAN_METHOD(SecurityContext::InitializeContext) {
 }
 
 NAN_GETTER(SecurityContext::PayloadGetter) {
-  Nan::HandleScope scope;
   // Unpack the context object
   SecurityContext *context = Nan::ObjectWrap::Unwrap<SecurityContext>(info.This());
   // Return the low bits
@@ -333,7 +329,6 @@ NAN_GETTER(SecurityContext::PayloadGetter) {
 }
 
 NAN_GETTER(SecurityContext::HasContextGetter) {
-  Nan::HandleScope scope;
   // Unpack the context object
   SecurityContext *context = Nan::ObjectWrap::Unwrap<SecurityContext>(info.This());
   // Return the low bits
@@ -362,7 +357,7 @@ static void _initializeContextStep(Worker *worker) {
   SecBufferDesc ibd, obd;
   SecBuffer ib, ob;
 
-  // 
+  //
   // Prepare data structure for returned data from SSPI
   ob.BufferType = SECBUFFER_TOKEN;
   ob.cbBuffer = context->m_PkgInfo->cbMaxToken;
@@ -383,7 +378,7 @@ static void _initializeContextStep(Worker *worker) {
     // prepare buffer description
     ibd.cBuffers  = 1;
     ibd.ulVersion = SECBUFFER_VERSION;
-    ibd.pBuffers  = &ib;    
+    ibd.pBuffers  = &ib;
   }
 
   // Perform initialization step
@@ -403,7 +398,7 @@ static void _initializeContextStep(Worker *worker) {
   );
 
   // If we have a ok or continue let's prepare the result
-  if(status == SEC_E_OK 
+  if(status == SEC_E_OK
     || status == SEC_I_COMPLETE_NEEDED
     || status == SEC_I_CONTINUE_NEEDED
     || status == SEC_I_COMPLETE_AND_CONTINUE
@@ -424,7 +419,7 @@ static void _initializeContextStep(Worker *worker) {
   if(call->service_principal_name_str != NULL) free(call->service_principal_name_str);
 }
 
-static Handle<Value> _map_initializeContextStep(Worker *worker) {
+static Local<Value> _map_initializeContextStep(Worker *worker) {
   // Unwrap the security context
   SecurityContext *context = (SecurityContext *)worker->return_value;
   // Return the value
@@ -432,8 +427,6 @@ static Handle<Value> _map_initializeContextStep(Worker *worker) {
 }
 
 NAN_METHOD(SecurityContext::InitalizeStep) {
-  Nan::HandleScope scope;
-
   char *service_principal_name_str = NULL, *input_str = NULL, *decoded_input_str = NULL;
   int decoded_input_str_length = NULL;
 
@@ -526,7 +519,7 @@ static void _encryptMessage(Worker *worker) {
 
   // We've got ok
   if(status == SEC_E_OK) {
-    int bytesToAllocate = (int)descriptor->bufferSize();    
+    int bytesToAllocate = (int)descriptor->bufferSize();
     // Free up existing payload
     if(context->payload != NULL) free(context->payload);
     // Save the payload
@@ -541,7 +534,7 @@ static void _encryptMessage(Worker *worker) {
   }
 }
 
-static Handle<Value> _map_encryptMessage(Worker *worker) {
+static Local<Value> _map_encryptMessage(Worker *worker) {
   // Unwrap the security context
   SecurityContext *context = (SecurityContext *)worker->return_value;
   // Return the value
@@ -549,16 +542,14 @@ static Handle<Value> _map_encryptMessage(Worker *worker) {
 }
 
 NAN_METHOD(SecurityContext::EncryptMessage) {
-  Nan::HandleScope scope;
-
   if(info.Length() != 3)
-    return Nan::ThrowError("EncryptMessage takes an instance of SecurityBufferDescriptor, an integer flag and a callback function");  
+    return Nan::ThrowError("EncryptMessage takes an instance of SecurityBufferDescriptor, an integer flag and a callback function");
   if(!SecurityBufferDescriptor::HasInstance(info[0]))
-    return Nan::ThrowError("EncryptMessage takes an instance of SecurityBufferDescriptor, an integer flag and a callback function");  
+    return Nan::ThrowError("EncryptMessage takes an instance of SecurityBufferDescriptor, an integer flag and a callback function");
   if(!info[1]->IsUint32())
-    return Nan::ThrowError("EncryptMessage takes an instance of SecurityBufferDescriptor, an integer flag and a callback function");  
+    return Nan::ThrowError("EncryptMessage takes an instance of SecurityBufferDescriptor, an integer flag and a callback function");
   if(!info[2]->IsFunction())
-    return Nan::ThrowError("EncryptMessage takes an instance of SecurityBufferDescriptor, an integer flag and a callback function");  
+    return Nan::ThrowError("EncryptMessage takes an instance of SecurityBufferDescriptor, an integer flag and a callback function");
 
   // Unpack the security context
   SecurityContext *security_context = Nan::ObjectWrap::Unwrap<SecurityContext>(info.This());
@@ -602,7 +593,7 @@ typedef struct SecurityContextDecryptMessageCall {
 static void _decryptMessage(Worker *worker) {
   unsigned long quality = 0;
   SECURITY_STATUS status;
-  
+
   // Unpack parameters
   SecurityContextDecryptMessageCall *call = (SecurityContextDecryptMessageCall *)worker->parameters;
   SecurityContext *context = call->context;
@@ -618,7 +609,7 @@ static void _decryptMessage(Worker *worker) {
 
   // We've got ok
   if(status == SEC_E_OK) {
-    int bytesToAllocate = (int)descriptor->bufferSize();    
+    int bytesToAllocate = (int)descriptor->bufferSize();
     // Free up existing payload
     if(context->payload != NULL) free(context->payload);
     // Save the payload
@@ -633,7 +624,7 @@ static void _decryptMessage(Worker *worker) {
   }
 }
 
-static Handle<Value> _map_decryptMessage(Worker *worker) {
+static Local<Value> _map_decryptMessage(Worker *worker) {
   // Unwrap the security context
   SecurityContext *context = (SecurityContext *)worker->return_value;
   // Return the value
@@ -641,8 +632,6 @@ static Handle<Value> _map_decryptMessage(Worker *worker) {
 }
 
 NAN_METHOD(SecurityContext::DecryptMessage) {
-  Nan::HandleScope scope;
-
   if(info.Length() != 2)
     return Nan::ThrowError("DecryptMessage takes an instance of SecurityBufferDescriptor and a callback function");
   if(!SecurityBufferDescriptor::HasInstance(info[0]))
@@ -690,7 +679,7 @@ static void _queryContextAttributes(Worker *worker) {
   SECURITY_STATUS status;
 
   // Cast to data structure
-  SecurityContextQueryContextAttributesCall *call = (SecurityContextQueryContextAttributesCall *)worker->parameters;  
+  SecurityContextQueryContextAttributesCall *call = (SecurityContextQueryContextAttributesCall *)worker->parameters;
 
   // Allocate some space
   SecPkgContext_Sizes *sizes = (SecPkgContext_Sizes *)calloc(1, sizeof(SecPkgContext_Sizes));
@@ -699,8 +688,8 @@ static void _queryContextAttributes(Worker *worker) {
     &call->context->m_Context,
     call->attribute,
     sizes
-  );  
-  
+  );
+
   if(status == SEC_E_OK) {
     worker->return_code = status;
     worker->return_value = sizes;
@@ -711,9 +700,9 @@ static void _queryContextAttributes(Worker *worker) {
   }
 }
 
-static Handle<Value> _map_queryContextAttributes(Worker *worker) {
+static Local<Value> _map_queryContextAttributes(Worker *worker) {
   // Cast to data structure
-  SecurityContextQueryContextAttributesCall *call = (SecurityContextQueryContextAttributesCall *)worker->parameters;  
+  SecurityContextQueryContextAttributesCall *call = (SecurityContextQueryContextAttributesCall *)worker->parameters;
   // Unpack the attribute
   uint32_t attribute = call->attribute;
 
@@ -734,8 +723,6 @@ static Handle<Value> _map_queryContextAttributes(Worker *worker) {
 }
 
 NAN_METHOD(SecurityContext::QueryContextAttributes) {
-  Nan::HandleScope scope;
-
   if(info.Length() != 2)
     return Nan::ThrowError("QueryContextAttributes method takes a an integer Attribute specifier and a callback function");
   if(!info[0]->IsInt32())
@@ -747,10 +734,10 @@ NAN_METHOD(SecurityContext::QueryContextAttributes) {
   SecurityContext *security_context = Nan::ObjectWrap::Unwrap<SecurityContext>(info.This());
 
   // Unpack the int value
-  uint32_t attribute = info[0]->ToInt32()->Value();  
+  uint32_t attribute = info[0]->ToInt32()->Value();
 
   // Check that we have a supported attribute
-  if(attribute != SECPKG_ATTR_SIZES) 
+  if(attribute != SECPKG_ATTR_SIZES)
     return Nan::ThrowError("QueryContextAttributes only supports the SECPKG_ATTR_SIZES attribute");
 
   // Create call structure
@@ -777,7 +764,7 @@ NAN_METHOD(SecurityContext::QueryContextAttributes) {
   info.GetReturnValue().Set(Nan::Undefined());
 }
 
-void SecurityContext::Initialize(Handle<Object> target) {
+void SecurityContext(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
   // Grab the scope of the call from Node
   Nan::HandleScope scope;
 
@@ -818,49 +805,49 @@ static LPSTR DisplaySECError(DWORD ErrCode) {
       break;
 
     case SEC_E_CRYPTO_SYSTEM_INVALID:
-      pszName = "SEC_E_CRYPTO_SYSTEM_INVALID - The cipher chosen for the security context is not supported. Used with the Digest SSP."; 
+      pszName = "SEC_E_CRYPTO_SYSTEM_INVALID - The cipher chosen for the security context is not supported. Used with the Digest SSP.";
       break;
     case SEC_E_INCOMPLETE_MESSAGE:
-      pszName = "SEC_E_INCOMPLETE_MESSAGE - The data in the input buffer is incomplete. The application needs to read more data from the server and call DecryptMessageSync (General) again."; 
+      pszName = "SEC_E_INCOMPLETE_MESSAGE - The data in the input buffer is incomplete. The application needs to read more data from the server and call DecryptMessageSync (General) again.";
       break;
 
     case SEC_E_INVALID_HANDLE:
-      pszName = "SEC_E_INVALID_HANDLE - A context handle that is not valid was specified in the phContext parameter. Used with the Digest and Schannel SSPs."; 
+      pszName = "SEC_E_INVALID_HANDLE - A context handle that is not valid was specified in the phContext parameter. Used with the Digest and Schannel SSPs.";
       break;
 
     case SEC_E_INVALID_TOKEN:
-      pszName = "SEC_E_INVALID_TOKEN - The buffers are of the wrong type or no buffer of type SECBUFFER_DATA was found. Used with the Schannel SSP."; 
+      pszName = "SEC_E_INVALID_TOKEN - The buffers are of the wrong type or no buffer of type SECBUFFER_DATA was found. Used with the Schannel SSP.";
       break;
-        
+
     case SEC_E_MESSAGE_ALTERED:
-      pszName = "SEC_E_MESSAGE_ALTERED - The message has been altered. Used with the Digest and Schannel SSPs."; 
+      pszName = "SEC_E_MESSAGE_ALTERED - The message has been altered. Used with the Digest and Schannel SSPs.";
       break;
-        
+
     case SEC_E_OUT_OF_SEQUENCE:
-      pszName = "SEC_E_OUT_OF_SEQUENCE - The message was not received in the correct sequence."; 
+      pszName = "SEC_E_OUT_OF_SEQUENCE - The message was not received in the correct sequence.";
       break;
-        
+
     case SEC_E_QOP_NOT_SUPPORTED:
-      pszName = "SEC_E_QOP_NOT_SUPPORTED - Neither confidentiality nor integrity are supported by the security context. Used with the Digest SSP."; 
+      pszName = "SEC_E_QOP_NOT_SUPPORTED - Neither confidentiality nor integrity are supported by the security context. Used with the Digest SSP.";
       break;
-        
+
     case SEC_I_CONTEXT_EXPIRED:
-      pszName = "SEC_I_CONTEXT_EXPIRED - The message sender has finished using the connection and has initiated a shutdown."; 
+      pszName = "SEC_I_CONTEXT_EXPIRED - The message sender has finished using the connection and has initiated a shutdown.";
       break;
-        
+
     case SEC_I_RENEGOTIATE:
-      pszName = "SEC_I_RENEGOTIATE - The remote party requires a new handshake sequence or the application has just initiated a shutdown."; 
+      pszName = "SEC_I_RENEGOTIATE - The remote party requires a new handshake sequence or the application has just initiated a shutdown.";
       break;
-        
+
     case SEC_E_ENCRYPT_FAILURE:
-      pszName = "SEC_E_ENCRYPT_FAILURE - The specified data could not be encrypted."; 
+      pszName = "SEC_E_ENCRYPT_FAILURE - The specified data could not be encrypted.";
       break;
-        
+
     case SEC_E_DECRYPT_FAILURE:
-      pszName = "SEC_E_DECRYPT_FAILURE - The specified data could not be decrypted."; 
+      pszName = "SEC_E_DECRYPT_FAILURE - The specified data could not be decrypted.";
       break;
     case -1:
-      pszName = "Failed to load security.dll library"; 
+      pszName = "Failed to load security.dll library";
       break;
   }
 

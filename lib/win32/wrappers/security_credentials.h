@@ -30,32 +30,32 @@ extern "C" {
 using namespace v8;
 using namespace node;
 
-class SecurityCredentials : public Nan::ObjectWrap {  
-  public:    
+class SecurityCredentials : public Nan::ObjectWrap {
+  public:
     SecurityCredentials();
-    ~SecurityCredentials();    
+    ~SecurityCredentials();
 
     // Pointer to context object
     SEC_WINNT_AUTH_IDENTITY m_Identity;
     // credentials
-    CredHandle m_Credentials;    
+    CredHandle m_Credentials;
     // Expiry time for ticket
     TimeStamp Expiration;
 
     // Has instance check
-    static inline bool HasInstance(Handle<Value> val) {
+    static inline bool HasInstance(Local<Value> val) {
       if (!val->IsObject()) return false;
       Local<Object> obj = val->ToObject();
       return Nan::New(constructor_template)->HasInstance(obj);
     };
 
     // Functions available from V8
-    static void Initialize(Handle<Object> target);    
+    static void Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target);
     static NAN_METHOD(Aquire);
 
     // Constructor used for creating new Long objects from C++
     static Nan::Persistent<FunctionTemplate> constructor_template;
-    
+
   private:
     // Create a new instance
     static NAN_METHOD(New);

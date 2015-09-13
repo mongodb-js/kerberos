@@ -23,10 +23,10 @@ extern "C" {
 using namespace v8;
 using namespace node;
 
-class SecurityContext : public Nan::ObjectWrap {  
-  public:    
+class SecurityContext : public Nan::ObjectWrap {
+  public:
     SecurityContext();
-    ~SecurityContext();    
+    ~SecurityContext();
 
     // Security info package
     PSecPkgInfo m_PkgInfo;
@@ -44,14 +44,14 @@ class SecurityContext : public Nan::ObjectWrap {
     char *payload;
 
     // Has instance check
-    static inline bool HasInstance(Handle<Value> val) {
+    static inline bool HasInstance(Local<Value> val) {
       if (!val->IsObject()) return false;
       Local<Object> obj = val->ToObject();
       return Nan::New(constructor_template)->HasInstance(obj);
     };
 
     // Functions available from V8
-    static void Initialize(Handle<Object> target);
+    static void Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target);
     static NAN_METHOD(InitializeContext);
     static NAN_METHOD(InitalizeStep);
     static NAN_METHOD(DecryptMessage);
@@ -65,7 +65,7 @@ class SecurityContext : public Nan::ObjectWrap {
 
     // Constructor used for creating new Long objects from C++
     static Nan::Persistent<FunctionTemplate> constructor_template;
-    
+
   private:
     // Create a new instance
     static NAN_METHOD(New);

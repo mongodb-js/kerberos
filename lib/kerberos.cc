@@ -62,7 +62,7 @@ Kerberos::Kerberos() : Nan::ObjectWrap() {
 
 Nan::Persistent<FunctionTemplate> Kerberos::constructor_template;
 
-void Kerberos::Initialize(v8::Handle<v8::Object> target) {
+void Kerberos::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
   // Grab the scope of the call from Node
   Nan::HandleScope scope;
 
@@ -88,7 +88,6 @@ void Kerberos::Initialize(v8::Handle<v8::Object> target) {
 }
 
 NAN_METHOD(Kerberos::New) {
-  Nan::HandleScope scope;
   // Create a Kerberos instance
   Kerberos *kerberos = new Kerberos();
   // Return the kerberos object
@@ -106,7 +105,7 @@ static void _authGSSClientInit(Worker *worker) {
   // Allocate state
   state = (gss_client_state *)malloc(sizeof(gss_client_state));
   if(state == NULL) die("Memory allocation failed");
-  
+
   // Unpack the parameter data struct
   AuthGSSClientCall *call = (AuthGSSClientCall *)worker->parameters;
   // Start the kerberos client
@@ -130,7 +129,7 @@ static void _authGSSClientInit(Worker *worker) {
   free(response);
 }
 
-static Handle<Value> _map_authGSSClientInit(Worker *worker) {
+static Local<Value> _map_authGSSClientInit(Worker *worker) {
   KerberosContext *context = KerberosContext::New();
   context->state = (gss_client_state *)worker->return_value;
   return context->handle();
@@ -138,8 +137,6 @@ static Handle<Value> _map_authGSSClientInit(Worker *worker) {
 
 // Initialize method
 NAN_METHOD(Kerberos::AuthGSSClientInit) {
-  Nan::HandleScope scope;
-
   // Ensure valid call
     if(info.Length() != 3) return Nan::ThrowError("Requires a service string uri, integer flags and a callback function");
   if(info.Length() == 3 && (!info[0]->IsString() || !info[1]->IsInt32() || !info[2]->IsFunction()))
@@ -215,7 +212,7 @@ static void _authGSSClientStep(Worker *worker) {
   free(response);
 }
 
-static Handle<Value> _map_authGSSClientStep(Worker *worker) {
+static Local<Value> _map_authGSSClientStep(Worker *worker) {
   Nan::HandleScope scope;
   // Return the return code
   return Nan::New<Int32>(worker->return_code);
@@ -223,8 +220,6 @@ static Handle<Value> _map_authGSSClientStep(Worker *worker) {
 
 // Initialize method
 NAN_METHOD(Kerberos::AuthGSSClientStep) {
-  Nan::HandleScope scope;
-
   // Ensure valid call
   if(info.Length() != 2 && info.Length() != 3) return Nan::ThrowError("Requires a GSS context, optional challenge string and callback function");
   if(info.Length() == 2 && (!KerberosContext::HasInstance(info[0]) || !info[1]->IsFunction())) return Nan::ThrowError("Requires a GSS context, optional challenge string and callback function");
@@ -315,7 +310,7 @@ static void _authGSSClientUnwrap(Worker *worker) {
   free(response);
 }
 
-static Handle<Value> _map_authGSSClientUnwrap(Worker *worker) {
+static Local<Value> _map_authGSSClientUnwrap(Worker *worker) {
   Nan::HandleScope scope;
   // Return the return code
   return Nan::New<Int32>(worker->return_code);
@@ -323,8 +318,6 @@ static Handle<Value> _map_authGSSClientUnwrap(Worker *worker) {
 
 // Initialize method
 NAN_METHOD(Kerberos::AuthGSSClientUnwrap) {
-  Nan::HandleScope scope;
-
   // Ensure valid call
     if(info.Length() != 2 && info.Length() != 3) return Nan::ThrowError("Requires a GSS context, optional challenge string and callback function");
     if(info.Length() == 2 && (!KerberosContext::HasInstance(info[0]) || !info[1]->IsFunction())) return Nan::ThrowError("Requires a GSS context, optional challenge string and callback function");
@@ -348,7 +341,7 @@ NAN_METHOD(Kerberos::AuthGSSClientUnwrap) {
     challenge_str = (char *)calloc(challenge->Utf8Length() + 1, sizeof(char));
     if(challenge_str == NULL) die("Memory allocation failed");
     // Write v8 string to c-string
-    challenge->WriteUtf8(challenge_str);    
+    challenge->WriteUtf8(challenge_str);
   }
 
   // Allocate a structure
@@ -386,7 +379,7 @@ static void _authGSSClientWrap(Worker *worker) {
 
   // Unpack the parameter data struct
   AuthGSSClientWrapCall *call = (AuthGSSClientWrapCall *)worker->parameters;
-  user_name = call->user_name;  
+  user_name = call->user_name;
 
   // Check what kind of challenge we have
   if(call->user_name == NULL) {
@@ -412,7 +405,7 @@ static void _authGSSClientWrap(Worker *worker) {
   free(response);
 }
 
-static Handle<Value> _map_authGSSClientWrap(Worker *worker) {
+static Local<Value> _map_authGSSClientWrap(Worker *worker) {
   Nan::HandleScope scope;
   // Return the return code
   return Nan::New<Int32>(worker->return_code);
@@ -420,8 +413,6 @@ static Handle<Value> _map_authGSSClientWrap(Worker *worker) {
 
 // Initialize method
 NAN_METHOD(Kerberos::AuthGSSClientWrap) {
-  Nan::HandleScope scope;
-
   // Ensure valid call
     if(info.Length() != 3 && info.Length() != 4) return Nan::ThrowError("Requires a GSS context, the result from the authGSSClientResponse after authGSSClientUnwrap, optional user name and callback function");
     if(info.Length() == 3 && (!KerberosContext::HasInstance(info[0]) || !info[1]->IsString() || !info[2]->IsFunction())) return Nan::ThrowError("Requires a GSS context, the result from the authGSSClientResponse after authGSSClientUnwrap, optional user name and callback function");
@@ -430,7 +421,7 @@ NAN_METHOD(Kerberos::AuthGSSClientWrap) {
   // Challenge string
   char *challenge_str = NULL;
   char *user_name_str = NULL;
-  
+
   // Let's unpack the kerberos context
   Local<Object> object = info[0]->ToObject();
   KerberosContext *kerberos_context = KerberosContext::Unwrap<KerberosContext>(object);
@@ -445,7 +436,7 @@ NAN_METHOD(Kerberos::AuthGSSClientWrap) {
   challenge_str = (char *)calloc(challenge->Utf8Length() + 1, sizeof(char));
   if(challenge_str == NULL) die("Memory allocation failed");
   // Write v8 string to c-string
-  challenge->WriteUtf8(challenge_str);    
+  challenge->WriteUtf8(challenge_str);
 
   // If we have a user string
   if(info.Length() == 4) {
@@ -511,7 +502,7 @@ static void _authGSSClientClean(Worker *worker) {
   free(response);
 }
 
-static Handle<Value> _map_authGSSClientClean(Worker *worker) {
+static Local<Value> _map_authGSSClientClean(Worker *worker) {
   Nan::HandleScope scope;
   // Return the return code
   return Nan::New<Int32>(worker->return_code);
@@ -519,9 +510,7 @@ static Handle<Value> _map_authGSSClientClean(Worker *worker) {
 
 // Initialize method
 NAN_METHOD(Kerberos::AuthGSSClientClean) {
-  Nan::HandleScope scope;
-
-  // // Ensure valid call
+  // Ensure valid call
   if(info.Length() != 2) return Nan::ThrowError("Requires a GSS context and callback function");
   if(!KerberosContext::HasInstance(info[0]) || !info[1]->IsFunction()) return Nan::ThrowError("Requires a GSS context and callback function");
 
@@ -592,7 +581,7 @@ static void _authGSSServerInit(Worker *worker) {
   free(response);
 }
 
-static Handle<Value> _map_authGSSServerInit(Worker *worker) {
+static Local<Value> _map_authGSSServerInit(Worker *worker) {
   KerberosContext *context = KerberosContext::New();
   context->server_state = (gss_server_state *)worker->return_value;
   return context->handle();
@@ -600,8 +589,6 @@ static Handle<Value> _map_authGSSServerInit(Worker *worker) {
 
 // Server Initialize method
 NAN_METHOD(Kerberos::AuthGSSServerInit) {
-  Nan::HandleScope scope;
-
   // Ensure valid call
   if(info.Length() != 2) return Nan::ThrowError("Requires a service string service and a callback function");
   if(!info[0]->IsString() || !info[1]->IsFunction()) return Nan::ThrowError("Requires a service string service and a callback function");
@@ -664,7 +651,7 @@ static void _authGSSServerClean(Worker *worker) {
   free(response);
 }
 
-static Handle<Value> _map_authGSSServerClean(Worker *worker) {
+static Local<Value> _map_authGSSServerClean(Worker *worker) {
   Nan::HandleScope scope;
   // Return the return code
   return Nan::New<Int32>(worker->return_code);
@@ -672,8 +659,6 @@ static Handle<Value> _map_authGSSServerClean(Worker *worker) {
 
 // Initialize method
 NAN_METHOD(Kerberos::AuthGSSServerClean) {
-  Nan::HandleScope scope;
-
   // // Ensure valid call
   if(info.Length() != 2) return Nan::ThrowError("Requires a GSS context and callback function");
   if(!KerberosContext::HasInstance(info[0]) || !info[1]->IsFunction()) return Nan::ThrowError("Requires a GSS context and callback function");
@@ -748,7 +733,7 @@ static void _authGSSServerStep(Worker *worker) {
   free(response);
 }
 
-static Handle<Value> _map_authGSSServerStep(Worker *worker) {
+static Local<Value> _map_authGSSServerStep(Worker *worker) {
   Nan::HandleScope scope;
   // Return the return code
   return Nan::New<Int32>(worker->return_code);
@@ -756,8 +741,6 @@ static Handle<Value> _map_authGSSServerStep(Worker *worker) {
 
 // Initialize method
 NAN_METHOD(Kerberos::AuthGSSServerStep) {
-  Nan::HandleScope scope;
-
   // Ensure valid call
   if(info.Length() != 3) return Nan::ThrowError("Requires a GSS context, auth-data string and callback function");
   if(!KerberosContext::HasInstance(info[0]))  return Nan::ThrowError("1st arg must be a GSS context");
@@ -843,7 +826,7 @@ void Kerberos::After(uv_work_t* work_req) {
     }
   } else {
     // // Map the data
-    Handle<Value> result = worker->mapper(worker);
+    Local<Value> result = worker->mapper(worker);
     // Set up the callback with a null first
     #if defined(V8_MAJOR_VERSION) && (V8_MAJOR_VERSION > 4 ||                      \
       (V8_MAJOR_VERSION == 4 && defined(V8_MINOR_VERSION) && V8_MINOR_VERSION >= 3))
@@ -873,8 +856,7 @@ void Kerberos::After(uv_work_t* work_req) {
 }
 
 // Exporting function
-extern "C" void init(Handle<Object> target) {
-  Nan::HandleScope scope;
+NAN_MODULE_INIT(init) {
   Kerberos::Initialize(target);
   KerberosContext::Initialize(target);
 }

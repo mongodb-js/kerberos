@@ -32,7 +32,7 @@ class Worker {
     int return_code;
     // Method we are going to fire
     void (*execute)(Worker *worker);
-    Handle<Value> (*mapper)(Worker *worker);
+    Local<Value> (*mapper)(Worker *worker);
 };
 
 #endif  // WORKER_H_

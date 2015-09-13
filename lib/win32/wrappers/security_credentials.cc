@@ -27,7 +27,6 @@ SecurityCredentials::~SecurityCredentials() {
 }
 
 NAN_METHOD(SecurityCredentials::New) {
-  Nan::HandleScope scope;
   // Create security credentials instance
   SecurityCredentials *security_credentials = new SecurityCredentials();
   // Wrap it
@@ -53,7 +52,7 @@ static void _authSSPIAquire(Worker *worker) {
   SECURITY_STATUS status;
 
   // Unpack data
-  SecurityCredentialCall *call = (SecurityCredentialCall *)worker->parameters;  
+  SecurityCredentialCall *call = (SecurityCredentialCall *)worker->parameters;
 
   // // Unwrap the credentials
   // SecurityCredentials *security_credentials = (SecurityCredentials *)call->credentials;
@@ -76,7 +75,7 @@ static void _authSSPIAquire(Worker *worker) {
   if(call->password_str != NULL) {
     // Set up the password
     security_credentials->m_Identity.Password = USTR(_tcsdup(call->password_str));
-    security_credentials->m_Identity.PasswordLength = (unsigned long)_tcslen(call->password_str);    
+    security_credentials->m_Identity.PasswordLength = (unsigned long)_tcslen(call->password_str);
   }
 
   #ifdef _UNICODE
@@ -90,7 +89,7 @@ static void _authSSPIAquire(Worker *worker) {
     NULL,
     call->package_str,
     SECPKG_CRED_OUTBOUND,
-    NULL, 
+    NULL,
     call->password_str != NULL ? &security_credentials->m_Identity : NULL,
     NULL, NULL,
     &security_credentials->m_Credentials,
@@ -115,13 +114,11 @@ static void _authSSPIAquire(Worker *worker) {
   free(call);
 }
 
-static Handle<Value> _map_authSSPIAquire(Worker *worker) {
+static Local<Value> _map_authSSPIAquire(Worker *worker) {
   return Nan::Null();
 }
 
 NAN_METHOD(SecurityCredentials::Aquire) {
-  Nan::HandleScope scope;
-
   char *package_str = NULL, *username_str = NULL, *password_str = NULL, *domain_str = NULL;
   // Unpack the variables
   if(info.Length() != 2 && info.Length() != 3 && info.Length() != 4 && info.Length() != 5)
@@ -167,14 +164,14 @@ NAN_METHOD(SecurityCredentials::Aquire) {
   if(info.Length() == 3 || info.Length() == 4 || info.Length() == 5) {
     Local<String> password = info[2]->ToString();
     password_str = (char *)calloc(password->Utf8Length() + 1, sizeof(char));
-    password->WriteUtf8(password_str);    
+    password->WriteUtf8(password_str);
   }
 
   // If we have a domain
   if((info.Length() == 4 || info.Length() == 5) && info[3]->IsString()) {
     Local<String> domain = info[3]->ToString();
     domain_str = (char *)calloc(domain->Utf8Length() + 1, sizeof(char));
-    domain->WriteUtf8(domain_str);    
+    domain->WriteUtf8(domain_str);
   }
 
   // Allocate call structure
@@ -203,7 +200,7 @@ NAN_METHOD(SecurityCredentials::Aquire) {
   info.GetReturnValue().Set(Nan::Undefined());
 }
 
-void SecurityCredentials::Initialize(Handle<Object> target) {
+void SecurityCredentials::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
   // Grab the scope of the call from Node
   Nan::HandleScope scope;
 
@@ -234,49 +231,49 @@ static LPSTR DisplaySECError(DWORD ErrCode) {
       break;
 
     case SEC_E_CRYPTO_SYSTEM_INVALID:
-      pszName = "SEC_E_CRYPTO_SYSTEM_INVALID - The cipher chosen for the security context is not supported. Used with the Digest SSP."; 
+      pszName = "SEC_E_CRYPTO_SYSTEM_INVALID - The cipher chosen for the security context is not supported. Used with the Digest SSP.";
       break;
     case SEC_E_INCOMPLETE_MESSAGE:
-      pszName = "SEC_E_INCOMPLETE_MESSAGE - The data in the input buffer is incomplete. The application needs to read more data from the server and call DecryptMessage (General) again."; 
+      pszName = "SEC_E_INCOMPLETE_MESSAGE - The data in the input buffer is incomplete. The application needs to read more data from the server and call DecryptMessage (General) again.";
       break;
 
     case SEC_E_INVALID_HANDLE:
-      pszName = "SEC_E_INVALID_HANDLE - A context handle that is not valid was specified in the phContext parameter. Used with the Digest and Schannel SSPs."; 
+      pszName = "SEC_E_INVALID_HANDLE - A context handle that is not valid was specified in the phContext parameter. Used with the Digest and Schannel SSPs.";
       break;
 
     case SEC_E_INVALID_TOKEN:
-      pszName = "SEC_E_INVALID_TOKEN - The buffers are of the wrong type or no buffer of type SECBUFFER_DATA was found. Used with the Schannel SSP."; 
+      pszName = "SEC_E_INVALID_TOKEN - The buffers are of the wrong type or no buffer of type SECBUFFER_DATA was found. Used with the Schannel SSP.";
       break;
-        
+
     case SEC_E_MESSAGE_ALTERED:
-      pszName = "SEC_E_MESSAGE_ALTERED - The message has been altered. Used with the Digest and Schannel SSPs."; 
+      pszName = "SEC_E_MESSAGE_ALTERED - The message has been altered. Used with the Digest and Schannel SSPs.";
       break;
-        
+
     case SEC_E_OUT_OF_SEQUENCE:
-      pszName = "SEC_E_OUT_OF_SEQUENCE - The message was not received in the correct sequence."; 
+      pszName = "SEC_E_OUT_OF_SEQUENCE - The message was not received in the correct sequence.";
       break;
-        
+
     case SEC_E_QOP_NOT_SUPPORTED:
-      pszName = "SEC_E_QOP_NOT_SUPPORTED - Neither confidentiality nor integrity are supported by the security context. Used with the Digest SSP."; 
+      pszName = "SEC_E_QOP_NOT_SUPPORTED - Neither confidentiality nor integrity are supported by the security context. Used with the Digest SSP.";
       break;
-        
+
     case SEC_I_CONTEXT_EXPIRED:
-      pszName = "SEC_I_CONTEXT_EXPIRED - The message sender has finished using the connection and has initiated a shutdown."; 
+      pszName = "SEC_I_CONTEXT_EXPIRED - The message sender has finished using the connection and has initiated a shutdown.";
       break;
-        
+
     case SEC_I_RENEGOTIATE:
-      pszName = "SEC_I_RENEGOTIATE - The remote party requires a new handshake sequence or the application has just initiated a shutdown."; 
+      pszName = "SEC_I_RENEGOTIATE - The remote party requires a new handshake sequence or the application has just initiated a shutdown.";
       break;
-        
+
     case SEC_E_ENCRYPT_FAILURE:
-      pszName = "SEC_E_ENCRYPT_FAILURE - The specified data could not be encrypted."; 
+      pszName = "SEC_E_ENCRYPT_FAILURE - The specified data could not be encrypted.";
       break;
-        
+
     case SEC_E_DECRYPT_FAILURE:
-      pszName = "SEC_E_DECRYPT_FAILURE - The specified data could not be decrypted."; 
+      pszName = "SEC_E_DECRYPT_FAILURE - The specified data could not be decrypted.";
       break;
     case -1:
-      pszName = "Failed to load security.dll library"; 
+      pszName = "Failed to load security.dll library";
       break;
 
   }
@@ -328,16 +325,16 @@ void SecurityCredentials::After(uv_work_t* work_req) {
     security_credentials->m_Credentials = return_value->m_Credentials;
     security_credentials->Expiration = return_value->Expiration;
     // Set up the callback with a null first
-    Handle<Value> info[2] = { Nan::Null(), result};
+    Local<Value> info[2] = { Nan::Null(), result};
     // Wrap the callback function call in a TryCatch so that we can call
     // node's FatalException afterwards. This makes it possible to catch
     // the exception from JavaScript land using the
     // process.on('uncaughtException') event.
     Nan::TryCatch try_catch;
-    
+
     // Call the callback
     worker->callback->Call(ARRAY_SIZE(info), info);
-    
+
     // If we have an exception handle it as a fatalexception
     if (try_catch.HasCaught()) {
       Nan::FatalException(try_catch);

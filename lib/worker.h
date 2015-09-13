@@ -3,7 +3,7 @@
 
 #include <node.h>
 #include <node_object_wrap.h>
-#include <nan.h>    
+#include <nan.h>
 #include <v8.h>
 
 using namespace node;
@@ -32,7 +32,7 @@ class Worker {
     int return_code;
     // Method we are going to fire
     void (*execute)(Worker *worker);
-    Handle<Value> (*mapper)(Worker *worker);
+    Local<Value> (*mapper)(Worker *worker);
 };
 
 #endif  // WORKER_H_
