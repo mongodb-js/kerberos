@@ -13,7 +13,7 @@
 #include <tchar.h>
 #include "security_credentials.h"
 #include "../worker.h"
-#include "nan.h"
+#include <nan.h>
 
 extern "C" {
   #include "../kerberos_sspi.h"
@@ -23,10 +23,10 @@ extern "C" {
 using namespace v8;
 using namespace node;
 
-class SecurityContext : public ObjectWrap {  
-  public:    
+class SecurityContext : public Nan::ObjectWrap {
+  public:
     SecurityContext();
-    ~SecurityContext();    
+    ~SecurityContext();
 
     // Security info package
     PSecPkgInfo m_PkgInfo;
@@ -44,14 +44,14 @@ class SecurityContext : public ObjectWrap {
     char *payload;
 
     // Has instance check
-    static inline bool HasInstance(Handle<Value> val) {
+    static inline bool HasInstance(Local<Value> val) {
       if (!val->IsObject()) return false;
       Local<Object> obj = val->ToObject();
-      return NanNew(constructor_template)->HasInstance(obj);
+      return Nan::New(constructor_template)->HasInstance(obj);
     };
 
     // Functions available from V8
-    static void Initialize(Handle<Object> target);
+    static void Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target);
     static NAN_METHOD(InitializeContext);
     static NAN_METHOD(InitalizeStep);
     static NAN_METHOD(DecryptMessage);
@@ -64,9 +64,9 @@ class SecurityContext : public ObjectWrap {
     static NAN_GETTER(HasContextGetter);
 
     // Constructor used for creating new Long objects from C++
-    static Persistent<FunctionTemplate> constructor_template;
-    
-  private:
+    static Nan::Persistent<FunctionTemplate> constructor_template;
+
+ // private:
     // Create a new instance
     static NAN_METHOD(New);
 };

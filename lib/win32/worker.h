@@ -4,7 +4,7 @@
 #include <node.h>
 #include <node_object_wrap.h>
 #include <v8.h>
-#include "nan.h"
+#include <nan.h>
 
 using namespace node;
 using namespace v8;
@@ -17,7 +17,7 @@ class Worker {
     // libuv's request struct.
     uv_work_t request;
     // Callback
-    NanCallback *callback;
+    Nan::Callback *callback;
     // Parameters
     void *parameters;
     // Results
@@ -32,7 +32,7 @@ class Worker {
     int return_code;
     // Method we are going to fire
     void (*execute)(Worker *worker);
-    Handle<Value> (*mapper)(Worker *worker);
+    Local<Value> (*mapper)(Worker *worker);
 };
 
 #endif  // WORKER_H_

@@ -13,14 +13,14 @@
     "authentication"
   ],
   "dependencies": {
-    "nan": "~1.9.0"
+    "nan": "~2.0"
   },
   "devDependencies": {
     "nodeunit": "latest"
   },
-  "scripts": { 
-    "install" : "(node-gyp rebuild 2> builderror.log) || (exit 0)", 
-    "test" : "nodeunit ./test" 
+  "scripts": {
+    "install" : "(node-gyp rebuild) || (exit 0)",
+    "test" : "nodeunit ./test"
   },
   "author": "Christian Amor Kvalheim",
   "license": "Apache 2.0",

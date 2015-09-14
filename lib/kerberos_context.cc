@@ -1,8 +1,8 @@
 #include "kerberos_context.h"
 
-Persistent<FunctionTemplate> KerberosContext::constructor_template;
+Nan::Persistent<FunctionTemplate> KerberosContext::constructor_template;
 
-KerberosContext::KerberosContext() : ObjectWrap() {
+KerberosContext::KerberosContext() : Nan::ObjectWrap() {
     state = NULL;
     server_state = NULL;
 }
@@ -11,60 +11,58 @@ KerberosContext::~KerberosContext() {
 }
 
 KerberosContext* KerberosContext::New() {
-  NanScope();  
-  Local<Object> obj = NanNew(constructor_template)->GetFunction()->NewInstance();
-  KerberosContext *kerberos_context = ObjectWrap::Unwrap<KerberosContext>(obj);  
+  Nan::HandleScope scope;
+  Local<Object> obj = Nan::New(constructor_template)->GetFunction()->NewInstance();
+  KerberosContext *kerberos_context = Nan::ObjectWrap::Unwrap<KerberosContext>(obj);
   return kerberos_context;
 }
 
 NAN_METHOD(KerberosContext::New) {
-  NanScope();
   // Create code object
   KerberosContext *kerberos_context = new KerberosContext();
   // Wrap it
-  kerberos_context->Wrap(args.This());
+  kerberos_context->Wrap(info.This());
   // Return the object
-  NanReturnValue(args.This());
+  info.GetReturnValue().Set(info.This());
 }
 
-void KerberosContext::Initialize(v8::Handle<v8::Object> target) {
+void KerberosContext::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
   // Grab the scope of the call from Node
-  NanScope();
+  Nan::HandleScope scope;
 
   // Define a new function template
-  // Local<FunctionTemplate> t = NanNew<FunctionTemplate>(New);
-  Local<FunctionTemplate> t = NanNew<v8::FunctionTemplate>(static_cast<NAN_METHOD((*))>(New));
+  Local<FunctionTemplate> t = Nan::New<v8::FunctionTemplate>(static_cast<NAN_METHOD((*))>(New));
   t->InstanceTemplate()->SetInternalFieldCount(1);
-  t->SetClassName(NanNew<String>("KerberosContext"));
+  t->SetClassName(Nan::New<String>("KerberosContext").ToLocalChecked());
 
   // Get prototype
   Local<ObjectTemplate> proto = t->PrototypeTemplate();
 
   // Getter for the response
-  proto->SetAccessor(NanNew<String>("response"), KerberosContext::ResponseGetter);
+  Nan::SetAccessor(proto, Nan::New<String>("response").ToLocalChecked(), KerberosContext::ResponseGetter);
 
   // Getter for the username
-  proto->SetAccessor(NanNew<String>("username"), KerberosContext::UsernameGetter);
+  Nan::SetAccessor(proto, Nan::New<String>("username").ToLocalChecked(), KerberosContext::UsernameGetter);
 
   // Getter for the targetname - server side only
-  proto->SetAccessor(NanNew<String>("targetname"), KerberosContext::TargetnameGetter);
+  Nan::SetAccessor(proto, Nan::New<String>("targetname").ToLocalChecked(), KerberosContext::TargetnameGetter);
 
   // Set persistent
-  NanAssignPersistent(constructor_template, t);
+  constructor_template.Reset(t);
+ // NanAssignPersistent(constructor_template, t);
 
   // Set the symbol
-  target->ForceSet(NanNew<String>("KerberosContext"), t->GetFunction());
+  target->ForceSet(Nan::New<String>("KerberosContext").ToLocalChecked(), t->GetFunction());
 }
 
 
 // Response Setter / Getter
 NAN_GETTER(KerberosContext::ResponseGetter) {
-  NanScope();
   gss_client_state *client_state;
   gss_server_state *server_state;
 
   // Unpack the object
-  KerberosContext *context = ObjectWrap::Unwrap<KerberosContext>(args.This());
+  KerberosContext *context = Nan::ObjectWrap::Unwrap<KerberosContext>(info.This());
 
   // Response could come from client or server state...
   client_state = context->state;
@@ -75,19 +73,17 @@ NAN_GETTER(KerberosContext::ResponseGetter) {
 	  server_state != NULL ? server_state->response : NULL;
 
   if(response == NULL) {
-    NanReturnValue(NanNull());
+    info.GetReturnValue().Set(Nan::Null());
   } else {
     // Return the response
-    NanReturnValue(NanNew<String>(response));
+    info.GetReturnValue().Set(Nan::New<String>(response).ToLocalChecked());
   }
 }
 
 // username Getter
 NAN_GETTER(KerberosContext::UsernameGetter) {
-  NanScope();
-
   // Unpack the object
-  KerberosContext *context = ObjectWrap::Unwrap<KerberosContext>(args.This());
+  KerberosContext *context = Nan::ObjectWrap::Unwrap<KerberosContext>(info.This());
 
   gss_client_state *client_state = context->state;
   gss_server_state *server_state = context->server_state;
@@ -97,26 +93,24 @@ NAN_GETTER(KerberosContext::UsernameGetter) {
 	  server_state != NULL ? server_state->username : NULL;
 
   if(username == NULL) {
-    NanReturnValue(NanNull());
+    info.GetReturnValue().Set(Nan::Null());
   } else {
-    NanReturnValue(NanNew<String>(username));
+    info.GetReturnValue().Set(Nan::New<String>(username).ToLocalChecked());
   }
 }
 
 // targetname Getter - server side only
 NAN_GETTER(KerberosContext::TargetnameGetter) {
-  NanScope();
-
   // Unpack the object
-  KerberosContext *context = ObjectWrap::Unwrap<KerberosContext>(args.This());
+  KerberosContext *context = Nan::ObjectWrap::Unwrap<KerberosContext>(info.This());
 
   gss_server_state *server_state = context->server_state;
 
   char *targetname = server_state != NULL ? server_state->targetname : NULL;
 
   if(targetname == NULL) {
-    NanReturnValue(NanNull());
+    info.GetReturnValue().Set(Nan::Null());
   } else {
-    NanReturnValue(NanNew<String>(targetname));
+    info.GetReturnValue().Set(Nan::New<String>(targetname).ToLocalChecked());
   }
 }

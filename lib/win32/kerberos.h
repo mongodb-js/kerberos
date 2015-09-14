@@ -14,17 +14,17 @@ extern "C" {
 using namespace v8;
 using namespace node;
 
-class Kerberos : public ObjectWrap {
+class Kerberos : public Nan::ObjectWrap {
 
 public:
   Kerberos();
   ~Kerberos() {};
 
   // Constructor used for creating new Kerberos objects from C++
-  static Persistent<FunctionTemplate> constructor_template;
+  static Nan::Persistent<FunctionTemplate> constructor_template;
 
   // Initialize function for the object
-  static void Initialize(Handle<Object> target);
+  static void Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target);
 
   // Method available
   static NAN_METHOD(AcquireAlternateCredentials);

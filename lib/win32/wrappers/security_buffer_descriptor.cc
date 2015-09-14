@@ -15,15 +15,15 @@
 #include "security_buffer_descriptor.h"
 #include "security_buffer.h"
 
-Persistent<FunctionTemplate> SecurityBufferDescriptor::constructor_template;
+Nan::Persistent<FunctionTemplate> SecurityBufferDescriptor::constructor_template;
 
-SecurityBufferDescriptor::SecurityBufferDescriptor() : ObjectWrap() {
+SecurityBufferDescriptor::SecurityBufferDescriptor() : Nan::ObjectWrap() {
 }
 
-SecurityBufferDescriptor::SecurityBufferDescriptor(const Persistent<Array>& arrayObjectPersistent) : ObjectWrap() {
+SecurityBufferDescriptor::SecurityBufferDescriptor(const Nan::Persistent<Array>& arrayObjectPersistent) : Nan::ObjectWrap() {
   SecurityBuffer *security_obj = NULL;
   // Get the Local value
-  Local<Array> arrayObject = NanNew(arrayObjectPersistent);
+  Local<Array> arrayObject = Nan::New(arrayObjectPersistent);
 
   // Safe reference to array
   this->arrayObject = arrayObject;
@@ -34,16 +34,16 @@ SecurityBufferDescriptor::SecurityBufferDescriptor(const Persistent<Array>& arra
 
   if(arrayObject->Length() == 1) {
     // Unwrap  the buffer
-    security_obj = ObjectWrap::Unwrap<SecurityBuffer>(arrayObject->Get(0)->ToObject());
+    security_obj = Nan::ObjectWrap::Unwrap<SecurityBuffer>(arrayObject->Get(0)->ToObject());
     // Assign the buffer
     this->secBufferDesc.pBuffers = &security_obj->sec_buffer;
   } else {
     this->secBufferDesc.pBuffers = new SecBuffer[arrayObject->Length()];
     this->secBufferDesc.cBuffers = arrayObject->Length();
-    
+
     // Assign the buffers
     for(uint32_t i = 0; i < arrayObject->Length(); i++) {
-      security_obj = ObjectWrap::Unwrap<SecurityBuffer>(arrayObject->Get(i)->ToObject());
+      security_obj = Nan::ObjectWrap::Unwrap<SecurityBuffer>(arrayObject->Get(i)->ToObject());
       this->secBufferDesc.pBuffers[i].BufferType = security_obj->sec_buffer.BufferType;
       this->secBufferDesc.pBuffers[i].pvBuffer = security_obj->sec_buffer.pvBuffer;
       this->secBufferDesc.pBuffers[i].cbBuffer = security_obj->sec_buffer.cbBuffer;
@@ -58,7 +58,7 @@ size_t SecurityBufferDescriptor::bufferSize() {
   SecurityBuffer *security_obj = NULL;
 
   if(this->secBufferDesc.cBuffers == 1) {
-    security_obj = ObjectWrap::Unwrap<SecurityBuffer>(arrayObject->Get(0)->ToObject());
+    security_obj = Nan::ObjectWrap::Unwrap<SecurityBuffer>(arrayObject->Get(0)->ToObject());
     return security_obj->size;
   } else {
     int bytesToAllocate = 0;
@@ -77,7 +77,7 @@ char *SecurityBufferDescriptor::toBuffer() {
   char *data = NULL;
 
   if(this->secBufferDesc.cBuffers == 1) {
-    security_obj = ObjectWrap::Unwrap<SecurityBuffer>(arrayObject->Get(0)->ToObject());
+    security_obj = Nan::ObjectWrap::Unwrap<SecurityBuffer>(arrayObject->Get(0)->ToObject());
     data = (char *)malloc(security_obj->size * sizeof(char));
     memcpy(data, security_obj->data, security_obj->size);
   } else {
@@ -98,88 +98,85 @@ char *SecurityBufferDescriptor::toBuffer() {
 }
 
 NAN_METHOD(SecurityBufferDescriptor::New) {
-  NanScope();
   SecurityBufferDescriptor *security_obj;
-  Persistent<Array> arrayObject;
+  Nan::Persistent<Array> arrayObject;
 
-  if(args.Length() != 1)
-    return NanThrowError("There must be 1 argument passed in where the first argument is a [int32 or an Array of SecurityBuffers]");
+  if(info.Length() != 1)
+    return Nan::ThrowError("There must be 1 argument passed in where the first argument is a [int32 or an Array of SecurityBuffers]");
 
-  if(!args[0]->IsInt32() && !args[0]->IsArray())
-    return NanThrowError("There must be 1 argument passed in where the first argument is a [int32 or an Array of SecurityBuffers]");
+  if(!info[0]->IsInt32() && !info[0]->IsArray())
+    return Nan::ThrowError("There must be 1 argument passed in where the first argument is a [int32 or an Array of SecurityBuffers]");
 
-  if(args[0]->IsArray()) {
-    Handle<Array> array = Handle<Array>::Cast(args[0]);
+  if(info[0]->IsArray()) {
+    Local<Array> array = Local<Array>::Cast(info[0]);
     // Iterate over all items and ensure we the right type
     for(uint32_t i = 0; i < array->Length(); i++) {
       if(!SecurityBuffer::HasInstance(array->Get(i))) {
-        return NanThrowError("There must be 1 argument passed in where the first argument is a [int32 or an Array of SecurityBuffers]");
+        return Nan::ThrowError("There must be 1 argument passed in where the first argument is a [int32 or an Array of SecurityBuffers]");
       }
     }
   }
 
   // We have a single integer
-  if(args[0]->IsInt32()) {
+  if(info[0]->IsInt32()) {
     // Create new SecurityBuffer instance
-    Local<Value> argv[] = {NanNew<Int32>(0x02), args[0]};
-    Handle<Value> security_buffer = NanNew(SecurityBuffer::constructor_template)->GetFunction()->NewInstance(2, argv);
+    Local<Value> argv[] = {Nan::New<Int32>(0x02), info[0]};
+    Local<Value> security_buffer = Nan::New(SecurityBuffer::constructor_template)->GetFunction()->NewInstance(2, argv);
     // Create a new array
-    Local<Array> array = NanNew<Array>(1);
+    Local<Array> array = Nan::New<Array>(1);
     // Set the first value
     array->Set(0, security_buffer);
 
     // Create persistent handle
-    Persistent<Array> persistenHandler;
-    NanAssignPersistent(persistenHandler, array);
+    Nan::Persistent<Array> persistenHandler;
+    persistenHandler.Reset(array);
 
     // Create descriptor
     security_obj = new SecurityBufferDescriptor(persistenHandler);
   } else {
     // Create a persistent handler
-    Persistent<Array> persistenHandler;
-    NanAssignPersistent(persistenHandler, Handle<Array>::Cast(args[0]));
+    Nan::Persistent<Array> persistenHandler;
+    persistenHandler.Reset(Local<Array>::Cast(info[0]));
     // Create a descriptor
     security_obj = new SecurityBufferDescriptor(persistenHandler);
   }
 
   // Wrap it
-  security_obj->Wrap(args.This());
+  security_obj->Wrap(info.This());
   // Return the object
-  NanReturnValue(args.This());
+  info.GetReturnValue().Set(info.This());
 }
 
 NAN_METHOD(SecurityBufferDescriptor::ToBuffer) {
-  NanScope();
-
   // Unpack the Security Buffer object
-  SecurityBufferDescriptor *security_obj = ObjectWrap::Unwrap<SecurityBufferDescriptor>(args.This());
+  SecurityBufferDescriptor *security_obj = Nan::ObjectWrap::Unwrap<SecurityBufferDescriptor>(info.This());
 
   // Get the buffer
   char *buffer_data = security_obj->toBuffer();
   size_t buffer_size = security_obj->bufferSize();
 
   // Create a Buffer
-  Local<Object> buffer = NanNewBufferHandle(buffer_data, (uint32_t)buffer_size);
+  Local<Object> buffer = Nan::CopyBuffer(buffer_data, (uint32_t)buffer_size).ToLocalChecked();
 
   // Return the buffer
-  NanReturnValue(buffer);
+  info.GetReturnValue().Set(buffer);
 }
 
-void SecurityBufferDescriptor::Initialize(Handle<Object> target) {
+void SecurityBufferDescriptor::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
   // Grab the scope of the call from Node
-  NanScope();
+  Nan::HandleScope scope;
 
   // Define a new function template
-  Local<FunctionTemplate> t = NanNew<FunctionTemplate>(New);
+  Local<FunctionTemplate> t = Nan::New<FunctionTemplate>(New);
   t->InstanceTemplate()->SetInternalFieldCount(1);
-  t->SetClassName(NanNew<String>("SecurityBufferDescriptor"));
+  t->SetClassName(Nan::New<String>("SecurityBufferDescriptor").ToLocalChecked());
 
   // Class methods
-  NODE_SET_PROTOTYPE_METHOD(t, "toBuffer", ToBuffer);
+  Nan::SetPrototypeMethod(t, "toBuffer", ToBuffer);
 
   // Set persistent
-  NanAssignPersistent(constructor_template, t);
+  constructor_template.Reset(t);
 
   // Set the symbol
-  target->ForceSet(NanNew<String>("SecurityBufferDescriptor"), t->GetFunction());
+  target->ForceSet(Nan::New<String>("SecurityBufferDescriptor").ToLocalChecked(), t->GetFunction());
 }
