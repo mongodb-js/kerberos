@@ -31,7 +31,6 @@ void KerberosContext::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) 
   Nan::HandleScope scope;
 
   // Define a new function template
-  // Local<FunctionTemplate> t = NanNew<FunctionTemplate>(New);
   Local<FunctionTemplate> t = Nan::New<v8::FunctionTemplate>(static_cast<NAN_METHOD((*))>(New));
   t->InstanceTemplate()->SetInternalFieldCount(1);
   t->SetClassName(Nan::New<String>("KerberosContext").ToLocalChecked());

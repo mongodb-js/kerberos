@@ -764,23 +764,23 @@ NAN_METHOD(SecurityContext::QueryContextAttributes) {
   info.GetReturnValue().Set(Nan::Undefined());
 }
 
-void SecurityContext(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
+void SecurityContext::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
   // Grab the scope of the call from Node
   Nan::HandleScope scope;
 
   // Define a new function template
-  Local<FunctionTemplate> t = Nan::New<FunctionTemplate>(New);
+  Local<FunctionTemplate> t = Nan::New<v8::FunctionTemplate>(static_cast<NAN_METHOD((*))>(SecurityContext::New));
   t->InstanceTemplate()->SetInternalFieldCount(1);
   t->SetClassName(Nan::New<String>("SecurityContext").ToLocalChecked());
 
   // Class methods
-  Nan::SetMethod(t, "initialize", InitializeContext);
+  Nan::SetMethod(t, "initialize", SecurityContext::InitializeContext);
 
   // Set up method for the instance
-  Nan::SetPrototypeMethod(t, "initialize", InitalizeStep);
-  Nan::SetPrototypeMethod(t, "decryptMessage", DecryptMessage);
-  Nan::SetPrototypeMethod(t, "queryContextAttributes", QueryContextAttributes);
-  Nan::SetPrototypeMethod(t, "encryptMessage", EncryptMessage);
+  Nan::SetPrototypeMethod(t, "initialize", SecurityContext::InitalizeStep);
+  Nan::SetPrototypeMethod(t, "decryptMessage", SecurityContext::DecryptMessage);
+  Nan::SetPrototypeMethod(t, "queryContextAttributes", SecurityContext::QueryContextAttributes);
+  Nan::SetPrototypeMethod(t, "encryptMessage", SecurityContext::EncryptMessage);
 
   // Get prototype
   Local<ObjectTemplate> proto = t->PrototypeTemplate();
@@ -790,7 +790,7 @@ void SecurityContext(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
   Nan::SetAccessor(proto, Nan::New<String>("hasContext").ToLocalChecked(), SecurityContext::HasContextGetter);
 
   // Set persistent
-  constructor_template.Reset(t);
+  SecurityContext::constructor_template.Reset(t);
 
   // Set the symbol
   target->ForceSet(Nan::New<String>("SecurityContext").ToLocalChecked(), t->GetFunction());

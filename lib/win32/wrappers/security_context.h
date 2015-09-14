@@ -66,7 +66,7 @@ class SecurityContext : public Nan::ObjectWrap {
     // Constructor used for creating new Long objects from C++
     static Nan::Persistent<FunctionTemplate> constructor_template;
 
-  private:
+ // private:
     // Create a new instance
     static NAN_METHOD(New);
 };
