@@ -30,6 +30,8 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <stdarg.h>
+#include <unistd.h>
+#include <krb5.h>
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
@@ -494,7 +496,7 @@ gss_client_response *authenticate_gss_server_init(const char *service, bool cons
 	gss_name_t gss_username;
 
 	name_token.length = strlen(username);
-	name_token.value = username;
+	name_token.value = (char *)username;
 
 	maj_stat = gss_import_name(&min_stat, &name_token, GSS_C_NT_USER_NAME, &gss_username);
 	if (GSS_ERROR(maj_stat))
@@ -885,13 +887,13 @@ gss_client_response *gss_error(const char *func, const char *op, OM_uint32 err_m
 static gss_client_response *krb5_ctx_error(krb5_context context, krb5_error_code problem)
 {
     gss_client_response *response = NULL;
-    char *error_text = krb5_get_err_text(context, problem);
+    const char *error_text = krb5_get_error_message(context, problem);
     response = calloc(1, sizeof(gss_client_response));
     if(response == NULL) die1("Memory allocation failed");
     response->message = strdup(error_text);
     // TODO: something other than AUTH_GSS_ERROR? AUTH_KRB5_ERROR ?
     response->return_code = AUTH_GSS_ERROR;
-    krb5_free_error_string(context, error_text);
+    krb5_free_error_message(context, error_text);
     return response;
 }
 

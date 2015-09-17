@@ -47,7 +47,7 @@ void KerberosContext::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) 
   // Getter for the targetname - server side only
   Nan::SetAccessor(proto, Nan::New<String>("targetname").ToLocalChecked(), KerberosContext::TargetnameGetter);
 
-  proto->SetAccessor(NanNew<String>("delegatedCredentialsCache"), KerberosContext::DelegatedCredentialsCacheGetter);
+  Nan::SetAccessor(proto, Nan::New<String>("delegatedCredentialsCache").ToLocalChecked(), KerberosContext::DelegatedCredentialsCacheGetter);
 
   // Set persistent
   constructor_template.Reset(t);
@@ -119,18 +119,16 @@ NAN_GETTER(KerberosContext::TargetnameGetter) {
 
 // targetname Getter - server side only
 NAN_GETTER(KerberosContext::DelegatedCredentialsCacheGetter) {
-  NanScope();
-
   // Unpack the object
-  KerberosContext *context = ObjectWrap::Unwrap<KerberosContext>(args.This());
+  KerberosContext *context = Nan::ObjectWrap::Unwrap<KerberosContext>(info.This());
 
   gss_server_state *server_state = context->server_state;
 
   char *delegated_credentials_cache = server_state != NULL ? server_state->delegated_credentials_cache : NULL;
 
   if(delegated_credentials_cache == NULL) {
-    NanReturnValue(NanNull());
+    info.GetReturnValue().Set(Nan::Null());
   } else {
-    NanReturnValue(NanNew<String>(delegated_credentials_cache));
+    info.GetReturnValue().Set(Nan::New<String>(delegated_credentials_cache).ToLocalChecked());
   }
 }

@@ -593,15 +593,15 @@ static Local<Value> _map_authGSSServerInit(Worker *worker) {
 // Server Initialize method
 NAN_METHOD(Kerberos::AuthGSSServerInit) {
   // Ensure valid call
-  if(args.Length() != 4) return Nan::ThrowError("Requires a service string, constrained delegation boolean, a username string (or NULL) for S4U2Self protocol transition and a callback function");
+  if(info.Length() != 4) return Nan::ThrowError("Requires a service string, constrained delegation boolean, a username string (or NULL) for S4U2Self protocol transition and a callback function");
 
-  if(!args[0]->IsString() ||
-	  !args[1]->IsBoolean() ||
-	  !(args[2]->IsString() || args[2]->IsNull()) ||
-	  !args[3]->IsFunction()
+  if(!info[0]->IsString() ||
+	  !info[1]->IsBoolean() ||
+	  !(info[2]->IsString() || info[2]->IsNull()) ||
+	  !info[3]->IsFunction()
      ) return Nan::ThrowError("Requires a service string, constrained delegation boolean, a username string (or NULL) for S4U2Self protocol transition and  a callback function");
 
-  if (!args[1]->BooleanValue() && !args[2]->IsNull()) return Nan::ThrowError("S4U2Self only possible when constrained delegation is enabled");
+  if (!info[1]->BooleanValue() && !info[2]->IsNull()) return Nan::ThrowError("S4U2Self only possible when constrained delegation is enabled");
 
   // Allocate a structure
   AuthGSSServerInitCall *call = (AuthGSSServerInitCall *)calloc(1, sizeof(AuthGSSServerInitCall));
@@ -617,15 +617,15 @@ NAN_METHOD(Kerberos::AuthGSSServerInit) {
 
   call->service = service_str;
 
-  call->constrained_delegation = args[1]->BooleanValue();
+  call->constrained_delegation = info[1]->BooleanValue();
 
-  if (args[2]->IsNull())
+  if (info[2]->IsNull())
   {
       call->username = NULL;
   }
   else
   {
-      Local<String> tmpString = args[2]->ToString();
+      Local<String> tmpString = info[2]->ToString();
 
       char *tmpCstr = (char *)calloc(tmpString->Utf8Length() + 1, sizeof(char));
       if(tmpCstr == NULL) die("Memory allocation failed");
