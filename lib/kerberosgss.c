@@ -12,7 +12,13 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  **/
+/*
+ * S4U2Proxy implementation
+ * Copyright (C) 2015 David Mansfield
+ * Code inspired by mod_auth_kerb.
+ */
 
 #include "kerberosgss.h"
 
@@ -23,6 +29,9 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <errno.h>
+#include <stdarg.h>
+#include <unistd.h>
+#include <krb5.h>
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
@@ -38,6 +47,11 @@ void die1(const char *message) {
 }
 
 static gss_client_response *gss_error(const char *func, const char *op, OM_uint32 err_maj, OM_uint32 err_min);
+static gss_client_response *other_error(const char *fmt, ...);
+static gss_client_response *krb5_ctx_error(krb5_context context, krb5_error_code problem);
+
+static gss_client_response *store_gss_creds(gss_server_state *state);
+static gss_client_response *create_krb5_ccache(gss_server_state *state, krb5_context context, krb5_principal princ, krb5_ccache *ccache);
 
 /*
 char* server_principal_details(const char* service, const char* hostname)
@@ -418,14 +432,15 @@ end:
   return response;
 }
 
-gss_client_response *authenticate_gss_server_init(const char *service, gss_server_state *state)
+gss_client_response *authenticate_gss_server_init(const char *service, bool constrained_delegation, const char *username, gss_server_state *state)
 {
     OM_uint32 maj_stat;
     OM_uint32 min_stat;
     gss_buffer_desc name_token = GSS_C_EMPTY_BUFFER;
     int ret = AUTH_GSS_COMPLETE;
     gss_client_response *response = NULL;
-    
+    gss_cred_usage_t usage = GSS_C_ACCEPT;
+
     state->context = GSS_C_NO_CONTEXT;
     state->server_name = GSS_C_NO_NAME;
     state->client_name = GSS_C_NO_NAME;
@@ -434,7 +449,9 @@ gss_client_response *authenticate_gss_server_init(const char *service, gss_serve
     state->username = NULL;
     state->targetname = NULL;
     state->response = NULL;
-
+    state->constrained_delegation = constrained_delegation;
+    state->delegated_credentials_cache = NULL;
+    
     // Server name may be empty which means we aren't going to create our own creds
     size_t service_len = strlen(service);
     if (service_len != 0)
@@ -452,10 +469,15 @@ gss_client_response *authenticate_gss_server_init(const char *service, gss_serve
             goto end;
         }
         
+        if (state->constrained_delegation)
+        {
+            usage = GSS_C_BOTH;
+        }
+
         // Get credentials
         maj_stat = gss_acquire_cred(&min_stat, state->server_name, GSS_C_INDEFINITE,
-                                    GSS_C_NO_OID_SET, GSS_C_ACCEPT, &state->server_creds, NULL, NULL);
-        
+                                    GSS_C_NO_OID_SET, usage, &state->server_creds, NULL, NULL);
+
         if (GSS_ERROR(maj_stat))
         {
             response = gss_error(__func__, "gss_acquire_cred", maj_stat, min_stat);
@@ -464,6 +486,60 @@ gss_client_response *authenticate_gss_server_init(const char *service, gss_serve
         }
     }
     
+    // If a username was passed, perform the S4U2Self protocol transition to acquire
+    // a credentials from that user as if we had done gss_accept_sec_context.
+    // In this scenario, the passed username is assumed to be already authenticated
+    // by some external mechanism, and we are here to "bootstrap" some gss credentials.
+    // In authenticate_gss_server_step we will bypass the actual authentication step.
+    if (username != NULL)
+    {
+	gss_name_t gss_username;
+
+	name_token.length = strlen(username);
+	name_token.value = (char *)username;
+
+	maj_stat = gss_import_name(&min_stat, &name_token, GSS_C_NT_USER_NAME, &gss_username);
+	if (GSS_ERROR(maj_stat))
+	{
+	    response = gss_error(__func__, "gss_import_name", maj_stat, min_stat);
+	    response->return_code = AUTH_GSS_ERROR;
+	    goto end;
+	}
+
+	maj_stat = gss_acquire_cred_impersonate_name(&min_stat,
+		state->server_creds,
+		gss_username,
+		GSS_C_INDEFINITE,
+		GSS_C_NO_OID_SET,
+		GSS_C_INITIATE,
+		&state->client_creds,
+		NULL,
+		NULL);
+
+	if (GSS_ERROR(maj_stat))
+	{
+	    response = gss_error(__func__, "gss_acquire_cred_impersonate_name", maj_stat, min_stat);
+	    response->return_code = AUTH_GSS_ERROR;
+	}
+
+	gss_release_name(&min_stat, &gss_username);
+
+	if (response != NULL)
+	{
+	    goto end;
+	}
+
+	// because the username MAY be a "local" username,
+	// we want get the canonical name from the acquired creds.
+	maj_stat = gss_inquire_cred(&min_stat, state->client_creds, &state->client_name, NULL, NULL, NULL);
+	if (GSS_ERROR(maj_stat))
+	{
+	    response = gss_error(__func__, "gss_inquire_cred", maj_stat, min_stat);
+	    response->return_code = AUTH_GSS_ERROR;
+	    goto end;
+	}
+    }
+
 end:
     if(response == NULL) {
       response = calloc(1, sizeof(gss_client_response));
@@ -506,6 +582,12 @@ gss_client_response *authenticate_gss_server_clean(gss_server_state *state)
         free(state->response);
         state->response = NULL;
     }
+    if (state->delegated_credentials_cache)
+    {
+	// TODO: what about actually destroying the cache? It can't be done now as
+	// the whole point is having it around for the lifetime of the "session"
+	free(state->delegated_credentials_cache);
+    }
     
     if(response == NULL) {
       response = calloc(1, sizeof(gss_client_response));
@@ -533,80 +615,93 @@ gss_client_response *authenticate_gss_server_step(gss_server_state *state, const
         state->response = NULL;
     }
     
-    if (auth_data && *auth_data)
+    // we don't need to check the authentication token if S4U2Self protocol
+    // transition was done, because we already have the client credentials.
+    if (state->client_creds == GSS_C_NO_CREDENTIAL)
     {
-        int len;
-        input_token.value = base64_decode(auth_data, &len);
-        input_token.length = len;
+	if (auth_data && *auth_data)
+	{
+	    int len;
+	    input_token.value = base64_decode(auth_data, &len);
+	    input_token.length = len;
+	}
+	else
+	{
+	    response = calloc(1, sizeof(gss_client_response));
+	    if(response == NULL) die1("Memory allocation failed");
+	    response->message = strdup("No auth_data value in request from client");
+	    response->return_code = AUTH_GSS_ERROR;
+	    goto end;
+	}
+
+	maj_stat = gss_accept_sec_context(&min_stat,
+					  &state->context,
+					  state->server_creds,
+					  &input_token,
+					  GSS_C_NO_CHANNEL_BINDINGS,
+					  &state->client_name,
+					  NULL,
+					  &output_token,
+					  NULL,
+					  NULL,
+					  &state->client_creds);
+
+	if (GSS_ERROR(maj_stat))
+	{
+	    response = gss_error(__func__, "gss_accept_sec_context", maj_stat, min_stat);
+	    response->return_code = AUTH_GSS_ERROR;
+	    goto end;
+	}
+
+	// Grab the server response to send back to the client
+	if (output_token.length)
+	{
+	    state->response = base64_encode((const unsigned char *)output_token.value, output_token.length);
+	    maj_stat = gss_release_buffer(&min_stat, &output_token);
+	}
     }
-    else
-    {
-	response = calloc(1, sizeof(gss_client_response));
-	if(response == NULL) die1("Memory allocation failed");
-        response->message = strdup("No auth_data value in request from client");
-        response->return_code = AUTH_GSS_ERROR;
-        goto end;
-    }
-    
-    maj_stat = gss_accept_sec_context(&min_stat,
-                                      &state->context,
-                                      state->server_creds,
-                                      &input_token,
-                                      GSS_C_NO_CHANNEL_BINDINGS,
-                                      &state->client_name,
-                                      NULL,
-                                      &output_token,
-                                      NULL,
-                                      NULL,
-                                      &state->client_creds);
-    
-    if (GSS_ERROR(maj_stat))
-    {
-        response = gss_error(__func__, "gss_accept_sec_context", maj_stat, min_stat);
-        response->return_code = AUTH_GSS_ERROR;
-        goto end;
-    }
-    
-    // Grab the server response to send back to the client
-    if (output_token.length)
-    {
-        state->response = base64_encode((const unsigned char *)output_token.value, output_token.length);
-        maj_stat = gss_release_buffer(&min_stat, &output_token);
-    }
-    
+
     // Get the user name
     maj_stat = gss_display_name(&min_stat, state->client_name, &output_token, NULL);
     if (GSS_ERROR(maj_stat))
     {
-        response = gss_error(__func__, "gss_display_name", maj_stat, min_stat);
-        response->return_code = AUTH_GSS_ERROR;
-        goto end;
+	response = gss_error(__func__, "gss_display_name", maj_stat, min_stat);
+	response->return_code = AUTH_GSS_ERROR;
+	goto end;
     }
     state->username = (char *)malloc(output_token.length + 1);
     strncpy(state->username, (char*) output_token.value, output_token.length);
     state->username[output_token.length] = 0;
-    
+
     // Get the target name if no server creds were supplied
     if (state->server_creds == GSS_C_NO_CREDENTIAL)
     {
-        gss_name_t target_name = GSS_C_NO_NAME;
-        maj_stat = gss_inquire_context(&min_stat, state->context, NULL, &target_name, NULL, NULL, NULL, NULL, NULL);
-        if (GSS_ERROR(maj_stat))
-        {
-            response = gss_error(__func__, "gss_inquire_context", maj_stat, min_stat);
-            response->return_code = AUTH_GSS_ERROR;
-            goto end;
-        }
-        maj_stat = gss_display_name(&min_stat, target_name, &output_token, NULL);
-        if (GSS_ERROR(maj_stat))
-        {
-            response = gss_error(__func__, "gss_display_name", maj_stat, min_stat);
-            response->return_code = AUTH_GSS_ERROR;
-            goto end;
-        }
-        state->targetname = (char *)malloc(output_token.length + 1);
-        strncpy(state->targetname, (char*) output_token.value, output_token.length);
-        state->targetname[output_token.length] = 0;
+	gss_name_t target_name = GSS_C_NO_NAME;
+	maj_stat = gss_inquire_context(&min_stat, state->context, NULL, &target_name, NULL, NULL, NULL, NULL, NULL);
+	if (GSS_ERROR(maj_stat))
+	{
+	    response = gss_error(__func__, "gss_inquire_context", maj_stat, min_stat);
+	    response->return_code = AUTH_GSS_ERROR;
+	    goto end;
+	}
+	maj_stat = gss_display_name(&min_stat, target_name, &output_token, NULL);
+	if (GSS_ERROR(maj_stat))
+	{
+	    response = gss_error(__func__, "gss_display_name", maj_stat, min_stat);
+	    response->return_code = AUTH_GSS_ERROR;
+	    goto end;
+	}
+	state->targetname = (char *)malloc(output_token.length + 1);
+	strncpy(state->targetname, (char*) output_token.value, output_token.length);
+	state->targetname[output_token.length] = 0;
+    }
+
+    if (state->constrained_delegation && state->client_creds != GSS_C_NO_CREDENTIAL)
+    {
+	if ((response = store_gss_creds(state)) != NULL)
+	{
+	    goto end;
+	}
     }
 
     ret = AUTH_GSS_COMPLETE;
@@ -626,6 +721,111 @@ end:
     // Return the response
     return response;
 }
+
+static gss_client_response *store_gss_creds(gss_server_state *state)
+{
+    OM_uint32 maj_stat, min_stat;
+    krb5_principal princ = NULL;
+    krb5_ccache ccache = NULL;
+    krb5_error_code problem;
+    krb5_context context;
+    gss_client_response *response = NULL;
+
+    problem = krb5_init_context(&context);
+    if (problem) {
+	response = other_error("No auth_data value in request from client");
+        return response;
+    }
+
+    problem = krb5_parse_name(context, state->username, &princ);
+    if (problem) {
+	response = krb5_ctx_error(context, problem);
+	goto end;
+    }
+
+    if ((response = create_krb5_ccache(state, context, princ, &ccache)))
+    {
+	goto end;
+    }
+
+    maj_stat = gss_krb5_copy_ccache(&min_stat, state->client_creds, ccache);
+    if (GSS_ERROR(maj_stat)) {
+        response = gss_error(__func__, "gss_krb5_copy_ccache", maj_stat, min_stat);
+        response->return_code = AUTH_GSS_ERROR;
+        goto end;
+    }
+
+    krb5_cc_close(context, ccache);
+    ccache = NULL;
+
+    response = calloc(1, sizeof(gss_client_response));
+    if(response == NULL) die1("Memory allocation failed");
+    // TODO: something other than AUTH_GSS_COMPLETE?
+    response->return_code = AUTH_GSS_COMPLETE;
+
+ end:
+    if (princ)
+	krb5_free_principal(context, princ);
+    if (ccache)
+	krb5_cc_destroy(context, ccache);
+    krb5_free_context(context);
+
+    return response;
+}
+
+static gss_client_response *create_krb5_ccache(gss_server_state *state, krb5_context kcontext, krb5_principal princ, krb5_ccache *ccache)
+{
+    char *ccname = NULL;
+    int fd;
+    krb5_error_code problem;
+    krb5_ccache tmp_ccache = NULL;
+    gss_client_response *error = NULL;
+
+    // TODO: mod_auth_kerb used a temp file under /run/httpd/krbcache. what can we do?
+    ccname = strdup("FILE:/tmp/krb5cc_nodekerberos_XXXXXX");
+    if (!ccname) die1("Memory allocation failed");
+
+    fd = mkstemp(ccname + strlen("FILE:"));
+    if (fd < 0) {
+	error = other_error("mkstemp() failed: %s", strerror(errno));
+	goto end;
+    }
+
+    close(fd);
+
+    problem = krb5_cc_resolve(kcontext, ccname, &tmp_ccache);
+    if (problem) {
+       error = krb5_ctx_error(kcontext, problem);
+       goto end;
+    }
+
+    problem = krb5_cc_initialize(kcontext, tmp_ccache, princ);
+    if (problem) {
+	error = krb5_ctx_error(kcontext, problem);
+	goto end;
+    }
+
+    state->delegated_credentials_cache = strdup(ccname);
+
+    // TODO: how/when to cleanup the creds cache file?
+    // TODO: how to expose the credentials expiration time?
+
+    *ccache = tmp_ccache;
+    tmp_ccache = NULL;
+
+ end:
+    if (tmp_ccache)
+	krb5_cc_destroy(kcontext, tmp_ccache);
+
+    if (ccname && error)
+	unlink(ccname);
+
+    if (ccname)
+	free(ccname);
+
+    return error;
+}
+
 
 gss_client_response *gss_error(const char *func, const char *op, OM_uint32 err_maj, OM_uint32 err_min) {
   OM_uint32 maj_stat, min_stat;
@@ -683,6 +883,49 @@ gss_client_response *gss_error(const char *func, const char *op, OM_uint32 err_m
 
   return response;
 }
+
+static gss_client_response *krb5_ctx_error(krb5_context context, krb5_error_code problem)
+{
+    gss_client_response *response = NULL;
+    const char *error_text = krb5_get_error_message(context, problem);
+    response = calloc(1, sizeof(gss_client_response));
+    if(response == NULL) die1("Memory allocation failed");
+    response->message = strdup(error_text);
+    // TODO: something other than AUTH_GSS_ERROR? AUTH_KRB5_ERROR ?
+    response->return_code = AUTH_GSS_ERROR;
+    krb5_free_error_message(context, error_text);
+    return response;
+}
+
+static gss_client_response *other_error(const char *fmt, ...)
+{
+    size_t needed;
+    char *msg;
+    gss_client_response *response = NULL;
+    va_list ap, aps;
+
+    va_start(ap, fmt);
+
+    va_copy(aps, ap);
+    needed = snprintf(NULL, 0, fmt, aps);
+    va_end(aps);
+
+    msg = malloc(needed);
+    if (!msg) die1("Memory allocation failed");
+
+    vsnprintf(msg, needed, fmt, ap);
+    va_end(ap);
+
+    response = calloc(1, sizeof(gss_client_response));
+    if(response == NULL) die1("Memory allocation failed");
+    response->message = msg;
+
+    // TODO: something other than AUTH_GSS_ERROR?
+    response->return_code = AUTH_GSS_ERROR;
+
+    return response;
+}
+
 
 #pragma clang diagnostic pop
 

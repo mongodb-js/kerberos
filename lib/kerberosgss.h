@@ -16,6 +16,8 @@
 #ifndef KERBEROS_GSS_H
 #define KERBEROS_GSS_H
 
+#include <stdbool.h>
+
 #include <gssapi/gssapi.h>
 #include <gssapi/gssapi_generic.h>
 #include <gssapi/gssapi_krb5.h>
@@ -52,6 +54,8 @@ typedef struct {
   char*            username;
   char*            targetname;
   char*            response;
+  bool		   constrained_delegation;
+  char*		   delegated_credentials_cache;
 } gss_server_state;
 
 // char* server_principal_details(const char* service, const char* hostname);
@@ -62,7 +66,7 @@ gss_client_response *authenticate_gss_client_step(gss_client_state *state, const
 gss_client_response *authenticate_gss_client_unwrap(gss_client_state* state, const char* challenge);
 gss_client_response *authenticate_gss_client_wrap(gss_client_state* state, const char* challenge, const char* user);
 
-gss_client_response *authenticate_gss_server_init(const char* service, gss_server_state* state);
+gss_client_response *authenticate_gss_server_init(const char* service, bool constrained_delegation, const char *username, gss_server_state* state);
 gss_client_response *authenticate_gss_server_clean(gss_server_state *state);
 gss_client_response *authenticate_gss_server_step(gss_server_state *state, const char *challenge);
 
