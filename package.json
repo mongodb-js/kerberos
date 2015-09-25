@@ -1,6 +1,6 @@
 {
   "name": "kerberos",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "description": "Kerberos library for Node.js",
   "main": "index.js",
   "repository": {
@@ -25,5 +25,5 @@
   "author": "Christian Amor Kvalheim",
   "license": "Apache 2.0",
   "readmeFilename": "README.md",
-  "gitHead": "bb01d4fe322e022999aca19da564e7d9db59a8ed"
+  "gitHead": "035be2e4619d7f3d7ea5103da1f60a6045ef8d7c"
 }
