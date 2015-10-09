@@ -19,7 +19,7 @@
     "nodeunit": "latest"
   },
   "scripts": {
-    "install" : "(node-gyp rebuild) || (exit 0)",
+    "install" : "node-gyp rebuild",
     "test" : "nodeunit ./test"
   },
   "author": "Christian Amor Kvalheim",
