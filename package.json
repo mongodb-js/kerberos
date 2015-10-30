@@ -1,6 +1,6 @@
 {
   "name": "kerberos",
-  "version": "0.0.16",
+  "version": "0.0.17",
   "description": "Kerberos library for Node.js",
   "main": "index.js",
   "repository": {
@@ -19,7 +19,7 @@
     "nodeunit": "latest"
   },
   "scripts": {
-    "install" : "node-gyp rebuild",
+    "install" : "(node-gyp rebuild) || (exit 0)",
     "test" : "nodeunit ./test"
   },
   "author": "Christian Amor Kvalheim",
