@@ -922,12 +922,11 @@ static gss_client_response *other_error(const char *fmt, ...)
     va_start(ap, fmt);
 
     va_copy(aps, ap);
-    needed = snprintf(NULL, 0, fmt, aps);
+    needed = vsnprintf(NULL, 0, fmt, aps) + 1;
     va_end(aps);
 
     msg = malloc(needed);
     if (!msg) die1("Memory allocation failed");
-
     vsnprintf(msg, needed, fmt, ap);
     va_end(ap);
 
