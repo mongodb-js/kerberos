@@ -70,4 +70,9 @@ gss_client_response *authenticate_gss_server_init(const char* service, bool cons
 gss_client_response *authenticate_gss_server_clean(gss_server_state *state);
 gss_client_response *authenticate_gss_server_step(gss_server_state *state, const char *challenge);
 
+gss_client_response *authenticate_user_krb5_password(const char *username,
+							 const char *password,
+							 const char *service);
+
+
 #endif

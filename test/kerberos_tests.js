@@ -32,3 +32,15 @@ exports['Simple initialize of Kerberos object'] = function(test) {
     });
   });
 }
+
+// for this test, please set the environment variables shown below.
+exports['Simple username password test'] = function(test) {
+    var Kerberos = require('../lib/kerberos.js').Kerberos;
+    var kerberos = new Kerberos();
+    kerberos.authUserKrb5Password(process.env.KRB5_PW_TEST_USERNAME, process.env.KRB5_PW_TEST_PASSWORD, process.env.KRB5_PW_TEST_SERVICE, function(err, ok) {
+        console.log("err:",err);
+        console.log("ok:", ok);
+        test.equal(ok, true);
+        test.done();
+    });
+};

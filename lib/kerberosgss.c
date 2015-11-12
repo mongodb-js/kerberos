@@ -52,7 +52,9 @@ static gss_client_response *krb5_ctx_error(krb5_context context, krb5_error_code
 
 static gss_client_response *store_gss_creds(gss_server_state *state);
 static gss_client_response *create_krb5_ccache(gss_server_state *state, krb5_context context, krb5_principal princ, krb5_ccache *ccache);
-
+static gss_client_response *verify_krb5_kdc(krb5_context context,
+					       krb5_creds *creds,
+					       const char *service);
 /*
  * Protocol transition
  */
@@ -736,6 +738,229 @@ end:
     // Return the response
     return response;
 }
+
+/*
+ * username, password: Credentials to validate. Null not allowed
+ * service: Service principal (e.g. HTTP/somehost.example.org) of key
+ *          stored in default keytab which will be used to verify KDC.
+ *          Empty string (*not* NULL) will bypass KDC verification
+ * return: response->return_code will be
+ * 		-1 (AUTH_GSS_ERROR) for error, see response->message
+ * 	 	0 for auth fail
+ * 	 	1 for auth ok
+ */
+gss_client_response *authenticate_user_krb5_password(const char *username,
+							 const char *password,
+							 const char *service)
+{
+    krb5_context context = NULL;
+    krb5_error_code problem;
+    krb5_principal user_principal = NULL;
+    krb5_get_init_creds_opt *opt = NULL;
+    krb5_creds creds;
+    bool auth_ok = false;
+
+    gss_client_response *response = NULL;
+
+    if (username == NULL || password == NULL || service == NULL) {
+	return other_error("username, password and service must all be non-null");
+    }
+
+    memset(&creds, 0, sizeof(creds));
+
+    problem = krb5_init_context(&context);
+    if (problem) {
+	// can't call krb5_ctx_error without a context...
+	response = other_error("unable to initialize krb5 context (%d)", (int)problem);
+	goto out;
+    }
+
+    problem = krb5_parse_name(context, username, &user_principal);
+    if (problem) {
+	response = krb5_ctx_error(context, problem);
+	goto out;
+    }
+
+    problem = krb5_get_init_creds_opt_alloc(context, &opt);
+    if (problem) {
+	response = krb5_ctx_error(context, problem);
+        goto out;
+    }
+
+    problem = krb5_get_init_creds_password(context, &creds, user_principal,
+                                          password, NULL,
+					  NULL, 0, NULL, opt);
+
+    switch (problem) {
+    case 0:
+        auth_ok = true;
+        break;
+    case KRB5KDC_ERR_PREAUTH_FAILED:
+    case KRB5KRB_AP_ERR_BAD_INTEGRITY:
+    case KRB5KDC_ERR_C_PRINCIPAL_UNKNOWN:
+        /* "expected" error */
+        auth_ok = false;
+        break;
+    default:
+	/* unexpected error */
+	response = krb5_ctx_error(context, problem);
+	break;
+    }
+
+    if (auth_ok && strlen(service) > 0) {
+	response = verify_krb5_kdc(context, &creds, service);
+    }
+
+  out:
+    krb5_free_cred_contents(context, &creds);
+
+    if (opt != NULL) {
+	krb5_get_init_creds_opt_free(context, opt);
+    }
+
+    if (user_principal != NULL) {
+	krb5_free_principal(context, user_principal);
+    }
+
+    if (context != NULL) {
+	krb5_free_context(context);
+    }
+
+    if (response == NULL) {
+	response = calloc(1, sizeof(gss_client_response));
+	if(response == NULL) die1("Memory allocation failed");
+	response->return_code = auth_ok ? 1 : 0;
+    }
+
+    return response;
+}
+
+/*
+ * The username/password have been verified, now we must verify the
+ * response came from a valid KDC by getting a ticket for our own
+ * service that we can verify using our keytab.
+ *
+ * Based on mod_auth_kerb
+ */
+static gss_client_response *verify_krb5_kdc(krb5_context context,
+					       krb5_creds *creds,
+					       const char *service)
+{
+    krb5_error_code problem;
+    krb5_keytab keytab = NULL;
+    krb5_ccache tmp_ccache = NULL;
+    krb5_principal server_princ = NULL;
+    krb5_creds *new_creds = NULL;
+    krb5_auth_context auth_context = NULL;
+    krb5_data req;
+    gss_client_response *response = NULL;
+
+    memset(&req, 0, sizeof(req));
+
+    problem = krb5_kt_default (context, &keytab);
+
+    if (problem) {
+	response = krb5_ctx_error(context, problem);
+        goto out;
+    }
+
+    problem = krb5_cc_new_unique(context, "MEMORY", NULL, &tmp_ccache);
+    if (problem) {
+	response = krb5_ctx_error(context, problem);
+        goto out;
+    }
+
+    problem = krb5_cc_initialize(context, tmp_ccache, creds->client);
+    if (problem) {
+	response = krb5_ctx_error(context, problem);
+        goto out;
+    }
+
+    problem = krb5_cc_store_cred(context, tmp_ccache, creds);
+    if (problem) {
+	response = krb5_ctx_error(context, problem);
+        goto out;
+    }
+
+    problem = krb5_parse_name(context, service, &server_princ);
+    if (problem) {
+	response = krb5_ctx_error(context, problem);
+        goto out;
+    }
+
+    /*
+     * creds->server is (almost always?) krbtgt service, and server_princ is not.
+     * In which case retrieve a service ticket for server_princ service from KDC
+     */
+    if (!krb5_principal_compare(context, server_princ, creds->server)) {
+	krb5_creds match_cred;
+
+	memset (&match_cred, 0, sizeof(match_cred));
+
+	match_cred.client = creds->client;
+	match_cred.server = server_princ;
+
+	problem = krb5_get_credentials(context, 0, tmp_ccache, &match_cred, &new_creds);
+	if (problem) {
+	    response = krb5_ctx_error(context, problem);
+	    goto out;
+	}
+
+	creds = new_creds;
+    }
+
+    problem = krb5_mk_req_extended(context, &auth_context, 0, NULL, creds, &req);
+    if (problem) {
+	response = krb5_ctx_error(context, problem);
+        goto out;
+    }
+
+    krb5_auth_con_free(context, auth_context);
+    auth_context = NULL;
+
+    problem = krb5_auth_con_init(context, &auth_context);
+    if (problem) {
+	response = krb5_ctx_error(context, problem);
+        goto out;
+    }
+
+    /* disable replay cache checks */
+    krb5_auth_con_setflags(context, auth_context, KRB5_AUTH_CONTEXT_DO_SEQUENCE);
+
+    problem = krb5_rd_req(context, &auth_context, &req,
+			  server_princ, keytab, 0, NULL);
+    if (problem) {
+	response = krb5_ctx_error(context, problem);
+        goto out;
+    }
+
+  out:
+
+    krb5_free_data_contents(context, &req);
+
+    if (auth_context) {
+        krb5_auth_con_free(context, auth_context);
+    }
+
+    if (new_creds) {
+	krb5_free_creds(context, new_creds);
+    }
+
+    if (server_princ) {
+	krb5_free_principal(context, server_princ);
+    }
+
+    if (tmp_ccache) {
+	krb5_cc_destroy (context, tmp_ccache);
+    }
+
+    if (keytab) {
+	krb5_kt_close (context, keytab);
+    }
+
+    return response;
+}
+
 
 static gss_client_response *store_gss_creds(gss_server_state *state)
 {

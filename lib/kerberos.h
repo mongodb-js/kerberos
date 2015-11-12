@@ -38,6 +38,7 @@ public:
   static NAN_METHOD(AuthGSSServerInit);
   static NAN_METHOD(AuthGSSServerClean);
   static NAN_METHOD(AuthGSSServerStep);
+  static NAN_METHOD(AuthUserKrb5Password);
 
 private:
   static NAN_METHOD(New);
