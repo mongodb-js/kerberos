@@ -22,6 +22,7 @@ void die(const char *message) {
 typedef struct AuthGSSClientCall {
   uint32_t  flags;
   char *uri;
+  char *credentials_cache;
 } AuthGSSClientCall;
 
 typedef struct AuthGSSClientStepCall {
@@ -118,10 +119,11 @@ static void _authGSSClientInit(Worker *worker) {
   // Unpack the parameter data struct
   AuthGSSClientCall *call = (AuthGSSClientCall *)worker->parameters;
   // Start the kerberos client
-  response = authenticate_gss_client_init(call->uri, call->flags, state);
+  response = authenticate_gss_client_init(call->uri, call->flags, call->credentials_cache, state);
 
   // Release the parameter struct memory
   free(call->uri);
+  free(call->credentials_cache);
   free(call);
 
   // If we have an error mark worker as having had an error
@@ -146,10 +148,12 @@ static Local<Value> _map_authGSSClientInit(Worker *worker) {
 
 // Initialize method
 NAN_METHOD(Kerberos::AuthGSSClientInit) {
+  const char *usage = "Requires a service string uri, integer flags, string credentialsCache and a callback function";
+
   // Ensure valid call
-    if(info.Length() != 3) return Nan::ThrowError("Requires a service string uri, integer flags and a callback function");
-  if(info.Length() == 3 && (!info[0]->IsString() || !info[1]->IsInt32() || !info[2]->IsFunction()))
-      return Nan::ThrowError("Requires a service string uri, integer flags and a callback function");
+  if(info.Length() != 4) return Nan::ThrowError(usage);
+  if(!info[0]->IsString() || !info[1]->IsInt32() || !info[2]->IsString() || !info[3]->IsFunction())
+      return Nan::ThrowError(usage);
 
   Local<String> service = info[0]->ToString();
   // Convert uri string to c-string
@@ -159,14 +163,23 @@ NAN_METHOD(Kerberos::AuthGSSClientInit) {
   // Write v8 string to c-string
   service->WriteUtf8(service_str);
 
+  Local<String> credentialsCache = info[2]->ToString();
+  // Convert string to c-string
+  char *credentials_cache_str = (char *)calloc(credentialsCache->Utf8Length() + 1, sizeof(char));
+  if(credentials_cache_str == NULL) die("Memory allocation failed");
+
+  // Write v8 string to c-string
+  credentialsCache->WriteUtf8(credentials_cache_str);
+
   // Allocate a structure
   AuthGSSClientCall *call = (AuthGSSClientCall *)calloc(1, sizeof(AuthGSSClientCall));
   if(call == NULL) die("Memory allocation failed");
   call->flags =info[1]->ToInt32()->Uint32Value();
   call->uri = service_str;
+  call->credentials_cache = credentials_cache_str;
 
   // Unpack the callback
-  Local<Function> callbackHandle = Local<Function>::Cast(info[2]);
+  Local<Function> callbackHandle = Local<Function>::Cast(info[3]);
   Nan::Callback *callback = new Nan::Callback(callbackHandle);
 
   // Let's allocate some space

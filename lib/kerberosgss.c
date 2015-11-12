@@ -55,6 +55,8 @@ static gss_client_response *create_krb5_ccache(gss_server_state *state, krb5_con
 static gss_client_response *verify_krb5_kdc(krb5_context context,
 					       krb5_creds *creds,
 					       const char *service);
+static gss_client_response *init_gss_creds(const char *credential_cache, gss_cred_id_t *cred);
+
 /*
  * Protocol transition
  */
@@ -148,7 +150,7 @@ end:
     return result;
 }
 */
-gss_client_response *authenticate_gss_client_init(const char* service, long int gss_flags, gss_client_state* state) {
+gss_client_response *authenticate_gss_client_init(const char* service, long int gss_flags, const char* credentials_cache, gss_client_state* state) {
   OM_uint32 maj_stat;
   OM_uint32 min_stat;
   gss_buffer_desc name_token = GSS_C_EMPTY_BUFFER;
@@ -160,6 +162,7 @@ gss_client_response *authenticate_gss_client_init(const char* service, long int 
   state->gss_flags = gss_flags;
   state->username = NULL;
   state->response = NULL;
+  state->credentials_cache = NULL;
 
   // Import server name first
   name_token.length = strlen(service);
@@ -171,6 +174,11 @@ gss_client_response *authenticate_gss_client_init(const char* service, long int 
     response = gss_error(__func__, "gss_import_name", maj_stat, min_stat);
     response->return_code = AUTH_GSS_ERROR;
     goto end;
+  }
+
+  if (credentials_cache && strlen(credentials_cache) > 0) {
+      state->credentials_cache = strdup(credentials_cache);
+      if (state->credentials_cache == NULL) die1("Memory allocation failed");
   }
 
 end:
@@ -204,6 +212,11 @@ gss_client_response *authenticate_gss_client_clean(gss_client_state *state) {
     state->response = NULL;
   }
 
+  if (state->credentials_cache != NULL) {
+    free(state->credentials_cache);
+    state->credentials_cache = NULL;
+  }
+
   if(response == NULL) {
     response = calloc(1, sizeof(gss_client_response));
     if(response == NULL) die1("Memory allocation failed");
@@ -220,6 +233,7 @@ gss_client_response *authenticate_gss_client_step(gss_client_state* state, const
   gss_buffer_desc output_token = GSS_C_EMPTY_BUFFER;
   int ret = AUTH_GSS_CONTINUE;
   gss_client_response *response = NULL;
+  gss_cred_id_t gss_cred = GSS_C_NO_CREDENTIAL;
 
   // Always clear out the old response
   if (state->response != NULL) {
@@ -234,9 +248,16 @@ gss_client_response *authenticate_gss_client_step(gss_client_state* state, const
     input_token.length = len;
   }
 
+  if (state->credentials_cache) {
+      response = init_gss_creds(state->credentials_cache, &gss_cred);
+      if (response) {
+	  goto end;
+      }
+  }
+
   // Do GSSAPI step
   maj_stat = gss_init_sec_context(&min_stat,
-                                  GSS_C_NO_CREDENTIAL,
+                                  gss_cred,
                                   &state->context,
                                   state->server_name,
                                   GSS_C_NO_OID,
@@ -296,8 +317,12 @@ gss_client_response *authenticate_gss_client_step(gss_client_state* state, const
   }
 
 end:
+  if (gss_cred != GSS_C_NO_CREDENTIAL)
+    gss_release_cred(&min_stat, &gss_cred);
+
   if(output_token.value)
     gss_release_buffer(&min_stat, &output_token);
+
   if(input_token.value)
     free(input_token.value);
 
@@ -308,6 +333,49 @@ end:
   }
 
   // Return the response
+  return response;
+}
+
+
+static gss_client_response *init_gss_creds(const char *credential_cache, gss_cred_id_t *cred) {
+  OM_uint32 maj_stat;
+  OM_uint32 min_stat;
+  const char *old_credential_cache;
+  krb5_context context;
+  krb5_error_code problem;
+  gss_client_response *response = NULL;
+  krb5_ccache ccache = NULL;
+
+  *cred = GSS_C_NO_CREDENTIAL;
+
+  if (credential_cache == NULL || strlen(credential_cache) == 0) {
+      return NULL;
+  }
+
+  problem = krb5_init_context(&context);
+  if (problem) {
+      return other_error("unable to initialize krb5 context (%d)", (int)problem);
+  }
+
+  problem = krb5_cc_resolve(context, credential_cache, &ccache);
+  if (problem) {
+      response = krb5_ctx_error(context, problem);
+      goto done;
+  }
+
+  maj_stat = gss_krb5_import_cred(&min_stat, ccache, NULL, NULL, cred);
+  if (GSS_ERROR(maj_stat)) {
+    response = gss_error(__func__, "gss_krb5_import_cred", maj_stat, min_stat);
+    response->return_code = AUTH_GSS_ERROR;
+  }
+
+ done:
+  if (response && ccache) {
+      krb5_cc_close(context, ccache);
+  }
+
+  krb5_free_context(context);
+
   return response;
 }
 

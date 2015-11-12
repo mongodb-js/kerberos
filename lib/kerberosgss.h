@@ -43,6 +43,7 @@ typedef struct {
   long int         gss_flags;
   char*            username;
   char*            response;
+  char*            credentials_cache;
 } gss_client_state;
 
 typedef struct {
@@ -60,7 +61,7 @@ typedef struct {
 
 // char* server_principal_details(const char* service, const char* hostname);
 
-gss_client_response *authenticate_gss_client_init(const char* service, long int gss_flags, gss_client_state* state);
+gss_client_response *authenticate_gss_client_init(const char* service, long int gss_flags, const char* credentials_cache, gss_client_state* state);
 gss_client_response *authenticate_gss_client_clean(gss_client_state *state);
 gss_client_response *authenticate_gss_client_step(gss_client_state *state, const char *challenge);
 gss_client_response *authenticate_gss_client_unwrap(gss_client_state* state, const char* challenge);
