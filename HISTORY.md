@@ -1,3 +1,7 @@
+0.0.18 01-19-2016
+-----------------
+- remove builderror.log.
+
 0.0.17 10-30-2015
 -----------------
 - Reverted changes in package.json from 0.0.16.

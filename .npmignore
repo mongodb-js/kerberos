@@ -7,12 +7,14 @@ HISTORY
 Readme.md
 TODO
 
+*.log
+
 docs/
 docs/sphinx-docs
 data/
 dev/
 examples/
-
+test/
 
 build/
 node_modules/
