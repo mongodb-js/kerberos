@@ -37,6 +37,12 @@ exports['Simple initialize of Kerberos object'] = function(test) {
 exports['Simple username password test'] = function(test) {
     var Kerberos = require('../lib/kerberos.js').Kerberos;
     var kerberos = new Kerberos();
+
+    if (!process.env.KRB5_PW_TEST_USERNAME) {
+        test.done();
+        return;
+    }
+
     kerberos.authUserKrb5Password(process.env.KRB5_PW_TEST_USERNAME, process.env.KRB5_PW_TEST_PASSWORD, process.env.KRB5_PW_TEST_SERVICE, function(err, ok) {
         console.log("err:",err);
         console.log("ok:", ok);
@@ -55,6 +61,11 @@ exports['Negotiate HTTP Client Test'] = function(test) {
     // don't use the cache in $KRB5CCNAME, use the one in $NEGOTIATE_TEST_KRB5CCNAME instead
     var krb5CcName = process.env.NEGOTIATE_TEST_KRB5CCNAME || ''; 
     /////
+
+    if (!httpHostname) {
+        test.done();
+        return;
+    }
 
     var serviceName = "HTTP@"+httpHostname;
 
