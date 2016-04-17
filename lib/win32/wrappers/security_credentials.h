@@ -51,7 +51,7 @@ class SecurityCredentials : public Nan::ObjectWrap {
 
     // Functions available from V8
     static void Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target);
-    static NAN_METHOD(Aquire);
+    static NAN_METHOD(Acquire);
 
     // Constructor used for creating new Long objects from C++
     static Nan::Persistent<FunctionTemplate> constructor_template;
