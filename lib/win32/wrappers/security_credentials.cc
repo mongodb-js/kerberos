@@ -118,26 +118,26 @@ static Local<Value> _map_authSSPIAquire(Worker *worker) {
   return Nan::Null();
 }
 
-NAN_METHOD(SecurityCredentials::Aquire) {
+NAN_METHOD(SecurityCredentials::Acquire) {
   char *package_str = NULL, *username_str = NULL, *password_str = NULL, *domain_str = NULL;
   // Unpack the variables
   if(info.Length() != 2 && info.Length() != 3 && info.Length() != 4 && info.Length() != 5)
-    return Nan::ThrowError("Aquire must be called with either [package:string, username:string, [password:string, domain:string], callback:function]");
+    return Nan::ThrowError("Acquire must be called with either [package:string, username:string, [password:string, domain:string], callback:function]");
 
   if(!info[0]->IsString())
-    return Nan::ThrowError("Aquire must be called with either [package:string, username:string, [password:string, domain:string], callback:function]");
+    return Nan::ThrowError("Acquire must be called with either [package:string, username:string, [password:string, domain:string], callback:function]");
 
   if(!info[1]->IsString())
-    return Nan::ThrowError("Aquire must be called with either [package:string, username:string, [password:string, domain:string], callback:function]");
+    return Nan::ThrowError("Acquire must be called with either [package:string, username:string, [password:string, domain:string], callback:function]");
 
   if(info.Length() == 3 && (!info[2]->IsString() && !info[2]->IsFunction()))
-    return Nan::ThrowError("Aquire must be called with either [package:string, username:string, [password:string, domain:string], callback:function]");
+    return Nan::ThrowError("Acquire must be called with either [package:string, username:string, [password:string, domain:string], callback:function]");
 
   if(info.Length() == 4 && (!info[3]->IsString() && !info[3]->IsUndefined() && !info[3]->IsNull()) && !info[3]->IsFunction())
-    return Nan::ThrowError("Aquire must be called with either [package:string, username:string, [password:string, domain:string], callback:function]");
+    return Nan::ThrowError("Acquire must be called with either [package:string, username:string, [password:string, domain:string], callback:function]");
 
   if(info.Length() == 5 && !info[4]->IsFunction())
-    return Nan::ThrowError("Aquire must be called with either [package:string, username:string, [password:string, domain:string], callback:function]");
+    return Nan::ThrowError("Acquire must be called with either [package:string, username:string, [password:string, domain:string], callback:function]");
 
   Local<Function> callbackHandle;
 
@@ -210,7 +210,7 @@ void SecurityCredentials::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE targ
   t->SetClassName(Nan::New<String>("SecurityCredentials").ToLocalChecked());
 
   // Class methods
-  Nan::SetMethod(t, "aquire", Aquire);
+  Nan::SetMethod(t, "acquire", Acquire);
 
   // Set persistent
   constructor_template.Reset(t);
