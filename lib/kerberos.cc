@@ -22,6 +22,7 @@ void die(const char *message) {
 typedef struct AuthGSSClientCall {
   uint32_t  flags;
   char *uri;
+  char *credentials_cache;
 } AuthGSSClientCall;
 
 typedef struct AuthGSSClientStepCall {
@@ -59,6 +60,12 @@ typedef struct AuthGSSServerStepCall {
   char *auth_data;
 } AuthGSSServerStepCall;
 
+typedef struct AuthUserKrb5PasswordCall {
+  char *username;
+  char *password;
+  char *service;
+} AuthUserKrb5PasswordCall;
+
 Kerberos::Kerberos() : Nan::ObjectWrap() {
 }
 
@@ -82,6 +89,7 @@ void Kerberos::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
   Nan::SetPrototypeMethod(t, "authGSSServerInit", AuthGSSServerInit);
   Nan::SetPrototypeMethod(t, "authGSSServerClean", AuthGSSServerClean);
   Nan::SetPrototypeMethod(t, "authGSSServerStep", AuthGSSServerStep);
+  Nan::SetPrototypeMethod(t, "authUserKrb5Password", AuthUserKrb5Password);
 
   constructor_template.Reset(t);
 
@@ -111,10 +119,11 @@ static void _authGSSClientInit(Worker *worker) {
   // Unpack the parameter data struct
   AuthGSSClientCall *call = (AuthGSSClientCall *)worker->parameters;
   // Start the kerberos client
-  response = authenticate_gss_client_init(call->uri, call->flags, state);
+  response = authenticate_gss_client_init(call->uri, call->flags, call->credentials_cache, state);
 
   // Release the parameter struct memory
   free(call->uri);
+  free(call->credentials_cache);
   free(call);
 
   // If we have an error mark worker as having had an error
@@ -139,10 +148,12 @@ static Local<Value> _map_authGSSClientInit(Worker *worker) {
 
 // Initialize method
 NAN_METHOD(Kerberos::AuthGSSClientInit) {
+  const char *usage = "Requires a service string uri, integer flags, string credentialsCache and a callback function";
+
   // Ensure valid call
-    if(info.Length() != 3) return Nan::ThrowError("Requires a service string uri, integer flags and a callback function");
-  if(info.Length() == 3 && (!info[0]->IsString() || !info[1]->IsInt32() || !info[2]->IsFunction()))
-      return Nan::ThrowError("Requires a service string uri, integer flags and a callback function");
+  if(info.Length() != 4) return Nan::ThrowError(usage);
+  if(!info[0]->IsString() || !info[1]->IsInt32() || !info[2]->IsString() || !info[3]->IsFunction())
+      return Nan::ThrowError(usage);
 
   Local<String> service = info[0]->ToString();
   // Convert uri string to c-string
@@ -152,14 +163,23 @@ NAN_METHOD(Kerberos::AuthGSSClientInit) {
   // Write v8 string to c-string
   service->WriteUtf8(service_str);
 
+  Local<String> credentialsCache = info[2]->ToString();
+  // Convert string to c-string
+  char *credentials_cache_str = (char *)calloc(credentialsCache->Utf8Length() + 1, sizeof(char));
+  if(credentials_cache_str == NULL) die("Memory allocation failed");
+
+  // Write v8 string to c-string
+  credentialsCache->WriteUtf8(credentials_cache_str);
+
   // Allocate a structure
   AuthGSSClientCall *call = (AuthGSSClientCall *)calloc(1, sizeof(AuthGSSClientCall));
   if(call == NULL) die("Memory allocation failed");
   call->flags =info[1]->ToInt32()->Uint32Value();
   call->uri = service_str;
+  call->credentials_cache = credentials_cache_str;
 
   // Unpack the callback
-  Local<Function> callbackHandle = Local<Function>::Cast(info[2]);
+  Local<Function> callbackHandle = Local<Function>::Cast(info[3]);
   Nan::Callback *callback = new Nan::Callback(callbackHandle);
 
   // Let's allocate some space
@@ -819,6 +839,84 @@ NAN_METHOD(Kerberos::AuthGSSServerStep) {
   // Return no value as it's callback based
   info.GetReturnValue().Set(Nan::Undefined());
 }
+
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// authUserKrb5Password
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+static void _authUserKrb5Password(Worker *worker) {
+    AuthUserKrb5PasswordCall *call = (AuthUserKrb5PasswordCall *)worker->parameters;
+
+    gss_client_response *response = authenticate_user_krb5_password(call->username, call->password, call->service);
+
+    free(call->username);
+    free(call->password);
+    free(call->service);
+    free(call);
+
+    // If we have an error mark worker as having had an error
+    if(response->return_code == AUTH_GSS_ERROR) {
+      worker->error = TRUE;
+      worker->error_code = response->return_code;
+      worker->error_message = response->message;
+    } else {
+      worker->return_code = response->return_code;
+    }
+
+    free(response);
+}
+
+static Local<Value> _map_authUserKrb5Password(Worker *worker) {
+  return worker->return_code ? Nan::True() : Nan::False();
+}
+
+NAN_METHOD(Kerberos::AuthUserKrb5Password) {
+    const char *usage = "Requires a username (string), password (string), service (string) and callback (function(err,boolean))";
+
+    if(info.Length() != 4) return Nan::ThrowError(usage);
+    if(!info[0]->IsString()) return Nan::ThrowError(usage);
+    if(!info[1]->IsString()) return Nan::ThrowError(usage);
+    if(!info[2]->IsString()) return Nan::ThrowError(usage);
+    if(!info[3]->IsFunction()) return Nan::ThrowError(usage);
+
+    AuthUserKrb5PasswordCall *call = (AuthUserKrb5PasswordCall *)calloc(1, sizeof(AuthUserKrb5PasswordCall));
+    if (call == NULL) die("Memory allocation failed");
+
+    // Unpack the strings
+    Local<String> username_str = info[0]->ToString();
+    Local<String> password_str = info[1]->ToString();
+    Local<String> service_str = info[2]->ToString();
+
+    call->username = (char *)calloc(username_str->Utf8Length() + 1, sizeof(char));
+    call->password = (char *)calloc(password_str->Utf8Length() + 1, sizeof(char));
+    call->service = (char *)calloc(service_str->Utf8Length() + 1, sizeof(char));
+
+    if (call->username == NULL || call->password == NULL || call->service == NULL) {
+	die("Memory allocation failed");
+    }
+
+    username_str->WriteUtf8(call->username);
+    password_str->WriteUtf8(call->password);
+    service_str->WriteUtf8(call->service);
+
+    // Unpack the callback
+    Local<Function> callbackHandle = Local<Function>::Cast(info[3]);
+    Nan::Callback *callback = new Nan::Callback(callbackHandle);
+
+    Worker *worker = new Worker();
+    worker->error = false;
+    worker->request.data = worker;
+    worker->callback = callback;
+    worker->parameters = call;
+    worker->execute = _authUserKrb5Password;
+    worker->mapper = _map_authUserKrb5Password;
+
+    // Schedule the worker with lib_uv
+    uv_queue_work(uv_default_loop(), &worker->request, Kerberos::Process, (uv_after_work_cb)Kerberos::After);
+
+    // Return no value as it's callback based
+    info.GetReturnValue().Set(Nan::Undefined());
+}
+
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // UV Lib callbacks

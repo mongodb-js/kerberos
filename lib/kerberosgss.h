@@ -43,6 +43,7 @@ typedef struct {
   long int         gss_flags;
   char*            username;
   char*            response;
+  char*            credentials_cache;
 } gss_client_state;
 
 typedef struct {
@@ -60,7 +61,7 @@ typedef struct {
 
 // char* server_principal_details(const char* service, const char* hostname);
 
-gss_client_response *authenticate_gss_client_init(const char* service, long int gss_flags, gss_client_state* state);
+gss_client_response *authenticate_gss_client_init(const char* service, long int gss_flags, const char* credentials_cache, gss_client_state* state);
 gss_client_response *authenticate_gss_client_clean(gss_client_state *state);
 gss_client_response *authenticate_gss_client_step(gss_client_state *state, const char *challenge);
 gss_client_response *authenticate_gss_client_unwrap(gss_client_state* state, const char* challenge);
@@ -69,5 +70,13 @@ gss_client_response *authenticate_gss_client_wrap(gss_client_state* state, const
 gss_client_response *authenticate_gss_server_init(const char* service, bool constrained_delegation, const char *username, gss_server_state* state);
 gss_client_response *authenticate_gss_server_clean(gss_server_state *state);
 gss_client_response *authenticate_gss_server_step(gss_server_state *state, const char *challenge);
+
+gss_client_response *authenticate_user_krb5_password(const char *username,
+							 const char *password,
+							 const char *service);
+
+OM_uint32 gss_krb5_import_cred(OM_uint32 *minor_status,
+              krb5_ccache id, krb5_principal keytab_principal,
+              krb5_keytab keytab, gss_cred_id_t *cred);
 
 #endif
