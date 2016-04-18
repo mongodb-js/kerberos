@@ -9,9 +9,9 @@ exports.tearDown = function(callback) {
 exports['Initialize a set of security credentials'] = function(test) {
   var SecurityCredentials = require('../../lib/sspi.js').SecurityCredentials;
 
-  // Aquire some credentials
+  // Acquire some credentials
   try {
-    var credentials = SecurityCredentials.aquire('Kerberos', 'dev1@10GEN.ME', 'a');    
+    var credentials = SecurityCredentials.acquire('Kerberos', 'dev1@10GEN.ME', 'a');    
   } catch(err) {    
     console.dir(err)
     test.ok(false);
