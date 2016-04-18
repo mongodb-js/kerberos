@@ -75,5 +75,8 @@ gss_client_response *authenticate_user_krb5_password(const char *username,
 							 const char *password,
 							 const char *service);
 
+OM_uint32 gss_krb5_import_cred(OM_uint32 *minor_status,
+              krb5_ccache id, krb5_principal keytab_principal,
+              krb5_keytab keytab, gss_cred_id_t *cred);
 
 #endif

@@ -340,7 +340,6 @@ end:
 static gss_client_response *init_gss_creds(const char *credential_cache, gss_cred_id_t *cred) {
   OM_uint32 maj_stat;
   OM_uint32 min_stat;
-  const char *old_credential_cache;
   krb5_context context;
   krb5_error_code problem;
   gss_client_response *response = NULL;
@@ -856,7 +855,7 @@ gss_client_response *authenticate_user_krb5_password(const char *username,
     }
 
     problem = krb5_get_init_creds_password(context, &creds, user_principal,
-                                          password, NULL,
+                                          (char *)password, NULL,
 					  NULL, 0, NULL, opt);
 
     switch (problem) {
