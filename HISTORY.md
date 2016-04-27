@@ -1,3 +1,8 @@
+0.0.20 03-07-2016
+-----------------
+- Updated nan.h dependency to 2.2.x series.
+- Fixed minor compilation warnings due to v8 C++ ABI changes.
+
 0.0.19 03-07-2016
 -----------------
 - Fix installation error (Issue #1).
