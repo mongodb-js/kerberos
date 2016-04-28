@@ -1,4 +1,8 @@
-0.0.20 03-07-2016
+0.0.21 04-28-2016
+-----------------
+- Updated nan.h dependency to 2.3.x series for Node 6.0.
+
+0.0.20 04-26-2016
 -----------------
 - Updated nan.h dependency to 2.2.x series.
 - Fixed minor compilation warnings due to v8 C++ ABI changes.
