@@ -161,7 +161,7 @@ NAN_METHOD(SecurityCredentials::Acquire) {
   username->WriteUtf8(username_str);
 
   // If we have a password
-  if(info.Length() == 3 || info.Length() == 4 || info.Length() == 5) {
+  if((info.Length() == 3 || info.Length() == 4 || info.Length() == 5) && info[2]->IsString()) {
     Local<String> password = info[2]->ToString();
     password_str = (char *)calloc(password->Utf8Length() + 1, sizeof(char));
     password->WriteUtf8(password_str);
