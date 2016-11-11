@@ -94,7 +94,7 @@ void Kerberos::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
   constructor_template.Reset(t);
 
   // Set the symbol
-  target->ForceSet(Nan::New<String>("Kerberos").ToLocalChecked(), t->GetFunction());
+  target->Set(Nan::New<String>("Kerberos").ToLocalChecked(), t->GetFunction());
 }
 
 NAN_METHOD(Kerberos::New) {
@@ -174,7 +174,7 @@ NAN_METHOD(Kerberos::AuthGSSClientInit) {
   // Allocate a structure
   AuthGSSClientCall *call = (AuthGSSClientCall *)calloc(1, sizeof(AuthGSSClientCall));
   if(call == NULL) die("Memory allocation failed");
-  call->flags =info[1]->ToInt32()->Uint32Value();
+  call->flags = Nan::To<uint32_t>(info[1]).FromJust();
   call->uri = service_str;
   call->credentials_cache = credentials_cache_str;
 

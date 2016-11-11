@@ -12,8 +12,11 @@ KerberosContext::~KerberosContext() {
 
 KerberosContext* KerberosContext::New() {
   Nan::HandleScope scope;
-  Local<Object> obj = Nan::New(constructor_template)->GetFunction()->NewInstance();
-  KerberosContext *kerberos_context = Nan::ObjectWrap::Unwrap<KerberosContext>(obj);
+
+  Local<FunctionTemplate> constructorHandle = Nan::New<FunctionTemplate>(constructor_template);
+  // Local<Object> obj = Nan::New(constructor_template)->GetFunction()->NewInstance();
+  Nan::MaybeLocal<Object> obj = Nan::NewInstance(constructorHandle->GetFunction());
+  KerberosContext *kerberos_context = Nan::ObjectWrap::Unwrap<KerberosContext>(obj.ToLocalChecked());
   return kerberos_context;
 }
 
@@ -54,7 +57,7 @@ void KerberosContext::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) 
  // NanAssignPersistent(constructor_template, t);
 
   // Set the symbol
-  target->ForceSet(Nan::New<String>("KerberosContext").ToLocalChecked(), t->GetFunction());
+  target->Set(Nan::New<String>("KerberosContext").ToLocalChecked(), t->GetFunction());
 }
 
 
