@@ -53,11 +53,12 @@ NAN_METHOD(SecurityBuffer::New) {
     return Nan::ThrowError("Two parameters needed integer buffer type and  [32 bit integer/Buffer] required");
 
   // Unpack buffer type
-  uint32_t buffer_type = info[0]->ToUint32()->Value();
+  // uint32_t buffer_type = info[0]->ToUint32()->Value();
+  uint32_t buffer_type = Nan::To<uint32_t>(info[0]).FromJust();
 
   // If we have an integer
   if(info[1]->IsInt32()) {
-    security_obj = new SecurityBuffer(buffer_type, info[1]->ToUint32()->Value());
+    security_obj = new SecurityBuffer(buffer_type, Nan::To<uint32_t>(info[1]).FromJust());
   } else {
     // Get the length of the Buffer
     size_t length = Buffer::Length(info[1]->ToObject());
@@ -97,5 +98,5 @@ void SecurityBuffer::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
   constructor_template.Reset(t);
 
   // Set the symbol
-  target->ForceSet(Nan::New<String>("SecurityBuffer").ToLocalChecked(), t->GetFunction());
+  target->Set(Nan::New<String>("SecurityBuffer").ToLocalChecked(), t->GetFunction());
 }

@@ -216,7 +216,7 @@ void SecurityCredentials::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE targ
   constructor_template.Reset(t);
 
   // Set the symbol
-  target->ForceSet(Nan::New<String>("SecurityCredentials").ToLocalChecked(), t->GetFunction());
+  target->Set(Nan::New<String>("SecurityCredentials").ToLocalChecked(), t->GetFunction());
 
   // Attempt to load the security.dll library
   load_library();
@@ -316,16 +316,18 @@ void SecurityCredentials::After(uv_work_t* work_req) {
     }
   } else {
     SecurityCredentials *return_value = (SecurityCredentials *)worker->return_value;
+    // Create a new constructor handler
+    Local<FunctionTemplate> constructorHandle = Nan::New<FunctionTemplate>(constructor_template);
     // Create a new instance
-    Local<Object> result = Nan::New(constructor_template)->GetFunction()->NewInstance();
+    Nan::MaybeLocal<Object> result = Nan::NewInstance(constructorHandle->GetFunction());
     // Unwrap the credentials
-    SecurityCredentials *security_credentials = Nan::ObjectWrap::Unwrap<SecurityCredentials>(result);
+    SecurityCredentials *security_credentials = Nan::ObjectWrap::Unwrap<SecurityCredentials>(result.ToLocalChecked());
     // Set the values
     security_credentials->m_Identity = return_value->m_Identity;
     security_credentials->m_Credentials = return_value->m_Credentials;
     security_credentials->Expiration = return_value->Expiration;
     // Set up the callback with a null first
-    Local<Value> info[2] = { Nan::Null(), result};
+    Local<Value> info[2] = { Nan::Null(), result.ToLocalChecked()};
     // Wrap the callback function call in a TryCatch so that we can call
     // node's FatalException afterwards. This makes it possible to catch
     // the exception from JavaScript land using the

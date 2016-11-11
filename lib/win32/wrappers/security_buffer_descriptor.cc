@@ -121,11 +121,14 @@ NAN_METHOD(SecurityBufferDescriptor::New) {
   if(info[0]->IsInt32()) {
     // Create new SecurityBuffer instance
     Local<Value> argv[] = {Nan::New<Int32>(0x02), info[0]};
-    Local<Value> security_buffer = Nan::New(SecurityBuffer::constructor_template)->GetFunction()->NewInstance(2, argv);
+    // Get the constructor handler
+    Local<FunctionTemplate> constructorHandle = Nan::New<FunctionTemplate>(SecurityBuffer::constructor_template);
+    // Create a new instance for the security buffer
+    Nan::MaybeLocal<Object> security_buffer = Nan::NewInstance(constructorHandle->GetFunction(), 2, argv);
     // Create a new array
     Local<Array> array = Nan::New<Array>(1);
     // Set the first value
-    array->Set(0, security_buffer);
+    array->Set(0, security_buffer.ToLocalChecked());
 
     // Create persistent handle
     Nan::Persistent<Array> persistenHandler;
@@ -178,5 +181,5 @@ void SecurityBufferDescriptor::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE
   constructor_template.Reset(t);
 
   // Set the symbol
-  target->ForceSet(Nan::New<String>("SecurityBufferDescriptor").ToLocalChecked(), t->GetFunction());
+  target->Set(Nan::New<String>("SecurityBufferDescriptor").ToLocalChecked(), t->GetFunction());
 }

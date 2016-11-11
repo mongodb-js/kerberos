@@ -289,9 +289,13 @@ NAN_METHOD(SecurityContext::InitializeContext) {
   // Unpack the Security credentials
   security_credentials = Nan::ObjectWrap::Unwrap<SecurityCredentials>(info[0]->ToObject());
   // Create Security context instance
-  Local<Object> security_context_value = Nan::New(constructor_template)->GetFunction()->NewInstance();
+  Local<FunctionTemplate> constructorHandle = Nan::New<FunctionTemplate>(constructor_template);
+  // Create security context value
+  Nan::MaybeLocal<Object> security_context_value = Nan::NewInstance(constructorHandle->GetFunction());
+
+  // Local<Object> security_context_value = Nan::New(constructor_template)->GetFunction()->NewInstance();
   // Unwrap the security context
-  SecurityContext *security_context = Nan::ObjectWrap::Unwrap<SecurityContext>(security_context_value);
+  SecurityContext *security_context = Nan::ObjectWrap::Unwrap<SecurityContext>(security_context_value.ToLocalChecked());
   // Add a reference to the security_credentials
   security_context->security_credentials = security_credentials;
 
@@ -734,7 +738,7 @@ NAN_METHOD(SecurityContext::QueryContextAttributes) {
   SecurityContext *security_context = Nan::ObjectWrap::Unwrap<SecurityContext>(info.This());
 
   // Unpack the int value
-  uint32_t attribute = info[0]->ToInt32()->Value();
+  uint32_t attribute = Nan::To<uint32_t>(info[0]).FromJust();
 
   // Check that we have a supported attribute
   if(attribute != SECPKG_ATTR_SIZES)
@@ -793,7 +797,7 @@ void SecurityContext::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) 
   SecurityContext::constructor_template.Reset(t);
 
   // Set the symbol
-  target->ForceSet(Nan::New<String>("SecurityContext").ToLocalChecked(), t->GetFunction());
+  target->Set(Nan::New<String>("SecurityContext").ToLocalChecked(), t->GetFunction());
 }
 
 static LPSTR DisplaySECError(DWORD ErrCode) {
@@ -853,4 +857,3 @@ static LPSTR DisplaySECError(DWORD ErrCode) {
 
   return pszName;
 }
-
