@@ -1,3 +1,8 @@
+0.0.22 10-11-2016
+-----------------
+- Updated nan.h dependency to 2.4.x series for Node 6.8.x or higher.
+- The length calculations are off by one meaning it impossible to not set the password (Issue #54, http://www.github.com/tlbdk).
+
 0.0.21 04-28-2016
 -----------------
 - Updated nan.h dependency to 2.3.x series for Node 6.0.
