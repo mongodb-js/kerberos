@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-static HINSTANCE _sspi_security_dll = NULL; 
+static HINSTANCE _sspi_security_dll = NULL;
 static HINSTANCE _sspi_secur32_dll = NULL;
 
 /**
@@ -65,6 +65,39 @@ SECURITY_STATUS SEC_ENTRY _sspi_AcquireCredentialsHandle(
 }
 
 /**
+ * Acquire Credentials
+ */
+SECURITY_STATUS SEC_ENTRY _sspi_FreeCredentialsHandle(
+  PCredHandle phCredential
+) {
+  SECURITY_STATUS     status;
+  // Create function pointer instance
+  acquireCredentialsHandle_fn pfn_acquireCredentialsHandle = NULL;
+
+  // Return error if library not loaded
+  if(_sspi_security_dll == NULL) return -1;
+
+  // Map function
+  #ifdef _UNICODE
+      pfn_acquireCredentialsHandle = (acquireCredentialsHandle_fn)GetProcAddress(_sspi_security_dll, "AcquireFreeCredentialsHandleW");
+  #else
+      pfn_acquireCredentialsHandle = (acquireCredentialsHandle_fn)GetProcAddress(_sspi_security_dll, "AcquireFreeCredentialsHandleA");
+  #endif
+
+  // Check if the we managed to map function pointer
+  if(!pfn_acquireCredentialsHandle) {
+    printf("GetProcAddress failed.\n");
+    return -2;
+  }
+
+  // Status
+  status = (*pfn_acquireCredentialsHandle)(phCredential);
+
+  // Call the function
+  return status;
+}
+
+/**
  * Delete Security Context
  */
 SECURITY_STATUS SEC_ENTRY _sspi_DeleteSecurityContext(PCtxtHandle phContext) {
@@ -113,8 +146,8 @@ SECURITY_STATUS SEC_ENTRY _sspi_DecryptMessage(PCtxtHandle phContext, PSecBuffer
  */
 SECURITY_STATUS SEC_ENTRY _sspi_initializeSecurityContext(
   PCredHandle phCredential, PCtxtHandle phContext,
-  LPSTR pszTargetName, unsigned long fContextReq, 
-  unsigned long Reserved1, unsigned long TargetDataRep, 
+  LPSTR pszTargetName, unsigned long fContextReq,
+  unsigned long Reserved1, unsigned long TargetDataRep,
   PSecBufferDesc pInput, unsigned long Reserved2,
   PCtxtHandle phNewContext, PSecBufferDesc pOutput,
   unsigned long * pfContextAttr, PTimeStamp ptsExpiry
@@ -125,7 +158,7 @@ SECURITY_STATUS SEC_ENTRY _sspi_initializeSecurityContext(
 
   // Return error if library not loaded
   if(_sspi_security_dll == NULL) return -1;
-  
+
   // Map function
   #ifdef _UNICODE
     pfn_initializeSecurityContext = (initializeSecurityContext_fn)GetProcAddress(_sspi_security_dll, "InitializeSecurityContextW");
@@ -141,7 +174,7 @@ SECURITY_STATUS SEC_ENTRY _sspi_initializeSecurityContext(
 
   // Execute intialize context
   status = (*pfn_initializeSecurityContext)(
-    phCredential, phContext, pszTargetName, fContextReq, 
+    phCredential, phContext, pszTargetName, fContextReq,
     Reserved1, TargetDataRep, pInput, Reserved2,
     phNewContext, pOutput, pfContextAttr, ptsExpiry
   );
@@ -192,12 +225,12 @@ PSecurityFunctionTable _ssip_InitSecurityInterface() {
   #ifdef _UNICODE
     // Get the address of the InitSecurityInterface function.
     InitSecurityInterface = (INIT_SECURITY_INTERFACE) GetProcAddress (
-                                          _sspi_secur32_dll, 
+                                          _sspi_secur32_dll,
                                           TEXT("InitSecurityInterfaceW"));
   #else
     // Get the address of the InitSecurityInterface function.
     InitSecurityInterface = (INIT_SECURITY_INTERFACE) GetProcAddress (
-                                          _sspi_secur32_dll, 
+                                          _sspi_secur32_dll,
                                           TEXT("InitSecurityInterfaceA"));
   #endif
 

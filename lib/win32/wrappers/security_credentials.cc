@@ -24,6 +24,9 @@ SecurityCredentials::SecurityCredentials() : Nan::ObjectWrap() {
 }
 
 SecurityCredentials::~SecurityCredentials() {
+  if(&this->m_Credentials != NULL) {
+    _sspi_FreeCredentialsHandle(&this->m_Credentials);
+  }
 }
 
 NAN_METHOD(SecurityCredentials::New) {

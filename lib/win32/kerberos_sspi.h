@@ -11,7 +11,7 @@
  */
 SECURITY_STATUS SEC_ENTRY _sspi_EncryptMessage(PCtxtHandle phContext, unsigned long fQOP, PSecBufferDesc pMessage, unsigned long MessageSeqNo);
 
-typedef DWORD (WINAPI *encryptMessage_fn)(PCtxtHandle phContext, ULONG fQOP, PSecBufferDesc pMessage, ULONG MessageSeqNo);  
+typedef DWORD (WINAPI *encryptMessage_fn)(PCtxtHandle phContext, ULONG fQOP, PSecBufferDesc pMessage, ULONG MessageSeqNo);
 
 /**
  * Acquire Credentials
@@ -28,6 +28,13 @@ SECURITY_STATUS SEC_ENTRY _sspi_AcquireCredentialsHandle(
   PTimeStamp ptsExpiry                // (out) Lifetime (optional)
 );
 
+/*
+ * Free Credentials
+ */
+SECURITY_STATUS SEC_ENTRY _sspi_FreeCredentialsHandle(
+  PCredHandle phCredential,           // (in) Cred Handle
+);
+
 typedef DWORD (WINAPI *acquireCredentialsHandle_fn)(
     LPSTR pszPrincipal, LPSTR pszPackage, unsigned long fCredentialUse,
     void * pvLogonId, void * pAuthData, SEC_GET_KEY_FN pGetKeyFn, void * pvGetKeyArgument,
@@ -41,15 +48,15 @@ SECURITY_STATUS SEC_ENTRY _sspi_DeleteSecurityContext(
   PCtxtHandle phContext               // Context to delete
 );
 
-typedef DWORD (WINAPI *deleteSecurityContext_fn)(PCtxtHandle phContext);  
+typedef DWORD (WINAPI *deleteSecurityContext_fn)(PCtxtHandle phContext);
 
 /**
  * Decrypt Message
  */
 SECURITY_STATUS SEC_ENTRY _sspi_DecryptMessage(
-  PCtxtHandle phContext, 
-  PSecBufferDesc pMessage, 
-  unsigned long MessageSeqNo, 
+  PCtxtHandle phContext,
+  PSecBufferDesc pMessage,
+  unsigned long MessageSeqNo,
   unsigned long pfQOP
 );
 
@@ -75,7 +82,7 @@ SECURITY_STATUS SEC_ENTRY _sspi_initializeSecurityContext(
 );
 
 typedef DWORD (WINAPI *initializeSecurityContext_fn)(
-  PCredHandle phCredential, PCtxtHandle phContext, LPSTR pszTargetName, unsigned long fContextReq, 
+  PCredHandle phCredential, PCtxtHandle phContext, LPSTR pszTargetName, unsigned long fContextReq,
   unsigned long Reserved1, unsigned long TargetDataRep, PSecBufferDesc pInput, unsigned long Reserved2,
   PCtxtHandle phNewContext, PSecBufferDesc pOutput, unsigned long * pfContextAttr, PTimeStamp ptsExpiry);
 
