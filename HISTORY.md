@@ -1,3 +1,8 @@
+0.0.23 07-03-2017
+-----------------
+- SSPI implemented missing _sspi_FreeCredentialsHandle to correctly cleanup credentials allocation on call to destructor of the C++ instance.
+- Updated nan.h dependency to 2.5.x series for Node 7.6.x or higher.
+
 0.0.22 10-11-2016
 -----------------
 - Updated nan.h dependency to 2.4.x series for Node 6.8.x or higher.
