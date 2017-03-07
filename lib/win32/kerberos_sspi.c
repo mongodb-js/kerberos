@@ -86,7 +86,7 @@ SECURITY_STATUS SEC_ENTRY _sspi_FreeCredentialsHandle(
 
   // Check if the we managed to map function pointer
   if(!pfn_freeCredentialsHandle) {
-    printf("GetProcAddress failed.\n");
+    printf("GetProcAddress failed _sspi_FreeCredentialsHandle.\n");
     return -2;
   }
 
