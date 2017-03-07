@@ -28,6 +28,12 @@ SECURITY_STATUS SEC_ENTRY _sspi_AcquireCredentialsHandle(
   PTimeStamp ptsExpiry                // (out) Lifetime (optional)
 );
 
+typedef DWORD (WINAPI *acquireCredentialsHandle_fn)(
+    LPSTR pszPrincipal, LPSTR pszPackage, unsigned long fCredentialUse,
+    void * pvLogonId, void * pAuthData, SEC_GET_KEY_FN pGetKeyFn, void * pvGetKeyArgument,
+    PCredHandle phCredential, PTimeStamp ptsExpiry
+  );
+
 /*
  * Free Credentials
  */
@@ -35,10 +41,8 @@ SECURITY_STATUS SEC_ENTRY _sspi_FreeCredentialsHandle(
   PCredHandle phCredential           // (in) Cred Handle
 );
 
-typedef DWORD (WINAPI *acquireCredentialsHandle_fn)(
-    LPSTR pszPrincipal, LPSTR pszPackage, unsigned long fCredentialUse,
-    void * pvLogonId, void * pAuthData, SEC_GET_KEY_FN pGetKeyFn, void * pvGetKeyArgument,
-    PCredHandle phCredential, PTimeStamp ptsExpiry
+typedef DWORD (WINAPI *_sspi_FreeCredentialsHandle_fn)(
+    PCredHandle phCredential
   );
 
 /**

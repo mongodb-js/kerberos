@@ -72,26 +72,26 @@ SECURITY_STATUS SEC_ENTRY _sspi_FreeCredentialsHandle(
 ) {
   SECURITY_STATUS     status;
   // Create function pointer instance
-  acquireCredentialsHandle_fn pfn_acquireCredentialsHandle = NULL;
+  _sspi_FreeCredentialsHandle_fn pfn_freeCredentialsHandle = NULL;
 
   // Return error if library not loaded
   if(_sspi_security_dll == NULL) return -1;
 
   // Map function
   #ifdef _UNICODE
-      pfn_acquireCredentialsHandle = (acquireCredentialsHandle_fn)GetProcAddress(_sspi_security_dll, "AcquireFreeCredentialsHandleW");
+      pfn_freeCredentialsHandle = (_sspi_FreeCredentialsHandle_fn)GetProcAddress(_sspi_security_dll, "FreeCredentialsHandleW");
   #else
-      pfn_acquireCredentialsHandle = (acquireCredentialsHandle_fn)GetProcAddress(_sspi_security_dll, "AcquireFreeCredentialsHandleA");
+      pfn_freeCredentialsHandle = (_sspi_FreeCredentialsHandle_fn)GetProcAddress(_sspi_security_dll, "FreeCredentialsHandleA");
   #endif
 
   // Check if the we managed to map function pointer
-  if(!pfn_acquireCredentialsHandle) {
+  if(!pfn_freeCredentialsHandle) {
     printf("GetProcAddress failed.\n");
     return -2;
   }
 
   // Status
-  status = (*pfn_acquireCredentialsHandle)(phCredential);
+  status = (*pfn_freeCredentialsHandle)(phCredential);
 
   // Call the function
   return status;
