@@ -32,7 +32,7 @@ SECURITY_STATUS SEC_ENTRY _sspi_AcquireCredentialsHandle(
  * Free Credentials
  */
 SECURITY_STATUS SEC_ENTRY _sspi_FreeCredentialsHandle(
-  PCredHandle phCredential,           // (in) Cred Handle
+  PCredHandle phCredential           // (in) Cred Handle
 );
 
 typedef DWORD (WINAPI *acquireCredentialsHandle_fn)(
