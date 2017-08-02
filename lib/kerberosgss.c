@@ -150,7 +150,7 @@ end:
     return result;
 }
 */
-gss_client_response *authenticate_gss_client_init(const char* service, long int gss_flags, const char* credentials_cache, gss_client_state* state) {
+gss_client_response *authenticate_gss_client_init(const char* service, long int gss_flags, const char* credentials_cache, gss_client_state* state, gss_OID oid) {
   OM_uint32 maj_stat;
   OM_uint32 min_stat;
   gss_buffer_desc name_token = GSS_C_EMPTY_BUFFER;
@@ -168,7 +168,7 @@ gss_client_response *authenticate_gss_client_init(const char* service, long int 
   name_token.length = strlen(service);
   name_token.value = (char *)service;
 
-  maj_stat = gss_import_name(&min_stat, &name_token, gss_krb5_nt_service_name, &state->server_name);
+  maj_stat = gss_import_name(&min_stat, &name_token, oid , &state->server_name);
 
   if (GSS_ERROR(maj_stat)) {
     response = gss_error(__func__, "gss_import_name", maj_stat, min_stat);
