@@ -33,8 +33,10 @@
 #include <unistd.h>
 #include <krb5.h>
 
+#if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 void die1(const char *message) {
   if(errno) {
@@ -1233,4 +1235,6 @@ static gss_client_response *other_error(const char *fmt, ...)
 }
 
 
+#if defined(__clang__)
 #pragma clang diagnostic pop
+#endif
