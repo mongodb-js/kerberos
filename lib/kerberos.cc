@@ -153,8 +153,8 @@ NAN_METHOD(Kerberos::AuthGSSClientInit) {
 
   // Ensure valid call
   if(info.Length() != 5) return Nan::ThrowError(usage);
-  if(!info[0]->IsString() || !info[1]->IsInt32() || !info[2]->IsString() || !info[3]->IsFunction()
-    || !(info[4]->IsUndefined() || info[4]->IsInt32()))
+  if(!info[0]->IsString() || !info[1]->IsInt32() || !info[2]->IsString() || !info[4]->IsFunction()
+    || !(info[3]->IsUndefined() || info[3]->IsInt32()))
       return Nan::ThrowError(usage);
 
   Local<String> service = info[0]->ToString();
@@ -179,13 +179,13 @@ NAN_METHOD(Kerberos::AuthGSSClientInit) {
   call->flags = Nan::To<uint32_t>(info[1]).FromJust();
   call->uri = service_str;
   call->credentials_cache = credentials_cache_str;
-  if(info[4]->IsInt32())
+  if(info[3]->IsInt32())
     call->oid = GSS_C_NO_OID;
   else
     call->oid = gss_krb5_nt_service_name;
   
   // Unpack the callback
-  Local<Function> callbackHandle = Local<Function>::Cast(info[3]);
+  Local<Function> callbackHandle = Local<Function>::Cast(info[4]);
   Nan::Callback *callback = new Nan::Callback(callbackHandle);
 
   // Let's allocate some space
