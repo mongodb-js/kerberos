@@ -1,3 +1,5 @@
+'use strict';
+
 if (/^win/.test(process.platform)) {
   exports['Simple initialize of Kerberos win32 object'] = function(test) {
     var KerberosNative = require('../build/Release/kerberos').Kerberos;
