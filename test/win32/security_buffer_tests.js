@@ -1,3 +1,5 @@
+'use strict';
+
 exports.setUp = function(callback) {
   callback();
 };

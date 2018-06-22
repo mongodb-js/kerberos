@@ -1,3 +1,5 @@
+'use strict';
+
 exports.setUp = function(callback) {
   callback();
 };
@@ -18,7 +20,7 @@ exports['Simple initialize of Kerberos object'] = function(test) {
   ) {
     console.log('===================================== authGSSClientInit');
     test.equal(null, err);
-    test.ok(context != null && typeof context == 'object');
+    test.ok(context != null && typeof context === 'object');
     // console.log("===================================== authGSSClientInit")
     console.dir(err);
     console.dir(context);

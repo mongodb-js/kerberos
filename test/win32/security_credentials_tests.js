@@ -1,3 +1,5 @@
+'use strict';
+
 exports.setUp = function(callback) {
   callback();
 };
@@ -11,7 +13,7 @@ exports['Initialize a set of security credentials'] = function(test) {
 
   // Acquire some credentials
   try {
-    var credentials = SecurityCredentials.acquire('Kerberos', 'dev1@10GEN.ME', 'a');
+    SecurityCredentials.acquire('Kerberos', 'dev1@10GEN.ME', 'a');
   } catch (err) {
     console.dir(err);
     test.ok(false);
