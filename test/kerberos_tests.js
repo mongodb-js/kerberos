@@ -1,134 +1,107 @@
 'use strict';
 
-exports.setUp = function(callback) {
-  callback();
-};
+const expect = require('chai').expect;
+const http = require('http');
+const Kerberos = require('..').Kerberos;
 
-exports.tearDown = function(callback) {
-  callback();
-};
+describe('Kerberos', function() {
+  it('simple initialize of Kerberos object', function(done) {
+    const kerberos = new Kerberos();
 
-exports['Simple initialize of Kerberos object'] = function(test) {
-  var Kerberos = require('../lib/kerberos.js').Kerberos;
-  var kerberos = new Kerberos();
-  // console.dir(kerberos)
+    // Initiate kerberos client
+    kerberos.authGSSClientInit('mongodb@kdc.10gen.me', Kerberos.GSS_C_MUTUAL_FLAG, function(
+      err,
+      context
+    ) {
+      expect(err).to.not.exist;
+      expect(context).to.exist;
 
-  // Initiate kerberos client
-  kerberos.authGSSClientInit('mongodb@kdc.10gen.me', Kerberos.GSS_C_MUTUAL_FLAG, function(
-    err,
-    context
-  ) {
-    console.log('===================================== authGSSClientInit');
-    test.equal(null, err);
-    test.ok(context != null && typeof context === 'object');
-    // console.log("===================================== authGSSClientInit")
-    console.dir(err);
-    console.dir(context);
-    // console.dir(typeof result)
+      // Perform the first step
+      kerberos.authGSSClientStep(context, function(/* err, result */) {
+        // TODO: reenable next lines when osx support is complete
+        // expect(err).to.not.exist;
+        // expect(result).to.exist;
 
-    // Perform the first step
-    kerberos.authGSSClientStep(context, function(err, result) {
-      console.log('===================================== authGSSClientStep');
-      console.dir(err);
-      console.dir(result);
-      console.dir(context);
-
-      test.done();
-    });
-  });
-};
-
-// for this test, please set the environment variables shown below.
-exports['Simple username password test'] = function(test) {
-  var Kerberos = require('../lib/kerberos.js').Kerberos;
-  var kerberos = new Kerberos();
-
-  if (!process.env.KRB5_PW_TEST_USERNAME) {
-    test.done();
-    return;
-  }
-
-  kerberos.authUserKrb5Password(
-    process.env.KRB5_PW_TEST_USERNAME,
-    process.env.KRB5_PW_TEST_PASSWORD,
-    process.env.KRB5_PW_TEST_SERVICE,
-    function(err, ok) {
-      console.log('err:', err);
-      console.log('ok:', ok);
-      test.equal(ok, true);
-      test.done();
-    }
-  );
-};
-
-//for this test, please set the environment variables shown below.
-exports['Negotiate HTTP Client Test'] = function(test) {
-  ///// REQUIRED ENVIRONMENT VARIABLES /////
-  // give the host and path to a Negotiate protected resource on your network
-  var httpHostname = process.env.NEGOTIATE_TEST_HOSTNAME;
-  var httpPath = process.env.NEGOTIATE_TEST_PATH;
-  ////  OPTIONAL ENVIRONMENT VARIABLES
-  // don't use the cache in $KRB5CCNAME, use the one in $NEGOTIATE_TEST_KRB5CCNAME instead
-  var krb5CcName = process.env.NEGOTIATE_TEST_KRB5CCNAME || '';
-  /////
-
-  if (!httpHostname) {
-    test.done();
-    return;
-  }
-
-  var serviceName = 'HTTP@' + httpHostname;
-
-  var Kerberos = require('../lib/kerberos.js').Kerberos;
-  var kerberos = new Kerberos();
-  var http = require('http');
-
-  kerberos.authGSSClientInit(serviceName, 0, krb5CcName, function(err, ctx) {
-    console.log('authGSSClientInit error: ', err);
-    test.equal(null, err);
-
-    kerberos.authGSSClientStep(ctx, '', function(err) {
-      console.log('authGSSClientStep error: ', err);
-      test.equal(null, err);
-
-      var cleanupCtx = function() {
-        kerberos.authGSSClientClean(ctx, function(err) {
-          console.log('authGSSClientClean error: ', err);
-          test.equal(null, err);
-          test.done();
-        });
-      };
-
-      var negotiateHeader = 'Negotiate ' + ctx.response;
-
-      var req = http.get(
-        {
-          hostname: httpHostname,
-          path: httpPath,
-          headers: {
-            authorization: negotiateHeader
-          }
-        },
-        function(res) {
-          console.log('http res: ', res.statusCode);
-          test.ok(
-            res.statusCode >= 200 && res.statusCode <= 299,
-            'http response status indicates success'
-          );
-
-          res.on('data', function(data) {
-            console.log('data:' + data);
-          });
-          res.on('end', function() {
-            cleanupCtx();
-          });
-        }
-      );
-
-      req.on('error', function(err) {
-        test.ok(false, 'http.get request failed: ' + err.message);
-        cleanupCtx();
+        done();
       });
     });
   });
-};
+
+  // for this test, please set the environment variables shown below.
+  it('simple username password test', function(done) {
+    const kerberos = new Kerberos();
+
+    if (!process.env.KRB5_PW_TEST_USERNAME) {
+      return done();
+    }
+
+    kerberos.authUserKrb5Password(
+      process.env.KRB5_PW_TEST_USERNAME,
+      process.env.KRB5_PW_TEST_PASSWORD,
+      process.env.KRB5_PW_TEST_SERVICE,
+      function(err, ok) {
+        expect(err).to.not.exist;
+        expect(ok).to.be.true;
+        done();
+      }
+    );
+  });
+
+  //for this test, please set the environment variables shown below.
+  it('negotiate HTTP Client Test', function(done) {
+    ///// REQUIRED ENVIRONMENT VARIABLES /////
+    // give the host and path to a Negotiate protected resource on your network
+    const httpHostname = process.env.NEGOTIATE_TEST_HOSTNAME;
+    const httpPath = process.env.NEGOTIATE_TEST_PATH;
+    ////  OPTIONAL ENVIRONMENT VARIABLES
+    // don't use the cache in $KRB5CCNAME, use the one in $NEGOTIATE_TEST_KRB5CCNAME instead
+    const krb5CcName = process.env.NEGOTIATE_TEST_KRB5CCNAME || '';
+    /////
+
+    if (!httpHostname) {
+      return done();
+    }
+
+    const serviceName = 'HTTP@' + httpHostname;
+    const kerberos = new Kerberos();
+
+    kerberos.authGSSClientInit(serviceName, 0, krb5CcName, function(err, ctx) {
+      expect(err).to.not.exist;
+
+      kerberos.authGSSClientStep(ctx, '', function(err) {
+        expect(err).to.not.exist;
+
+        const cleanupCtx = function() {
+          kerberos.authGSSClientClean(ctx, function(err) {
+            expect(err).to.not.exist;
+            done();
+          });
+        };
+
+        const negotiateHeader = 'Negotiate ' + ctx.response;
+
+        const req = http.get(
+          {
+            hostname: httpHostname,
+            path: httpPath,
+            headers: {
+              authorization: negotiateHeader
+            }
+          },
+          function(res) {
+            expect(res.statusCode).to.be.at.least(200);
+            expect(res.statusCode).to.be.at.most(299);
+
+            res.on('data', data => console.log(` >> ${data}`));
+            res.on('end', () => cleanupCtx());
+          }
+        );
+
+        req.on('error', function(err) {
+          done(`http.get request failed: ${err.message}`);
+          cleanupCtx();
+        });
+      });
+    });
+  });
+});
