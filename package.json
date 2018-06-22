@@ -17,10 +17,11 @@
     "nan": "~2.10.0"
   },
   "devDependencies": {
+    "chai": "^4.1.2",
     "clang-format": "^1.2.3",
     "eslint": "^4.19.1",
     "eslint-plugin-prettier": "^2.6.0",
-    "nodeunit": "latest",
+    "mocha": "^5.2.0",
     "prettier": "^1.13.5"
   },
   "scripts": {
@@ -29,7 +30,7 @@
     "format-js": "prettier --print-width 100 --tab-width 2 --single-quote --write index.js 'test/**/*.js' 'lib/**/*.js'",
     "lint": "eslint index.js lib test",
     "precommit": "check-clang-format",
-    "test": "nodeunit ./test"
+    "test": "mocha ./test"
   },
   "author": "Christian Amor Kvalheim",
   "license": "Apache-2.0",
