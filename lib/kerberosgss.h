@@ -22,61 +22,71 @@
 #include <gssapi/gssapi_generic.h>
 #include <gssapi/gssapi_krb5.h>
 
-#define krb5_get_err_text(context,code) error_message(code)
+#define krb5_get_err_text(context, code) error_message(code)
 
-#define AUTH_GSS_ERROR      -1
-#define AUTH_GSS_COMPLETE    1
-#define AUTH_GSS_CONTINUE    0
+#define AUTH_GSS_ERROR -1
+#define AUTH_GSS_COMPLETE 1
+#define AUTH_GSS_CONTINUE 0
 
-#define GSS_AUTH_P_NONE         1
-#define GSS_AUTH_P_INTEGRITY    2
-#define GSS_AUTH_P_PRIVACY      4
+#define GSS_AUTH_P_NONE 1
+#define GSS_AUTH_P_INTEGRITY 2
+#define GSS_AUTH_P_PRIVACY 4
 
 typedef struct {
-  int return_code;
-  char *message;
+    int return_code;
+    char* message;
 } gss_client_response;
 
 typedef struct {
-  gss_ctx_id_t     context;
-  gss_name_t       server_name;
-  long int         gss_flags;
-  char*            username;
-  char*            response;
-  char*            credentials_cache;
+    gss_ctx_id_t context;
+    gss_name_t server_name;
+    long int gss_flags;
+    char* username;
+    char* response;
+    char* credentials_cache;
 } gss_client_state;
 
 typedef struct {
-  gss_ctx_id_t     context;
-  gss_name_t       server_name;
-  gss_name_t       client_name;
-  gss_cred_id_t    server_creds;
-  gss_cred_id_t    client_creds;
-  char*            username;
-  char*            targetname;
-  char*            response;
-  bool		   constrained_delegation;
-  char*		   delegated_credentials_cache;
+    gss_ctx_id_t context;
+    gss_name_t server_name;
+    gss_name_t client_name;
+    gss_cred_id_t server_creds;
+    gss_cred_id_t client_creds;
+    char* username;
+    char* targetname;
+    char* response;
+    bool constrained_delegation;
+    char* delegated_credentials_cache;
 } gss_server_state;
 
 // char* server_principal_details(const char* service, const char* hostname);
 
-gss_client_response *authenticate_gss_client_init(const char* service, long int gss_flags, const char* credentials_cache, gss_client_state* state);
-gss_client_response *authenticate_gss_client_clean(gss_client_state *state);
-gss_client_response *authenticate_gss_client_step(gss_client_state *state, const char *challenge);
-gss_client_response *authenticate_gss_client_unwrap(gss_client_state* state, const char* challenge);
-gss_client_response *authenticate_gss_client_wrap(gss_client_state* state, const char* challenge, const char* user);
+gss_client_response* authenticate_gss_client_init(const char* service,
+                                                  long int gss_flags,
+                                                  const char* credentials_cache,
+                                                  gss_client_state* state);
+gss_client_response* authenticate_gss_client_clean(gss_client_state* state);
+gss_client_response* authenticate_gss_client_step(gss_client_state* state, const char* challenge);
+gss_client_response* authenticate_gss_client_unwrap(gss_client_state* state, const char* challenge);
+gss_client_response* authenticate_gss_client_wrap(gss_client_state* state,
+                                                  const char* challenge,
+                                                  const char* user);
 
-gss_client_response *authenticate_gss_server_init(const char* service, bool constrained_delegation, const char *username, gss_server_state* state);
-gss_client_response *authenticate_gss_server_clean(gss_server_state *state);
-gss_client_response *authenticate_gss_server_step(gss_server_state *state, const char *challenge);
+gss_client_response* authenticate_gss_server_init(const char* service,
+                                                  bool constrained_delegation,
+                                                  const char* username,
+                                                  gss_server_state* state);
+gss_client_response* authenticate_gss_server_clean(gss_server_state* state);
+gss_client_response* authenticate_gss_server_step(gss_server_state* state, const char* challenge);
 
-gss_client_response *authenticate_user_krb5_password(const char *username,
-							 const char *password,
-							 const char *service);
+gss_client_response* authenticate_user_krb5_password(const char* username,
+                                                     const char* password,
+                                                     const char* service);
 
-OM_uint32 gss_krb5_import_cred(OM_uint32 *minor_status,
-              krb5_ccache id, krb5_principal keytab_principal,
-              krb5_keytab keytab, gss_cred_id_t *cred);
+OM_uint32 gss_krb5_import_cred(OM_uint32* minor_status,
+                               krb5_ccache id,
+                               krb5_principal keytab_principal,
+                               krb5_keytab keytab,
+                               gss_cred_id_t* cred);
 
 #endif

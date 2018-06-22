@@ -1,38 +1,38 @@
 #ifndef WORKER_H_
 #define WORKER_H_
 
+#include <nan.h>
 #include <node.h>
 #include <node_object_wrap.h>
-#include <nan.h>
 #include <v8.h>
 
 using namespace node;
 using namespace v8;
 
 class Worker {
-  public:
+   public:
     Worker();
     virtual ~Worker();
 
     // libuv's request struct.
     uv_work_t request;
     // Callback
-    Nan::Callback *callback;
+    Nan::Callback* callback;
     // Parameters
-    void *parameters;
+    void* parameters;
     // Results
-    void *return_value;
+    void* return_value;
     // Did we raise an error
     bool error;
     // The error message
-    char *error_message;
+    char* error_message;
     // Error code if not message
     int error_code;
     // Any return code
     int return_code;
     // Method we are going to fire
-    void (*execute)(Worker *worker);
-    Local<Value> (*mapper)(Worker *worker);
+    void (*execute)(Worker* worker);
+    Local<Value> (*mapper)(Worker* worker);
 };
 
 #endif  // WORKER_H_
