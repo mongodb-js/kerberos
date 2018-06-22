@@ -1,0 +1,15 @@
+BasedOnStyle: Google
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+BinPackArguments: false
+BinPackParameters: false
+ColumnLimit: 100
+Cpp11BracedListStyle: true
+DerivePointerAlignment: false
+IndentWidth: 4
+MaxEmptyLinesToKeep: 1
+NamespaceIndentation: None
+SpaceBeforeAssignmentOperators: true
+Standard: Cpp11
+UseTab: Never
