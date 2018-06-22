@@ -1,10 +1,10 @@
 exports.setUp = function(callback) {
   callback();
-}
+};
 
 exports.tearDown = function(callback) {
   callback();
-}
+};
 
 exports['Initialize a security Buffer'] = function(test) {
   var SecurityBuffer = require('../../lib/sspi.js').SecurityBuffer;
@@ -19,4 +19,4 @@ exports['Initialize a security Buffer'] = function(test) {
   buffer = securityBuffer.toBuffer();
   test.deepEqual(allocated_buffer, buffer);
   test.done();
-}
+};

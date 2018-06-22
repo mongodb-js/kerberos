@@ -1,23 +1,21 @@
 exports.setUp = function(callback) {
   callback();
-}
+};
 
 exports.tearDown = function(callback) {
   callback();
-}
+};
 
 exports['Initialize a set of security credentials'] = function(test) {
   var SecurityCredentials = require('../../lib/sspi.js').SecurityCredentials;
 
   // Acquire some credentials
   try {
-    var credentials = SecurityCredentials.acquire('Kerberos', 'dev1@10GEN.ME', 'a');    
-  } catch(err) {    
-    console.dir(err)
+    var credentials = SecurityCredentials.acquire('Kerberos', 'dev1@10GEN.ME', 'a');
+  } catch (err) {
+    console.dir(err);
     test.ok(false);
   }
-
-
 
   // console.dir(SecurityCredentials);
 
@@ -52,4 +50,4 @@ exports['Initialize a set of security credentials'] = function(test) {
   // var result = securityDescriptor.toBuffer();
   // test.equal("hello worldadam and eve", result.toString());
   test.done();
-}
+};
