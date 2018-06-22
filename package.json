@@ -16,10 +16,13 @@
     "nan": "~2.10.0"
   },
   "devDependencies": {
+    "clang-format": "^1.2.3",
     "nodeunit": "latest"
   },
   "scripts": {
     "install": "(node-gyp rebuild) || (exit 0)",
+    "format": "git-clang-format",
+    "precommit": "check-clang-format",
     "test": "nodeunit ./test"
   },
   "author": "Christian Amor Kvalheim",
