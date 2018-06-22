@@ -23,6 +23,7 @@ typedef struct AuthGSSClientCall {
   uint32_t  flags;
   char *uri;
   char *credentials_cache;
+  gss_OID oid;
 } AuthGSSClientCall;
 
 typedef struct AuthGSSClientStepCall {
@@ -119,7 +120,7 @@ static void _authGSSClientInit(Worker *worker) {
   // Unpack the parameter data struct
   AuthGSSClientCall *call = (AuthGSSClientCall *)worker->parameters;
   // Start the kerberos client
-  response = authenticate_gss_client_init(call->uri, call->flags, call->credentials_cache, state);
+  response = authenticate_gss_client_init(call->uri, call->flags, call->credentials_cache, state, call->oid);
 
   // Release the parameter struct memory
   free(call->uri);
@@ -151,8 +152,9 @@ NAN_METHOD(Kerberos::AuthGSSClientInit) {
   const char *usage = "Requires a service string uri, integer flags, string credentialsCache and a callback function";
 
   // Ensure valid call
-  if(info.Length() != 4) return Nan::ThrowError(usage);
-  if(!info[0]->IsString() || !info[1]->IsInt32() || !info[2]->IsString() || !info[3]->IsFunction())
+  if(info.Length() != 5) return Nan::ThrowError(usage);
+  if(!info[0]->IsString() || !info[1]->IsInt32() || !info[2]->IsString() || !info[4]->IsFunction()
+    || !(info[3]->IsUndefined() || info[3]->IsInt32()))
       return Nan::ThrowError(usage);
 
   Local<String> service = info[0]->ToString();
@@ -177,9 +179,13 @@ NAN_METHOD(Kerberos::AuthGSSClientInit) {
   call->flags = Nan::To<uint32_t>(info[1]).FromJust();
   call->uri = service_str;
   call->credentials_cache = credentials_cache_str;
-
+  if(info[3]->IsInt32())
+    call->oid = GSS_C_NO_OID;
+  else
+    call->oid = gss_krb5_nt_service_name;
+  
   // Unpack the callback
-  Local<Function> callbackHandle = Local<Function>::Cast(info[3]);
+  Local<Function> callbackHandle = Local<Function>::Cast(info[4]);
   Nan::Callback *callback = new Nan::Callback(callbackHandle);
 
   // Let's allocate some space
