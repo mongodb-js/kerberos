@@ -8,8 +8,7 @@
       'conditions': [
         ['OS=="mac" or OS=="linux"', {
           'sources': [
-            'lib/kerberos.cc',
-            'lib/kerberos_unix.cc'
+            'src/kerberos.cc'
           ],
           'link_settings': {
             'libraries': [
@@ -20,8 +19,7 @@
         }],
         ['OS=="win"',  {
           'sources': [
-            'lib/kerberos.cc',
-            'lib/kerberos_win32.cc'
+            'src/kerberos.cc'
           ]
         }]
       ]
