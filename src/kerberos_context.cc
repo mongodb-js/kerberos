@@ -1,142 +1,93 @@
 #include "kerberos_context.h"
 
-Nan::Persistent<FunctionTemplate> KerberosContext::constructor_template;
+Nan::Persistent<v8::Function> KerberosClientContext::constructor;
+NAN_MODULE_INIT(KerberosClientContext::Init) {
+  v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(New);
+  tpl->SetClassName(Nan::New("KerberosClientContext").ToLocalChecked());
 
-KerberosContext::KerberosContext() : Nan::ObjectWrap() {
-    state = NULL;
-    server_state = NULL;
+  v8::Local<v8::ObjectTemplate> itpl = tpl->InstanceTemplate();
+  itpl->SetInternalFieldCount(1);
+
+  Nan::SetAccessor(itpl, Nan::New("username").ToLocalChecked(), KerberosClientContext::UserNameGetter);
+  Nan::SetAccessor(itpl, Nan::New("response").ToLocalChecked(), KerberosClientContext::ResponseGetter);
+  Nan::SetAccessor(itpl, Nan::New("responseConf").ToLocalChecked(), KerberosClientContext::ResponseConfGetter);
+
+  constructor.Reset(Nan::GetFunction(tpl).ToLocalChecked());
+  Nan::Set(target, Nan::New("KerberosClientContext").ToLocalChecked(), Nan::GetFunction(tpl).ToLocalChecked());
 }
 
-KerberosContext::~KerberosContext() {}
+KerberosClientContext::KerberosClientContext(gss_client_state* state)
+  : _state(state)
+{}
 
-KerberosContext* KerberosContext::New() {
-    Nan::HandleScope scope;
-
-    Local<FunctionTemplate> constructorHandle = Nan::New<FunctionTemplate>(constructor_template);
-    // Local<Object> obj = Nan::New(constructor_template)->GetFunction()->NewInstance();
-    Nan::MaybeLocal<Object> obj = Nan::NewInstance(constructorHandle->GetFunction());
-    KerberosContext* kerberos_context =
-        Nan::ObjectWrap::Unwrap<KerberosContext>(obj.ToLocalChecked());
-    return kerberos_context;
+KerberosClientContext::~KerberosClientContext()
+{
+  // TODO: destroy the state with `authenticate_gss_client_clean` if it hasn't been already
 }
 
-NAN_METHOD(KerberosContext::New) {
-    // Create code object
-    KerberosContext* kerberos_context = new KerberosContext();
-    // Wrap it
-    kerberos_context->Wrap(info.This());
-    // Return the object
-    info.GetReturnValue().Set(info.This());
+NAN_GETTER(KerberosClientContext::UserNameGetter) {
+  KerberosClientContext* context =
+    Nan::ObjectWrap::Unwrap<KerberosClientContext>(info.Holder());
+
+  info.GetReturnValue().Set(Nan::New(context->_state->username).ToLocalChecked());
 }
 
-void KerberosContext::Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target) {
-    // Grab the scope of the call from Node
-    Nan::HandleScope scope;
+NAN_GETTER(KerberosClientContext::ResponseGetter) {
+  KerberosClientContext* context =
+    Nan::ObjectWrap::Unwrap<KerberosClientContext>(info.Holder());
 
-    // Define a new function template
-    Local<FunctionTemplate> t = Nan::New<v8::FunctionTemplate>(static_cast<NAN_METHOD((*))>(New));
-    t->InstanceTemplate()->SetInternalFieldCount(1);
-    t->SetClassName(Nan::New<String>("KerberosContext").ToLocalChecked());
-
-    // Get prototype
-    Local<ObjectTemplate> proto = t->PrototypeTemplate();
-
-    // Getter for the response
-    Nan::SetAccessor(
-        proto, Nan::New<String>("response").ToLocalChecked(), KerberosContext::ResponseGetter);
-
-    // Getter for the username
-    Nan::SetAccessor(
-        proto, Nan::New<String>("username").ToLocalChecked(), KerberosContext::UsernameGetter);
-
-    // Getter for the targetname - server side only
-    Nan::SetAccessor(
-        proto, Nan::New<String>("targetname").ToLocalChecked(), KerberosContext::TargetnameGetter);
-
-    Nan::SetAccessor(proto,
-                     Nan::New<String>("delegatedCredentialsCache").ToLocalChecked(),
-                     KerberosContext::DelegatedCredentialsCacheGetter);
-
-    // Set persistent
-    constructor_template.Reset(t);
-    // NanAssignPersistent(constructor_template, t);
-
-    // Set the symbol
-    target->Set(Nan::New<String>("KerberosContext").ToLocalChecked(), t->GetFunction());
+  info.GetReturnValue().Set(Nan::New(context->_state->response).ToLocalChecked());
 }
 
-// Response Setter / Getter
-NAN_GETTER(KerberosContext::ResponseGetter) {
-    gss_client_state* client_state;
-    gss_server_state* server_state;
+NAN_GETTER(KerberosClientContext::ResponseConfGetter) {
+  KerberosClientContext* context =
+    Nan::ObjectWrap::Unwrap<KerberosClientContext>(info.Holder());
 
-    // Unpack the object
-    KerberosContext* context = Nan::ObjectWrap::Unwrap<KerberosContext>(info.This());
-
-    // Response could come from client or server state...
-    client_state = context->state;
-    server_state = context->server_state;
-
-    // If client state is in use, take response from there, otherwise from server
-    char* response = client_state != NULL ? client_state->response
-                                          : server_state != NULL ? server_state->response : NULL;
-
-    if (response == NULL) {
-        info.GetReturnValue().Set(Nan::Null());
-    } else {
-        // Return the response
-        info.GetReturnValue().Set(Nan::New<String>(response).ToLocalChecked());
-    }
+  info.GetReturnValue().Set(Nan::New(context->_state->responseConf).ToLocalChecked());
 }
 
-// username Getter
-NAN_GETTER(KerberosContext::UsernameGetter) {
-    // Unpack the object
-    KerberosContext* context = Nan::ObjectWrap::Unwrap<KerberosContext>(info.This());
+Nan::Persistent<v8::Function> KerberosServerContext::constructor;
+NAN_MODULE_INIT(KerberosClientContext::Init) {
+  v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(New);
+  tpl->SetClassName(Nan::New("KerberosServerContext").ToLocalChecked());
 
-    gss_client_state* client_state = context->state;
-    gss_server_state* server_state = context->server_state;
+  v8::Local<v8::ObjectTemplate> itpl = tpl->InstanceTemplate();
+  itpl->SetInternalFieldCount(1);
 
-    // If client state is in use, take response from there, otherwise from server
-    char* username = client_state != NULL ? client_state->username
-                                          : server_state != NULL ? server_state->username : NULL;
+  Nan::SetAccessor(itpl, Nan::New("username").ToLocalChecked(), KerberosServerContext::UserNameGetter);
+  Nan::SetAccessor(itpl, Nan::New("response").ToLocalChecked(), KerberosServerContext::ResponseGetter);
+  Nan::SetAccessor(itpl, Nan::New("targetName").ToLocalChecked(), KerberosServerContext::ResponseConfGetter);
 
-    if (username == NULL) {
-        info.GetReturnValue().Set(Nan::Null());
-    } else {
-        info.GetReturnValue().Set(Nan::New<String>(username).ToLocalChecked());
-    }
+  constructor.Reset(Nan::GetFunction(tpl).ToLocalChecked());
+  Nan::Set(target, Nan::New("KerberosServerContext").ToLocalChecked(), Nan::GetFunction(tpl).ToLocalChecked());
 }
 
-// targetname Getter - server side only
-NAN_GETTER(KerberosContext::TargetnameGetter) {
-    // Unpack the object
-    KerberosContext* context = Nan::ObjectWrap::Unwrap<KerberosContext>(info.This());
+KerberosServerContext::KerberosServerContext(gss_server_state* state)
+  : _state(state)
+{}
 
-    gss_server_state* server_state = context->server_state;
-
-    char* targetname = server_state != NULL ? server_state->targetname : NULL;
-
-    if (targetname == NULL) {
-        info.GetReturnValue().Set(Nan::Null());
-    } else {
-        info.GetReturnValue().Set(Nan::New<String>(targetname).ToLocalChecked());
-    }
+KerberosServerContext::~KerberosServerContext()
+{
+  // TODO: destroy the state with `authenticate_gss_server_clean` if it hasn't been already
 }
 
-// targetname Getter - server side only
-NAN_GETTER(KerberosContext::DelegatedCredentialsCacheGetter) {
-    // Unpack the object
-    KerberosContext* context = Nan::ObjectWrap::Unwrap<KerberosContext>(info.This());
+NAN_GETTER(KerberosServerContext::UserNameGetter) {
+  KerberosServerContext* context =
+    Nan::ObjectWrap::Unwrap<KerberosServerContext>(info.Holder());
 
-    gss_server_state* server_state = context->server_state;
+  info.GetReturnValue().Set(Nan::New(context->_state->username).ToLocalChecked());
+}
 
-    char* delegated_credentials_cache =
-        server_state != NULL ? server_state->delegated_credentials_cache : NULL;
+NAN_GETTER(KerberosServerContext::ResponseGetter) {
+  KerberosServerContext* context =
+    Nan::ObjectWrap::Unwrap<KerberosServerContext>(info.Holder());
 
-    if (delegated_credentials_cache == NULL) {
-        info.GetReturnValue().Set(Nan::Null());
-    } else {
-        info.GetReturnValue().Set(Nan::New<String>(delegated_credentials_cache).ToLocalChecked());
-    }
+  info.GetReturnValue().Set(Nan::New(context->_state->response).ToLocalChecked());
+}
+
+NAN_GETTER(KerberosServerContext::ResponseConfGetter) {
+  KerberosServerContext* context =
+    Nan::ObjectWrap::Unwrap<KerberosServerContext>(info.Holder());
+
+  info.GetReturnValue().Set(Nan::New(context->_state->responseConf).ToLocalChecked());
 }

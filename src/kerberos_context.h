@@ -1,64 +1,43 @@
 #ifndef KERBEROS_CONTEXT_H
 #define KERBEROS_CONTEXT_H
 
-#include <gssapi/gssapi.h>
-#include <gssapi/gssapi_generic.h>
-#include <gssapi/gssapi_krb5.h>
-#include <node.h>
-
-#include <node_object_wrap.h>
-#include <v8.h>
 #include "nan.h"
+#include "kerberos_gss.h"
 
-extern "C" {
-#include "kerberosgss.h"
+class KerberosClientContext : public Nan::ObjectWrap {
+ public:
+    static NAN_MODULE_INIT(Init);
+
+ private:
+    static Nan::Persistent<v8::Function> constructor;
+
+    static NAN_GETTER(UserNameGetter);
+    static NAN_GETTER(ResponseGetter);
+    static NAN_GETTER(ResponseConfGetter);
+
+ private:
+    explicit KerberosClientContext(gss_client_state* client_state);
+    ~KerberosClientContext();
+
+    gss_client_state* _state;
+};
+
+class KerberosServerContext : public Nan::ObjectWrap {
+ public:
+    static NAN_MODULE_INIT(Init);
+
+ private:
+    static Nan::Persistent<v8::Function> constructor;
+
+    static NAN_GETTER(UserNameGetter);
+    static NAN_GETTER(ResponseGetter);
+    static NAN_GETTER(TargetNameGetter);
+
+ private:
+    explicit KerberosServerContext(gss_server_state* server_state);
+    ~KerberosServerContext();
+
+    gss_server_state* _state;
 }
 
-using namespace v8;
-using namespace node;
-
-class KerberosContext : public Nan::ObjectWrap {
-   public:
-    KerberosContext();
-    ~KerberosContext();
-
-    static inline bool HasInstance(Local<Value> val) {
-        if (!val->IsObject())
-            return false;
-        Local<Object> obj = val->ToObject();
-        return Nan::New(constructor_template)->HasInstance(obj);
-    };
-
-    inline bool IsClientInstance() {
-        return state != NULL;
-    }
-
-    inline bool IsServerInstance() {
-        return server_state != NULL;
-    }
-
-    // Constructor used for creating new Kerberos objects from C++
-    static Nan::Persistent<FunctionTemplate> constructor_template;
-
-    // Initialize function for the object
-    static void Initialize(Nan::ADDON_REGISTER_FUNCTION_ARGS_TYPE target);
-
-    // Public constructor
-    static KerberosContext* New();
-
-    // Handle to the kerberos client context
-    gss_client_state* state;
-
-    // Handle to the kerberos server context
-    gss_server_state* server_state;
-
-   private:
-    static NAN_METHOD(New);
-    // In either client state or server state
-    static NAN_GETTER(ResponseGetter);
-    static NAN_GETTER(UsernameGetter);
-    // Only in the "server_state"
-    static NAN_GETTER(TargetnameGetter);
-    static NAN_GETTER(DelegatedCredentialsCacheGetter);
-};
 #endif
