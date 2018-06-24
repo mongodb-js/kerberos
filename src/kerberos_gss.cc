@@ -14,7 +14,7 @@
  * limitations under the License.
  **/
 
-#include "kerberos-gss.h"
+#include "kerberos_gss.h"
 
 #include "base64.h"
 
@@ -22,6 +22,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
+
+#if defined(__clang__)
+ #pragma clang diagnostic push
+ #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 static gss_result* gss_success_result(int ret);
 static gss_result* gss_error_result(OM_uint32 err_maj, OM_uint32 err_min);
@@ -219,7 +224,7 @@ gss_result* authenticate_gss_client_step(gss_client_state* state, const char* ch
     if (challenge && *challenge)
     {
         size_t len;
-        input_token.value = base64_decode(challenge, &len);
+        input_token.value = base64_decode(challenge, (int *) &len);
         input_token.length = len;
     }
 
@@ -316,7 +321,7 @@ gss_result* authenticate_gss_client_unwrap(gss_client_state *state, const char *
     if (challenge && *challenge)
     {
         size_t len;
-        input_token.value = base64_decode(challenge, &len);
+        input_token.value = base64_decode(challenge, (int *) &len);
         input_token.length = len;
     }
 
@@ -372,7 +377,7 @@ gss_result* authenticate_gss_client_wrap(gss_client_state* state, const char* ch
     if (challenge && *challenge)
     {
         size_t len;
-        input_token.value = base64_decode(challenge, &len);
+        input_token.value = base64_decode(challenge, (int *) &len);
         input_token.length = len;
     }
 
@@ -537,14 +542,14 @@ gss_result* authenticate_gss_server_step(gss_server_state *state, const char *ch
     if (challenge && *challenge)
     {
         size_t len;
-        input_token.value = base64_decode(challenge, &len);
+        input_token.value = base64_decode(challenge, (int *) &len);
         input_token.length = len;
     }
     else
     {
         ret = (gss_result *) malloc(sizeof(gss_result));
         ret->code = AUTH_GSS_ERROR;
-        ret->message = "No challenge parameter in request from client";
+        ret->message = strdup("No challenge parameter in request from client");
         goto end;
     }
 
@@ -667,7 +672,10 @@ static gss_result* gss_error_result(OM_uint32 err_maj, OM_uint32 err_min)
     result->code = AUTH_GSS_ERROR;
     // TODO: set the correct message here
     // PyErr_SetObject(GssException_class, Py_BuildValue("((s:i)(s:i))", buf_maj, err_maj, buf_min, err_min));
-    result->message = "something went wrong";
+    // result->message = (char *) malloc(sizeof(buf_maj));
+    // strncpy(result->message, (char *) &buf_maj, sizeof(buf_maj));
+    result->message = strdup("Figure out what error message to report here!");
+
     return result;
 }
 
