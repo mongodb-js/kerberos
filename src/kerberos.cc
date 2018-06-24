@@ -34,27 +34,6 @@ NAN_METHOD(AuthGSSClientStep) {
   AsyncQueueWorker(new DummyWorker(callback));
 }
 
-NAN_METHOD(AuthGSSClientResponse) {
-  v8::MaybeLocal<v8::Object> context = Nan::To<v8::Object>(info[0]);
-  Nan::Callback *callback = new Nan::Callback(Nan::To<v8::Function>(info[1]).ToLocalChecked());
-
-  AsyncQueueWorker(new DummyWorker(callback));
-}
-
-NAN_METHOD(AuthGSSClientResponseConf) {
-  v8::MaybeLocal<v8::Object> context = Nan::To<v8::Object>(info[0]);
-  Nan::Callback *callback = new Nan::Callback(Nan::To<v8::Function>(info[1]).ToLocalChecked());
-
-  AsyncQueueWorker(new DummyWorker(callback));
-}
-
-NAN_METHOD(AuthGSSClientUserName) {
-  v8::MaybeLocal<v8::Object> context = Nan::To<v8::Object>(info[0]);
-  Nan::Callback *callback = new Nan::Callback(Nan::To<v8::Function>(info[1]).ToLocalChecked());
-
-  AsyncQueueWorker(new DummyWorker(callback));
-}
-
 NAN_METHOD(AuthGSSClientUnwrap) {
   v8::MaybeLocal<v8::Object> context = Nan::To<v8::Object>(info[0]);
   v8::MaybeLocal<v8::String> challenge = Nan::To<v8::String>(info[1]);
@@ -93,27 +72,6 @@ NAN_METHOD(AuthGSSServerStep) {
   AsyncQueueWorker(new DummyWorker(callback));
 }
 
-NAN_METHOD(AuthGSSServerResponse) {
-  v8::MaybeLocal<v8::Object> context = Nan::To<v8::Object>(info[0]);
-  Nan::Callback *callback = new Nan::Callback(Nan::To<v8::Function>(info[1]).ToLocalChecked());
-
-  AsyncQueueWorker(new DummyWorker(callback));
-}
-
-NAN_METHOD(AuthGSSServerUserName) {
-  v8::MaybeLocal<v8::Object> context = Nan::To<v8::Object>(info[0]);
-  Nan::Callback *callback = new Nan::Callback(Nan::To<v8::Function>(info[1]).ToLocalChecked());
-
-  AsyncQueueWorker(new DummyWorker(callback));
-}
-
-NAN_METHOD(AuthGSSServerTargetName) {
-  v8::MaybeLocal<v8::Object> context = Nan::To<v8::Object>(info[0]);
-  Nan::Callback *callback = new Nan::Callback(Nan::To<v8::Function>(info[1]).ToLocalChecked());
-
-  AsyncQueueWorker(new DummyWorker(callback));
-}
-
 NAN_MODULE_INIT(Init) {
   // Client
   Nan::Set(target, Nan::New("authGSSClientInit").ToLocalChecked(),
@@ -122,12 +80,6 @@ NAN_MODULE_INIT(Init) {
     Nan::GetFunction(Nan::New<FunctionTemplate>(AuthGSSClientClean)).ToLocalChecked());
   Nan::Set(target, Nan::New("authGSSClientStep").ToLocalChecked(),
     Nan::GetFunction(Nan::New<FunctionTemplate>(AuthGSSClientStep)).ToLocalChecked());
-  Nan::Set(target, Nan::New("authGSSClientResponse").ToLocalChecked(),
-    Nan::GetFunction(Nan::New<FunctionTemplate>(AuthGSSClientResponse)).ToLocalChecked());
-  Nan::Set(target, Nan::New("authGSSClientResponseConf").ToLocalChecked(),
-    Nan::GetFunction(Nan::New<FunctionTemplate>(AuthGSSClientResponseConf)).ToLocalChecked());
-  Nan::Set(target, Nan::New("authGSSClientUserName").ToLocalChecked(),
-    Nan::GetFunction(Nan::New<FunctionTemplate>(AuthGSSClientUserName)).ToLocalChecked());
   Nan::Set(target, Nan::New("authGSSClientUnwrap").ToLocalChecked(),
     Nan::GetFunction(Nan::New<FunctionTemplate>(AuthGSSClientUnwrap)).ToLocalChecked());
   Nan::Set(target, Nan::New("authGSSClientWrap").ToLocalChecked(),
@@ -140,12 +92,6 @@ NAN_MODULE_INIT(Init) {
     Nan::GetFunction(Nan::New<FunctionTemplate>(AuthGSSServerClean)).ToLocalChecked());
   Nan::Set(target, Nan::New("authGSSServerStep").ToLocalChecked(),
     Nan::GetFunction(Nan::New<FunctionTemplate>(AuthGSSServerStep)).ToLocalChecked());
-  Nan::Set(target, Nan::New("authGSSServerResponse").ToLocalChecked(),
-    Nan::GetFunction(Nan::New<FunctionTemplate>(AuthGSSServerResponse)).ToLocalChecked());
-  Nan::Set(target, Nan::New("authGSSServerUserName").ToLocalChecked(),
-    Nan::GetFunction(Nan::New<FunctionTemplate>(AuthGSSServerUserName)).ToLocalChecked());
-  Nan::Set(target, Nan::New("authGSSServerTargetName").ToLocalChecked(),
-    Nan::GetFunction(Nan::New<FunctionTemplate>(AuthGSSServerTargetName)).ToLocalChecked());
 }
 
 NODE_MODULE(kerberos, Init)
