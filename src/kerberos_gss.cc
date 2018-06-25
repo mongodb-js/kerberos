@@ -32,6 +32,24 @@ static gss_result* gss_success_result(int ret);
 static gss_result* gss_error_result(OM_uint32 err_maj, OM_uint32 err_min);
 static gss_result* gss_error_result_with_message_and_code(const char *mesage, int code);
 
+gss_client_state* gss_client_state_new()
+{
+    gss_client_state* state = (gss_client_state *) malloc(sizeof(gss_client_state));
+    state->username = NULL;
+    state->response = NULL;
+    state->responseConf = 0;
+    return state;
+}
+
+gss_server_state* gss_server_state_new()
+{
+    gss_server_state* state = (gss_server_state *) malloc(sizeof(gss_server_state));
+    state->username = NULL;
+    state->response = NULL;
+    state->targetname = NULL;
+    return state;
+}
+
 gss_result* server_principal_details(const char* service, const char* hostname)
 {
     char match[1024];
