@@ -85,6 +85,54 @@ class ClientStepWorker : public Nan::AsyncWorker {
   std::string _challenge;
 };
 
+class ClientWrapWorker : public Nan::AsyncWorker {
+ public:
+  ClientWrapWorker(KerberosClientContext* context, std::string challenge, std::string user, int protect, Nan::Callback *callback)
+    : AsyncWorker(callback, "kerberos:ClientWrapWorker"),
+      _context(context),
+      _challenge(challenge),
+      _user(user),
+      _protect(protect)
+  {}
+
+  virtual void Execute() {
+    std::unique_ptr<gss_result, FreeDeleter> result(
+      authenticate_gss_client_wrap(_context->state(), _challenge.c_str(), _user.c_str(), _protect));
+    if (result->code == AUTH_GSS_ERROR) {
+      SetErrorMessage(result->message);
+      return;
+    }
+  }
+
+ private:
+  KerberosClientContext* _context;
+  std::string _challenge;
+  std::string _user;
+  int _protect;
+};
+
+class ClientUnwrapWorker : public Nan::AsyncWorker {
+ public:
+  ClientUnwrapWorker(KerberosClientContext* context, std::string challenge, Nan::Callback *callback)
+    : AsyncWorker(callback, "kerberos:ClientUnwrapWorker"),
+      _context(context),
+      _challenge(challenge)
+  {}
+
+  virtual void Execute() {
+    std::unique_ptr<gss_result, FreeDeleter> result(
+      authenticate_gss_client_unwrap(_context->state(), _challenge.c_str()));
+    if (result->code == AUTH_GSS_ERROR) {
+      SetErrorMessage(result->message);
+      return;
+    }
+  }
+
+ private:
+  KerberosClientContext* _context;
+  std::string _challenge;
+};
+
 class ServerInitWorker : public Nan::AsyncWorker {
  public:
   ServerInitWorker(std::string service, Nan::Callback *callback)

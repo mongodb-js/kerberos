@@ -88,15 +88,18 @@ NAN_METHOD(AuthGSSClientUnwrap) {
   std::string challenge(*Nan::Utf8String(info[1]));
   Nan::Callback *callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
 
-  AsyncQueueWorker(new DummyWorker(callback));
+  AsyncQueueWorker(new ClientUnwrapWorker(context, challenge, callback));
 }
 
 NAN_METHOD(AuthGSSClientWrap) {
-  std::string service(*Nan::Utf8String(info[0]));
+  KerberosClientContext* context =
+    Nan::ObjectWrap::Unwrap<KerberosClientContext>(info[0]->ToObject());
+  std::string challenge(*Nan::Utf8String(info[1]));
   v8::Local<v8::Object> options = Nan::To<v8::Object>(info[1]).ToLocalChecked();
   Nan::Callback *callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
 
-  AsyncQueueWorker(new DummyWorker(callback));
+  std::string user = StringOptionValue(options, "user");
+  AsyncQueueWorker(new ClientWrapWorker(context, challenge, user, 0, callback));
 }
 
 NAN_METHOD(AuthGSSServerInit) {
