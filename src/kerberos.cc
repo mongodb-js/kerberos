@@ -66,10 +66,11 @@ NAN_METHOD(AuthGSSClientInit) {
 }
 
 NAN_METHOD(AuthGSSClientClean) {
-  v8::MaybeLocal<v8::Object> context = Nan::To<v8::Object>(info[0]);
+  KerberosClientContext* context =
+    Nan::ObjectWrap::Unwrap<KerberosClientContext>(info[0]->ToObject());
   Nan::Callback *callback = new Nan::Callback(Nan::To<v8::Function>(info[1]).ToLocalChecked());
 
-  AsyncQueueWorker(new DummyWorker(callback));
+  AsyncQueueWorker(new ClientCleanWorker(context, callback));
 }
 
 NAN_METHOD(AuthGSSClientStep) {
@@ -104,10 +105,11 @@ NAN_METHOD(AuthGSSServerInit) {
 }
 
 NAN_METHOD(AuthGSSServerClean) {
-  v8::MaybeLocal<v8::Object> context = Nan::To<v8::Object>(info[0]);
+  KerberosServerContext* context =
+    Nan::ObjectWrap::Unwrap<KerberosServerContext>(info[0]->ToObject());
   Nan::Callback *callback = new Nan::Callback(Nan::To<v8::Function>(info[1]).ToLocalChecked());
 
-  AsyncQueueWorker(new DummyWorker(callback));
+  AsyncQueueWorker(new ServerCleanWorker(context, callback));
 }
 
 NAN_METHOD(AuthGSSServerStep) {
