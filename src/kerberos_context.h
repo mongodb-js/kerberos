@@ -7,6 +7,7 @@
 class KerberosClientContext : public Nan::ObjectWrap {
  public:
     static NAN_MODULE_INIT(Init);
+    static v8::Local<v8::Object> NewInstance(gss_client_state* state);
 
  private:
     static Nan::Persistent<v8::Function> constructor;
@@ -25,6 +26,7 @@ class KerberosClientContext : public Nan::ObjectWrap {
 class KerberosServerContext : public Nan::ObjectWrap {
  public:
     static NAN_MODULE_INIT(Init);
+    static v8::Local<v8::Object> NewInstance(gss_server_state* state);
 
  private:
     static Nan::Persistent<v8::Function> constructor;
@@ -38,6 +40,6 @@ class KerberosServerContext : public Nan::ObjectWrap {
     ~KerberosServerContext();
 
     gss_server_state* _state;
-}
+};
 
 #endif
