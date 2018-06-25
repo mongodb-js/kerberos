@@ -8,6 +8,8 @@ class KerberosClientContext : public Nan::ObjectWrap {
  public:
     static NAN_MODULE_INIT(Init);
     static v8::Local<v8::Object> NewInstance(gss_client_state* state);
+
+    gss_client_state* state() const;
     void destroy();
 
  private:
@@ -28,6 +30,8 @@ class KerberosServerContext : public Nan::ObjectWrap {
  public:
     static NAN_MODULE_INIT(Init);
     static v8::Local<v8::Object> NewInstance(gss_server_state* state);
+
+    gss_server_state* state() const;
     void destroy();
 
  private:
