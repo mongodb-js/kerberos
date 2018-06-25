@@ -74,31 +74,33 @@ NAN_METHOD(AuthGSSClientClean) {
 }
 
 NAN_METHOD(AuthGSSClientStep) {
-  v8::MaybeLocal<v8::Object> context = Nan::To<v8::Object>(info[0]);
-  v8::MaybeLocal<v8::String> challenge = Nan::To<v8::String>(info[1]);
+  KerberosClientContext* context =
+    Nan::ObjectWrap::Unwrap<KerberosClientContext>(info[0]->ToObject());
+  std::string challenge(*Nan::Utf8String(info[1]));
   Nan::Callback *callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
 
-  AsyncQueueWorker(new DummyWorker(callback));
+  AsyncQueueWorker(new ClientStepWorker(context, challenge, callback));
 }
 
 NAN_METHOD(AuthGSSClientUnwrap) {
-  v8::MaybeLocal<v8::Object> context = Nan::To<v8::Object>(info[0]);
-  v8::MaybeLocal<v8::String> challenge = Nan::To<v8::String>(info[1]);
+  KerberosClientContext* context =
+    Nan::ObjectWrap::Unwrap<KerberosClientContext>(info[0]->ToObject());
+  std::string challenge(*Nan::Utf8String(info[1]));
   Nan::Callback *callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
 
   AsyncQueueWorker(new DummyWorker(callback));
 }
 
 NAN_METHOD(AuthGSSClientWrap) {
-  v8::MaybeLocal<v8::String> service = Nan::To<v8::String>(info[0]);
-  v8::MaybeLocal<v8::Object> options = Nan::To<v8::Object>(info[1]);
+  std::string service(*Nan::Utf8String(info[0]));
+  v8::Local<v8::Object> options = Nan::To<v8::Object>(info[1]).ToLocalChecked();
   Nan::Callback *callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
 
   AsyncQueueWorker(new DummyWorker(callback));
 }
 
 NAN_METHOD(AuthGSSServerInit) {
-  std::string service = *(Nan::Utf8String(info[0]));
+  std::string service(*Nan::Utf8String(info[0]));
   Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
 
   AsyncQueueWorker(new ServerInitWorker(service, callback));
@@ -113,11 +115,12 @@ NAN_METHOD(AuthGSSServerClean) {
 }
 
 NAN_METHOD(AuthGSSServerStep) {
-  v8::MaybeLocal<v8::Object> context = Nan::To<v8::Object>(info[0]);
-  v8::MaybeLocal<v8::String> challenge = Nan::To<v8::String>(info[1]);
+  KerberosServerContext* context =
+    Nan::ObjectWrap::Unwrap<KerberosServerContext>(info[0]->ToObject());
+  std::string challenge(*Nan::Utf8String(info[1]));
   Nan::Callback *callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
 
-  AsyncQueueWorker(new DummyWorker(callback));
+  AsyncQueueWorker(new ServerStepWorker(context, challenge, callback));
 }
 
 NAN_MODULE_INIT(Init) {
