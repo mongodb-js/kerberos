@@ -1,4 +1,8 @@
+#include <memory>
+
 #include "kerberos.h"
+#include "kerberos_context.h"
+#include "kerberos_worker.h"
 
 using v8::FunctionTemplate;
 
@@ -12,11 +16,11 @@ class DummyWorker : public Nan::AsyncWorker {
 };
 
 NAN_METHOD(AuthGSSClientInit) {
-  v8::MaybeLocal<v8::String> service = Nan::To<v8::String>(info[0]);
-  v8::MaybeLocal<v8::Object> options = Nan::To<v8::Object>(info[1]);
+  v8::Local<v8::String> service = Nan::To<v8::String>(info[0]).ToLocalChecked();
+  v8::Local<v8::Object> options = Nan::To<v8::Object>(info[1]).ToLocalChecked();
   Nan::Callback *callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
 
-  AsyncQueueWorker(new DummyWorker(callback));
+  AsyncQueueWorker(new ClientInitWorker(std::string(), std::string(), 0, 0, callback));
 }
 
 NAN_METHOD(AuthGSSClientClean) {
@@ -51,10 +55,11 @@ NAN_METHOD(AuthGSSClientWrap) {
 }
 
 NAN_METHOD(AuthGSSServerInit) {
-  v8::MaybeLocal<v8::String> service = Nan::To<v8::String>(info[0]);
+  v8::Local<v8::String> service = Nan::To<v8::String>(info[0]).ToLocalChecked();
   Nan::Callback *callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
 
-  AsyncQueueWorker(new DummyWorker(callback));
+  Nan::Utf8String service_str(service);
+  AsyncQueueWorker(new ServerInitWorker(std::string(*service_str), callback));
 }
 
 NAN_METHOD(AuthGSSServerClean) {
@@ -73,6 +78,10 @@ NAN_METHOD(AuthGSSServerStep) {
 }
 
 NAN_MODULE_INIT(Init) {
+  // Custom types
+  KerberosClientContext::Init(target);
+  KerberosServerContext::Init(target);
+
   // Client
   Nan::Set(target, Nan::New("authGSSClientInit").ToLocalChecked(),
     Nan::GetFunction(Nan::New<FunctionTemplate>(AuthGSSClientInit)).ToLocalChecked());
