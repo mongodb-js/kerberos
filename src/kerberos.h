@@ -4,8 +4,6 @@
 
 #include <nan.h>
 
-#include "kerberos_gss.h"
-
 NAN_METHOD(AuthGSSClientInit);
 NAN_METHOD(AuthGSSClientClean);
 NAN_METHOD(AuthGSSClientStep);
