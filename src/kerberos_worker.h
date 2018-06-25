@@ -49,6 +49,22 @@ class ClientInitWorker : public Nan::AsyncWorker {
 
 };
 
+class ClientCleanWorker : public Nan::AsyncWorker {
+ public:
+  ClientCleanWorker(KerberosClientContext* context, Nan::Callback *callback)
+    : AsyncWorker(callback, "kerberos:ClientCleanWorker"),
+      _context(context)
+  {}
+
+  virtual void Execute() {
+    _context->destroy();
+  }
+
+ private:
+  KerberosClientContext* _context;
+
+};
+
 class ServerInitWorker : public Nan::AsyncWorker {
  public:
   ServerInitWorker(std::string service, Nan::Callback *callback)
@@ -81,6 +97,22 @@ class ServerInitWorker : public Nan::AsyncWorker {
  private:
   std::string _service;
   gss_server_state* _server_state;
+
+};
+
+class ServerCleanWorker : public Nan::AsyncWorker {
+ public:
+  ServerCleanWorker(KerberosServerContext* context, Nan::Callback *callback)
+    : AsyncWorker(callback, "kerberos:ServerCleanWorker"),
+      _context(context)
+  {}
+
+  virtual void Execute() {
+    _context->destroy();
+  }
+
+ private:
+  KerberosServerContext* _context;
 
 };
 

@@ -31,7 +31,10 @@ KerberosClientContext::KerberosClientContext(gss_client_state* state)
 
 KerberosClientContext::~KerberosClientContext()
 {
-  // TODO: destroy the state with `authenticate_gss_client_clean` if it hasn't been already
+}
+
+void KerberosClientContext::destroy() {
+  authenticate_gss_client_clean(_state);
 }
 
 NAN_GETTER(KerberosClientContext::UserNameGetter) {
@@ -91,6 +94,10 @@ KerberosServerContext::KerberosServerContext(gss_server_state* state)
 KerberosServerContext::~KerberosServerContext()
 {
   // TODO: destroy the state with `authenticate_gss_server_clean` if it hasn't been already
+}
+
+void KerberosServerContext::destroy() {
+  authenticate_gss_server_clean(_state);
 }
 
 NAN_GETTER(KerberosServerContext::UserNameGetter) {
