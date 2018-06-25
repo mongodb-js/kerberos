@@ -56,6 +56,9 @@ typedef struct {
     char*            response;
 } gss_server_state;
 
+gss_client_state* gss_client_state_new();
+gss_server_state* gss_server_state_new();
+
 gss_result* server_principal_details(const char* service, const char* hostname);
 
 gss_result* authenticate_gss_client_init(const char* service, const char* principal, long int gss_flags, gss_OID mech_oid, gss_client_state* state);
