@@ -6,6 +6,15 @@
 
 using v8::FunctionTemplate;
 
+#define GSS_MECH_OID_KRB5 9
+#define GSS_MECH_OID_SPNEGO 6
+
+static char krb5_mech_oid_bytes [] = "\x2a\x86\x48\x86\xf7\x12\x01\x02\x02";
+gss_OID_desc krb5_mech_oid = { 9, &krb5_mech_oid_bytes };
+
+static char spnego_mech_oid_bytes[] = "\x2b\x06\x01\x05\x05\x02";
+gss_OID_desc spnego_mech_oid = { 6, &spnego_mech_oid_bytes };
+
 class DummyWorker : public Nan::AsyncWorker {
  public:
   DummyWorker(Nan::Callback *callback)
@@ -15,12 +24,45 @@ class DummyWorker : public Nan::AsyncWorker {
   void Execute () {}
 };
 
-NAN_METHOD(AuthGSSClientInit) {
-  v8::Local<v8::String> service = Nan::To<v8::String>(info[0]).ToLocalChecked();
-  v8::Local<v8::Object> options = Nan::To<v8::Object>(info[1]).ToLocalChecked();
-  Nan::Callback *callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
+NAN_INLINE std::string StringOptionValue(v8::Local<v8::Object> options,
+                                         const char* _key) {
+  Nan::HandleScope scope;
+  v8::Local<v8::String> key = Nan::New(_key).ToLocalChecked();
+  return !options.IsEmpty()
+    && options->Has(key)
+    && options->Get(key)->IsString()
+    ? std::string(*(Nan::Utf8String(options->Get(key))))
+    : std::string();
+}
 
-  AsyncQueueWorker(new ClientInitWorker(std::string(), std::string(), 0, 0, callback));
+NAN_INLINE uint32_t UInt32OptionValue(v8::Local<v8::Object> options,
+                                      const char* _key,
+                                      uint32_t def) {
+  Nan::HandleScope scope;
+  v8::Local<v8::String> key = Nan::New(_key).ToLocalChecked();
+  return !options.IsEmpty()
+    && options->Has(key)
+    && options->Get(key)->IsNumber()
+    ? options->Get(key)->Uint32Value()
+    : def;
+}
+
+NAN_METHOD(AuthGSSClientInit) {
+  std::string service(*Nan::Utf8String(info[0]));
+  v8::Local<v8::Object> options = Nan::To<v8::Object>(info[1]).ToLocalChecked();
+  Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
+
+  std::string principal = StringOptionValue(options, "principal");
+  uint32_t gss_flags = UInt32OptionValue(options, "gssFlags", 0);
+  uint32_t mech_oid_int = UInt32OptionValue(options, "mechOID", 0);
+  gss_OID mech_oid = GSS_C_NO_OID;
+  if (mech_oid_int == GSS_MECH_OID_KRB5) {
+    mech_oid = &krb5_mech_oid;
+  } else if (mech_oid_int == GSS_MECH_OID_SPNEGO) {
+    mech_oid = &spnego_mech_oid;
+  }
+
+  AsyncQueueWorker(new ClientInitWorker(service, principal, gss_flags, GSS_C_NO_OID, callback));
 }
 
 NAN_METHOD(AuthGSSClientClean) {
@@ -55,11 +97,10 @@ NAN_METHOD(AuthGSSClientWrap) {
 }
 
 NAN_METHOD(AuthGSSServerInit) {
-  v8::Local<v8::String> service = Nan::To<v8::String>(info[0]).ToLocalChecked();
-  Nan::Callback *callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
+  std::string service = *(Nan::Utf8String(info[0]));
+  Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
 
-  Nan::Utf8String service_str(service);
-  AsyncQueueWorker(new ServerInitWorker(std::string(*service_str), callback));
+  AsyncQueueWorker(new ServerInitWorker(service, callback));
 }
 
 NAN_METHOD(AuthGSSServerClean) {
