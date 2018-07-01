@@ -22,7 +22,8 @@
     "eslint": "^4.19.1",
     "eslint-plugin-prettier": "^2.6.0",
     "mocha": "^5.2.0",
-    "prettier": "^1.13.5"
+    "prettier": "^1.13.5",
+    "segfault-handler": "^1.0.1"
   },
   "scripts": {
     "install": "(node-gyp rebuild) || (exit 0)",
