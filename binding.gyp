@@ -13,7 +13,8 @@
           'sources': [
             'src/base64.c',
             'src/kerberos.cc',
-            'src/kerberos_context.h',
+            'src/kerberos_client.cc',
+            'src/kerberos_server.cc',
             'src/kerberos_gss.cc'
           ],
           'link_settings': {
@@ -29,6 +30,8 @@
           ]
         }],
         ['OS=="mac"', {
+          'cflags!': [ '-fno-exceptions' ],
+          'cflags_cc!': [ '-fno-exceptions' ],
           'xcode_settings': {
             'GCC_ENABLE_CPP_RTTI': 'YES',
             'OTHER_CPLUSPLUSFLAGS' : [ '-std=c++11', '-stdlib=libc++' ],

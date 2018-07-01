@@ -1,8 +1,9 @@
 #include <memory>
 
 #include "kerberos.h"
-#include "kerberos_context.h"
-#include "kerberos_worker.h"
+#include "common.h"
+#include "kerberos_client.h"
+#include "kerberos_server.h"
 
 using v8::FunctionTemplate;
 
@@ -15,39 +16,47 @@ gss_OID_desc krb5_mech_oid = { 9, &krb5_mech_oid_bytes };
 static char spnego_mech_oid_bytes[] = "\x2b\x06\x01\x05\x05\x02";
 gss_OID_desc spnego_mech_oid = { 6, &spnego_mech_oid_bytes };
 
-class DummyWorker : public Nan::AsyncWorker {
+class InitializeClientWorker : public Nan::AsyncWorker {
  public:
-  DummyWorker(Nan::Callback *callback)
-    : AsyncWorker(callback, "kerberos:DummyWorker") {}
-  ~DummyWorker() {}
+  InitializeClientWorker(std::string service, std::string principal, long int gss_flags, gss_OID mech_oid, Nan::Callback *callback)
+    : AsyncWorker(callback, "kerberos:InitializeClientWorker"),
+      _service(service),
+      _principal(principal),
+      _gss_flags(gss_flags),
+      _mech_oid(mech_oid),
+      _client_state(NULL)
+  {}
 
-  void Execute () {}
+  virtual void Execute() {
+    std::unique_ptr<gss_client_state, FreeDeleter> state(gss_client_state_new());
+    std::unique_ptr<gss_result, FreeDeleter> result(
+      authenticate_gss_client_init(_service.c_str(), _principal.c_str(), _gss_flags, _mech_oid, state.get()));
+
+    if (result->code == AUTH_GSS_ERROR) {
+      SetErrorMessage(result->message);
+      return;
+    }
+
+    _client_state = state.release();
+  }
+
+ protected:
+  virtual void HandleOKCallback() {
+    Nan::HandleScope scope;
+    v8::Local<v8::Object> client = KerberosClient::NewInstance(_client_state);
+    v8::Local<v8::Value> argv[] = { Nan::Null(), client };
+    callback->Call(2, argv, async_resource);
+  }
+
+ private:
+  std::string _service;
+  std::string _principal;
+  long int _gss_flags;
+  gss_OID _mech_oid;
+  gss_client_state* _client_state;
 };
 
-NAN_INLINE std::string StringOptionValue(v8::Local<v8::Object> options,
-                                         const char* _key) {
-  Nan::HandleScope scope;
-  v8::Local<v8::String> key = Nan::New(_key).ToLocalChecked();
-  return !options.IsEmpty()
-    && options->Has(key)
-    && options->Get(key)->IsString()
-    ? std::string(*(Nan::Utf8String(options->Get(key))))
-    : std::string();
-}
-
-NAN_INLINE uint32_t UInt32OptionValue(v8::Local<v8::Object> options,
-                                      const char* _key,
-                                      uint32_t def) {
-  Nan::HandleScope scope;
-  v8::Local<v8::String> key = Nan::New(_key).ToLocalChecked();
-  return !options.IsEmpty()
-    && options->Has(key)
-    && options->Get(key)->IsNumber()
-    ? options->Get(key)->Uint32Value()
-    : def;
-}
-
-NAN_METHOD(AuthGSSClientInit) {
+NAN_METHOD(InitializeClient) {
   std::string service(*Nan::Utf8String(info[0]));
   v8::Local<v8::Object> options = Nan::To<v8::Object>(info[1]).ToLocalChecked();
   Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
@@ -62,94 +71,59 @@ NAN_METHOD(AuthGSSClientInit) {
     mech_oid = &spnego_mech_oid;
   }
 
-  AsyncQueueWorker(new ClientInitWorker(service, principal, gss_flags, GSS_C_NO_OID, callback));
+  AsyncQueueWorker(new InitializeClientWorker(service, principal, gss_flags, GSS_C_NO_OID, callback));
 }
 
-NAN_METHOD(AuthGSSClientClean) {
-  KerberosClientContext* context =
-    Nan::ObjectWrap::Unwrap<KerberosClientContext>(info[0]->ToObject());
-  Nan::Callback *callback = new Nan::Callback(Nan::To<v8::Function>(info[1]).ToLocalChecked());
+class InitializeServerWorker : public Nan::AsyncWorker {
+ public:
+  InitializeServerWorker(std::string service, Nan::Callback *callback)
+    : AsyncWorker(callback, "kerberos:InitializeServerWorker"),
+      _service(service),
+      _server_state(NULL)
+  {}
 
-  AsyncQueueWorker(new ClientCleanWorker(context, callback));
-}
+  virtual void Execute() {
+    std::unique_ptr<gss_server_state, FreeDeleter> state(gss_server_state_new());
+    std::unique_ptr<gss_result, FreeDeleter> result(
+      authenticate_gss_server_init(_service.c_str(), state.get()));
 
-NAN_METHOD(AuthGSSClientStep) {
-  KerberosClientContext* context =
-    Nan::ObjectWrap::Unwrap<KerberosClientContext>(info[0]->ToObject());
-  std::string challenge(*Nan::Utf8String(info[1]));
-  Nan::Callback *callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
+    if (result->code == AUTH_GSS_ERROR) {
+      SetErrorMessage(result->message);
+      return;
+    }
 
-  AsyncQueueWorker(new ClientStepWorker(context, challenge, callback));
-}
+    _server_state = state.release();
+  }
 
-NAN_METHOD(AuthGSSClientUnwrap) {
-  KerberosClientContext* context =
-    Nan::ObjectWrap::Unwrap<KerberosClientContext>(info[0]->ToObject());
-  std::string challenge(*Nan::Utf8String(info[1]));
-  Nan::Callback *callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
+ protected:
+  virtual void HandleOKCallback() {
+    Nan::HandleScope scope;
+    v8::Local<v8::Object> server = KerberosServer::NewInstance(_server_state);
+    v8::Local<v8::Value> argv[] = { Nan::Null(), server };
+    callback->Call(2, argv, async_resource);
+  }
 
-  AsyncQueueWorker(new ClientUnwrapWorker(context, challenge, callback));
-}
+ private:
+  std::string _service;
+  gss_server_state* _server_state;
+};
 
-NAN_METHOD(AuthGSSClientWrap) {
-  KerberosClientContext* context =
-    Nan::ObjectWrap::Unwrap<KerberosClientContext>(info[0]->ToObject());
-  std::string challenge(*Nan::Utf8String(info[1]));
-  v8::Local<v8::Object> options = Nan::To<v8::Object>(info[1]).ToLocalChecked();
-  Nan::Callback *callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
-
-  std::string user = StringOptionValue(options, "user");
-  AsyncQueueWorker(new ClientWrapWorker(context, challenge, user, 0, callback));
-}
-
-NAN_METHOD(AuthGSSServerInit) {
+NAN_METHOD(InitializeServer) {
   std::string service(*Nan::Utf8String(info[0]));
   Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
 
-  AsyncQueueWorker(new ServerInitWorker(service, callback));
-}
-
-NAN_METHOD(AuthGSSServerClean) {
-  KerberosServerContext* context =
-    Nan::ObjectWrap::Unwrap<KerberosServerContext>(info[0]->ToObject());
-  Nan::Callback *callback = new Nan::Callback(Nan::To<v8::Function>(info[1]).ToLocalChecked());
-
-  AsyncQueueWorker(new ServerCleanWorker(context, callback));
-}
-
-NAN_METHOD(AuthGSSServerStep) {
-  KerberosServerContext* context =
-    Nan::ObjectWrap::Unwrap<KerberosServerContext>(info[0]->ToObject());
-  std::string challenge(*Nan::Utf8String(info[1]));
-  Nan::Callback *callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
-
-  AsyncQueueWorker(new ServerStepWorker(context, challenge, callback));
+  AsyncQueueWorker(new InitializeServerWorker(service, callback));
 }
 
 NAN_MODULE_INIT(Init) {
   // Custom types
-  KerberosClientContext::Init(target);
-  KerberosServerContext::Init(target);
+  KerberosClient::Init(target);
+  KerberosServer::Init(target);
 
-  // Client
-  Nan::Set(target, Nan::New("authGSSClientInit").ToLocalChecked(),
-    Nan::GetFunction(Nan::New<FunctionTemplate>(AuthGSSClientInit)).ToLocalChecked());
-  Nan::Set(target, Nan::New("authGSSClientClean").ToLocalChecked(),
-    Nan::GetFunction(Nan::New<FunctionTemplate>(AuthGSSClientClean)).ToLocalChecked());
-  Nan::Set(target, Nan::New("authGSSClientStep").ToLocalChecked(),
-    Nan::GetFunction(Nan::New<FunctionTemplate>(AuthGSSClientStep)).ToLocalChecked());
-  Nan::Set(target, Nan::New("authGSSClientUnwrap").ToLocalChecked(),
-    Nan::GetFunction(Nan::New<FunctionTemplate>(AuthGSSClientUnwrap)).ToLocalChecked());
-  Nan::Set(target, Nan::New("authGSSClientWrap").ToLocalChecked(),
-    Nan::GetFunction(Nan::New<FunctionTemplate>(AuthGSSClientWrap)).ToLocalChecked());
-
-  // Server
-  Nan::Set(target, Nan::New("authGSSServerInit").ToLocalChecked(),
-    Nan::GetFunction(Nan::New<FunctionTemplate>(AuthGSSServerInit)).ToLocalChecked());
-  Nan::Set(target, Nan::New("authGSSServerClean").ToLocalChecked(),
-    Nan::GetFunction(Nan::New<FunctionTemplate>(AuthGSSServerClean)).ToLocalChecked());
-  Nan::Set(target, Nan::New("authGSSServerStep").ToLocalChecked(),
-    Nan::GetFunction(Nan::New<FunctionTemplate>(AuthGSSServerStep)).ToLocalChecked());
+  Nan::Set(target, Nan::New("initializeClient").ToLocalChecked(),
+    Nan::GetFunction(Nan::New<FunctionTemplate>(InitializeClient)).ToLocalChecked());
+  Nan::Set(target, Nan::New("initializeServer").ToLocalChecked(),
+    Nan::GetFunction(Nan::New<FunctionTemplate>(InitializeServer)).ToLocalChecked());
 }
 
 NODE_MODULE(kerberos, Init)
