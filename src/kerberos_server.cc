@@ -93,11 +93,12 @@ class ServerStepWorker : public Nan::AsyncWorker {
  private:
   virtual void HandleOKCallback() {
     Nan::HandleScope scope;
-    v8::Local<v8::Value> argv[] = {
-      Nan::Null(),
-      Nan::New(_server->_state->response).ToLocalChecked()
-    };
+    v8::Local<v8::Value> response = Nan::Null();
+    if (_server->_state->response != NULL) {
+      response = Nan::New(_server->_state->response).ToLocalChecked();
+    }
 
+    v8::Local<v8::Value> argv[] = { Nan::Null(), response };
     callback->Call(2, argv, async_resource);
   }
 
