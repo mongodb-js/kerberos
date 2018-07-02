@@ -688,11 +688,8 @@ static gss_result* gss_error_result(OM_uint32 err_maj, OM_uint32 err_min)
 
     result = (gss_result *) malloc(sizeof(gss_result));
     result->code = AUTH_GSS_ERROR;
-    // TODO: set the correct message here
-    // PyErr_SetObject(GssException_class, Py_BuildValue("((s:i)(s:i))", buf_maj, err_maj, buf_min, err_min));
-    // result->message = (char *) malloc(sizeof(buf_maj));
-    // strncpy(result->message, (char *) &buf_maj, sizeof(buf_maj));
-    result->message = strdup("Figure out what error message to report here!");
+    result->message = (char *) malloc(sizeof(char) * 1024 + 2);
+    sprintf(result->message, "%s: %s", buf_maj, buf_min);
 
     return result;
 }

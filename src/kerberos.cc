@@ -110,7 +110,7 @@ class InitializeServerWorker : public Nan::AsyncWorker {
 
 NAN_METHOD(InitializeServer) {
   std::string service(*Nan::Utf8String(info[0]));
-  Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
+  Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[1]).ToLocalChecked());
 
   AsyncQueueWorker(new InitializeServerWorker(service, callback));
 }
