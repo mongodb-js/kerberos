@@ -126,7 +126,10 @@ end:
     return result;
 }
 
-gss_result* authenticate_gss_client_init(const char* service, const char* principal, long int gss_flags, gss_OID mech_oid, gss_client_state* state)
+gss_result* authenticate_gss_client_init(
+    const char* service, const char* principal, long int gss_flags,
+    gss_server_state* delegatestate, gss_OID mech_oid, gss_client_state* state
+)
 {
     OM_uint32 maj_stat;
     OM_uint32 min_stat;
@@ -134,7 +137,6 @@ gss_result* authenticate_gss_client_init(const char* service, const char* princi
     gss_buffer_desc principal_token = GSS_C_EMPTY_BUFFER;
     gss_result* ret = NULL;
 
-    gss_OID mech;
     state->server_name = GSS_C_NO_NAME;
     state->mech_oid = mech_oid;
     state->context = GSS_C_NO_CONTEXT;
@@ -147,13 +149,9 @@ gss_result* authenticate_gss_client_init(const char* service, const char* princi
     name_token.length = strlen(service);
     name_token.value = (char *)service;
 
-    // could be in principal name format, i.e. service/fqdn@REALM
-    if (strchr(service, '/'))
-        mech = GSS_C_NO_OID;
-    else
-        mech = gss_krb5_nt_service_name;
-
-    maj_stat = gss_import_name(&min_stat, &name_token, mech, &state->server_name);
+    maj_stat = gss_import_name(
+        &min_stat, &name_token, gss_krb5_nt_service_name, &state->server_name
+    );
 
     if (GSS_ERROR(maj_stat))
     {
@@ -161,8 +159,12 @@ gss_result* authenticate_gss_client_init(const char* service, const char* princi
         goto end;
     }
 
-    // Get credential for principal
-    if (principal && *principal)
+    // Use the delegate credentials if they exist
+    if (delegatestate && delegatestate->client_creds != GSS_C_NO_CREDENTIAL) {
+        state->client_creds = delegatestate->client_creds;
+    }
+    // If available use the principal to extract its associated credentials
+    else if (principal && *principal)
     {
         gss_name_t name;
         principal_token.length = strlen(principal);
@@ -175,8 +177,10 @@ gss_result* authenticate_gss_client_init(const char* service, const char* princi
             goto end;
         }
 
-        maj_stat = gss_acquire_cred(&min_stat, name, GSS_C_INDEFINITE, GSS_C_NO_OID_SET, GSS_C_INITIATE,
-                                    &state->client_creds, NULL, NULL);
+        maj_stat = gss_acquire_cred(
+            &min_stat, name, GSS_C_INDEFINITE, GSS_C_NO_OID_SET,
+            GSS_C_INITIATE, &state->client_creds, NULL, NULL
+        );
         if (GSS_ERROR(maj_stat))
         {
             ret = gss_error_result(maj_stat, min_stat);
@@ -189,8 +193,7 @@ gss_result* authenticate_gss_client_init(const char* service, const char* princi
             ret = gss_error_result(maj_stat, min_stat);
             goto end;
         }
-
-      }
+    }
 
     ret = gss_success_result(AUTH_GSS_COMPLETE);
 end:
@@ -199,6 +202,7 @@ end:
 
 int authenticate_gss_client_clean(gss_client_state *state)
 {
+    OM_uint32 maj_stat;
     OM_uint32 min_stat;
     int ret = AUTH_GSS_COMPLETE;
 
@@ -206,7 +210,7 @@ int authenticate_gss_client_clean(gss_client_state *state)
         gss_delete_sec_context(&min_stat, &state->context, GSS_C_NO_BUFFER);
     if (state->server_name != GSS_C_NO_NAME)
         gss_release_name(&min_stat, &state->server_name);
-    if (state->client_creds != GSS_C_NO_CREDENTIAL)
+    if (state->client_creds != GSS_C_NO_CREDENTIAL && !(state->gss_flags & GSS_C_DELEG_FLAG))
         gss_release_cred(&min_stat, &state->client_creds);
     if (state->username != NULL)
     {
@@ -226,7 +230,6 @@ gss_result* authenticate_gss_client_step(gss_client_state* state, const char* ch
 {
     OM_uint32 maj_stat;
     OM_uint32 min_stat;
-    OM_uint32 ret_flags; // Not used, but may be necessary for gss call.
     gss_buffer_desc input_token = GSS_C_EMPTY_BUFFER;
     gss_buffer_desc output_token = GSS_C_EMPTY_BUFFER;
     gss_result* ret = NULL;
@@ -265,7 +268,7 @@ gss_result* authenticate_gss_client_step(gss_client_state* state, const char* ch
                                     &input_token,
                                     NULL,
                                     &output_token,
-                                    &ret_flags,
+                                    NULL
                                     NULL);
 
     if ((maj_stat != GSS_S_COMPLETE) && (maj_stat != GSS_S_CONTINUE_NEEDED))
