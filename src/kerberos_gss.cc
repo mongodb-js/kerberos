@@ -30,6 +30,7 @@
 
 static gss_result* gss_success_result(int ret);
 static gss_result* gss_error_result(OM_uint32 err_maj, OM_uint32 err_min);
+static gss_result* gss_error_result_with_message(const char* message);
 static gss_result* gss_error_result_with_message_and_code(const char *mesage, int code);
 
 gss_client_state* gss_client_state_new()
@@ -229,7 +230,7 @@ gss_result* authenticate_gss_client_step(gss_client_state* state, const char* ch
     gss_buffer_desc input_token = GSS_C_EMPTY_BUFFER;
     gss_buffer_desc output_token = GSS_C_EMPTY_BUFFER;
     gss_result* ret = NULL;
-    int temp_ret = AUTH_GSS_COMPLETE;
+    int temp_ret = AUTH_GSS_CONTINUE;
 
     // Always clear out the old response
     if (state->response != NULL)
@@ -243,6 +244,12 @@ gss_result* authenticate_gss_client_step(gss_client_state* state, const char* ch
     {
         size_t len;
         input_token.value = base64_decode(challenge, &len);
+        if (input_token.value == NULL)
+        {
+            ret = gss_error_result_with_message("Ran out of memory decoding challenge");
+            goto end;
+        }
+
         input_token.length = len;
     }
 
@@ -271,14 +278,19 @@ gss_result* authenticate_gss_client_step(gss_client_state* state, const char* ch
     // Grab the client response to send back to the server
     if (output_token.length)
     {
-        state->response = base64_encode((const unsigned char *)output_token.value, output_token.length);;
+        state->response = base64_encode((const unsigned char *)output_token.value, output_token.length);
+        if (state->response == NULL)
+        {
+            ret = gss_error_result_with_message("Ran out of memory encoding response");
+            goto end;
+        }
+
         maj_stat = gss_release_buffer(&min_stat, &output_token);
     }
 
     // Try to get the user name if we have completed all GSS operations
     if (temp_ret == AUTH_GSS_COMPLETE)
     {
-        gss_buffer_desc name_token;
         gss_name_t gssuser = GSS_C_NO_NAME;
         maj_stat = gss_inquire_context(&min_stat, state->context, &gssuser, NULL, NULL, NULL,  NULL, NULL, NULL);
         if (GSS_ERROR(maj_stat))
@@ -287,12 +299,14 @@ gss_result* authenticate_gss_client_step(gss_client_state* state, const char* ch
             goto end;
         }
 
+        gss_buffer_desc name_token;
         name_token.length = 0;
         maj_stat = gss_display_name(&min_stat, gssuser, &name_token, NULL);
         if (GSS_ERROR(maj_stat))
         {
-            if (name_token.value)
+            if (name_token.value) {
                 gss_release_buffer(&min_stat, &name_token);
+            }
             gss_release_name(&min_stat, &gssuser);
 
             ret = gss_error_result(maj_stat, min_stat);
@@ -300,7 +314,15 @@ gss_result* authenticate_gss_client_step(gss_client_state* state, const char* ch
         }
         else
         {
+            if (state->username != NULL) {
+                free(state->username);
+                state->username = NULL;
+            }
             state->username = (char *)malloc(name_token.length + 1);
+            if (state->username == NULL) {
+                ret = gss_error_result_with_message("Ran out of memory allocating username");
+                goto end;
+            }
             strncpy(state->username, (char*) name_token.value, name_token.length);
             state->username[name_token.length] = 0;
             gss_release_buffer(&min_stat, &name_token);
@@ -310,11 +332,12 @@ gss_result* authenticate_gss_client_step(gss_client_state* state, const char* ch
 
     ret = gss_success_result(temp_ret);
 end:
-    if (output_token.value)
+    if (output_token.value) {
         gss_release_buffer(&min_stat, &output_token);
-    if (input_token.value)
+    }
+    if (input_token.value) {
         free(input_token.value);
-
+    }
     return ret;
 }
 
@@ -565,9 +588,7 @@ gss_result* authenticate_gss_server_step(gss_server_state *state, const char *ch
     }
     else
     {
-        ret = (gss_result *) malloc(sizeof(gss_result));
-        ret->code = AUTH_GSS_ERROR;
-        ret->message = strdup("No challenge parameter in request from client");
+        ret = gss_error_result_with_message("No challenge parameter in request from client");
         goto end;
     }
 
@@ -694,14 +715,20 @@ static gss_result* gss_error_result(OM_uint32 err_maj, OM_uint32 err_min)
     return result;
 }
 
+static gss_result* gss_error_result_with_message(const char* message)
+{
+    gss_result* result = (gss_result *) malloc(sizeof(gss_result));
+    result->code = AUTH_GSS_ERROR;
+    result->message = strdup("Ran out of memory decoding challenge");
+    return result;
+}
+
 static gss_result* gss_error_result_with_message_and_code(const char* message, int code)
 {
     gss_result* result = (gss_result *) malloc(sizeof(gss_result));
     result->code = AUTH_GSS_ERROR;
-
-    char* msg = (char *) malloc(strlen(message) + 5);
-    sprintf(msg, "%s (%d)", message, code);
-    result->message = msg;
+    result->message = (char *) malloc(strlen(message) + 5);
+    sprintf(result->message, "%s (%d)", message, code);
     return result;
 }
 
