@@ -91,6 +91,16 @@ class ServerStepWorker : public Nan::AsyncWorker {
   }
 
  private:
+  virtual void HandleOKCallback() {
+    Nan::HandleScope scope;
+    v8::Local<v8::Value> argv[] = {
+      Nan::Null(),
+      Nan::New(_server->_state->response).ToLocalChecked()
+    };
+
+    callback->Call(2, argv, async_resource);
+  }
+
   KerberosServer* _server;
   std::string _challenge;
 };
