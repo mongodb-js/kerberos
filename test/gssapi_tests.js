@@ -19,27 +19,31 @@ describe('GSSAPI', function() {
       console.log('initializing server');
       kerberos.initializeServer(service, (err, server) => {
         expect(err).to.not.exist;
+        expect(client.contextComplete).to.be.false;
+        expect(server.contextComplete).to.be.false;
 
         console.log('stepping client');
-        client.step('', (err, result) => {
+        client.step('', (err, clientResponse) => {
           expect(err).to.not.exist;
-          expect(result).to.equal(kerberos.AUTH_GSS_COMPLETE);
+          expect(client.contextComplete).to.be.false;
 
           console.log('stepping server');
-          server.step(client.response, (err, result) => {
+          server.step(clientResponse, (err, serverResponse) => {
             expect(err).to.not.exist;
-            expect(result).to.equal(kerberos.AUTH_GSS_COMPLETE);
+            expect(client.contextComplete).to.be.false;
 
             console.log('stepping client again');
-            client.step(server.response, (err, result) => {
+            console.log(`server.response: ${serverResponse}`);
+            console.log('stepping....');
+            client.step(serverResponse, (err, clientResponse) => {
               expect(err).to.not.exist;
-              expect(result).to.equal(kerberos.AUTH_GSS_COMPLETE);
+              expect(client.contextComplete).to.be.true;
+              expect(clientResponse).to.exist;
 
               console.log('checking expectations');
               const expectedUsername = `${username}@${realm.toUpperCase()}`;
               expect(server.username).to.equal(expectedUsername);
               expect(client.username).to.equal(expectedUsername);
-
               expect(server.targetName).to.not.be.empty;
               done();
             });
