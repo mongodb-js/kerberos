@@ -30,7 +30,7 @@ class InitializeClientWorker : public Nan::AsyncWorker {
   virtual void Execute() {
     std::unique_ptr<gss_client_state, FreeDeleter> state(gss_client_state_new());
     std::unique_ptr<gss_result, FreeDeleter> result(
-      authenticate_gss_client_init(_service.c_str(), _principal.c_str(), _gss_flags, _mech_oid, state.get()));
+      authenticate_gss_client_init(_service.c_str(), _principal.c_str(), _gss_flags, NULL, _mech_oid, state.get()));
 
     if (result->code == AUTH_GSS_ERROR) {
       SetErrorMessage(result->message);
@@ -62,7 +62,7 @@ NAN_METHOD(InitializeClient) {
   Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
 
   std::string principal = StringOptionValue(options, "principal");
-  uint32_t gss_flags = UInt32OptionValue(options, "gssFlags", 0);
+  uint32_t gss_flags = UInt32OptionValue(options, "gssFlags", GSS_C_MUTUAL_FLAG | GSS_C_SEQUENCE_FLAG);
   uint32_t mech_oid_int = UInt32OptionValue(options, "mechOID", 0);
   gss_OID mech_oid = GSS_C_NO_OID;
   if (mech_oid_int == GSS_MECH_OID_KRB5) {
