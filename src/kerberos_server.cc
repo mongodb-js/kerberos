@@ -64,15 +64,15 @@ NAN_GETTER(KerberosServer::TargetNameGetter) {
 
 class ServerStepWorker : public Nan::AsyncWorker {
  public:
-  ServerStepWorker(KerberosServer* client, std::string challenge, Nan::Callback *callback)
+  ServerStepWorker(KerberosServer* server, std::string challenge, Nan::Callback *callback)
     : AsyncWorker(callback, "kerberos:ServerStepWorker"),
-      _client(client),
+      _server(server),
       _challenge(challenge)
   {}
 
   virtual void Execute() {
     std::unique_ptr<gss_result, FreeDeleter> result(
-      authenticate_gss_server_step(_client->state(), _challenge.c_str()));
+      authenticate_gss_server_step(_server->state(), _challenge.c_str()));
     if (result->code == AUTH_GSS_ERROR) {
       SetErrorMessage(result->message);
       return;
@@ -80,7 +80,7 @@ class ServerStepWorker : public Nan::AsyncWorker {
   }
 
  private:
-  KerberosServer* _client;
+  KerberosServer* _server;
   std::string _challenge;
 };
 
