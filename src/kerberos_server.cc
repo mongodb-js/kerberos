@@ -42,21 +42,21 @@ gss_server_state* KerberosServer::state() const {
 }
 
 NAN_GETTER(KerberosServer::UserNameGetter) {
-  KerberosServer* server = Nan::ObjectWrap::Unwrap<KerberosServer>(info.Holder());
+  KerberosServer* server = Nan::ObjectWrap::Unwrap<KerberosServer>(info.This());
   (server->_state->username == NULL) ?
     info.GetReturnValue().Set(Nan::Null()) :
     info.GetReturnValue().Set(Nan::New(server->_state->username).ToLocalChecked());
 }
 
 NAN_GETTER(KerberosServer::ResponseGetter) {
-  KerberosServer* server = Nan::ObjectWrap::Unwrap<KerberosServer>(info.Holder());
+  KerberosServer* server = Nan::ObjectWrap::Unwrap<KerberosServer>(info.This());
   (server->_state->response == NULL) ?
     info.GetReturnValue().Set(Nan::Null()) :
     info.GetReturnValue().Set(Nan::New(server->_state->response).ToLocalChecked());
 }
 
 NAN_GETTER(KerberosServer::TargetNameGetter) {
-  KerberosServer* server = Nan::ObjectWrap::Unwrap<KerberosServer>(info.Holder());
+  KerberosServer* server = Nan::ObjectWrap::Unwrap<KerberosServer>(info.This());
   (server->_state->targetname == NULL) ?
     info.GetReturnValue().Set(Nan::Null()) :
     info.GetReturnValue().Set(Nan::New(server->_state->targetname).ToLocalChecked());
@@ -85,10 +85,9 @@ class ServerStepWorker : public Nan::AsyncWorker {
 };
 
 NAN_METHOD(KerberosServer::Step) {
-  KerberosServer* client =
-    Nan::ObjectWrap::Unwrap<KerberosServer>(info[0]->ToObject());
-  std::string challenge(*Nan::Utf8String(info[1]));
-  Nan::Callback *callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
+  KerberosServer* client = Nan::ObjectWrap::Unwrap<KerberosServer>(info.This());
+  std::string challenge(*Nan::Utf8String(info[0]));
+  Nan::Callback *callback = new Nan::Callback(Nan::To<v8::Function>(info[1]).ToLocalChecked());
 
   AsyncQueueWorker(new ServerStepWorker(client, challenge, callback));
 }
