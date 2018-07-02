@@ -17,14 +17,17 @@ class KerberosServer : public Nan::ObjectWrap {
     static NAN_GETTER(UserNameGetter);
     static NAN_GETTER(ResponseGetter);
     static NAN_GETTER(TargetNameGetter);
+    static NAN_GETTER(ContextCompleteGetter);
 
     static NAN_METHOD(Step);
 
  private:
+    friend class ServerStepWorker;
     explicit KerberosServer(gss_server_state* server_state);
     ~KerberosServer();
 
     gss_server_state* _state;
+    bool _contextComplete;
 };
 
 #endif
