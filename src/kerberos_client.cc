@@ -91,6 +91,16 @@ class ClientStepWorker : public Nan::AsyncWorker {
   }
 
  private:
+  virtual void HandleOKCallback() {
+    Nan::HandleScope scope;
+    v8::Local<v8::Value> argv[] = {
+      Nan::Null(),
+      Nan::New(_client->_state->response).ToLocalChecked()
+    };
+
+    callback->Call(2, argv, async_resource);
+  }
+
   KerberosClient* _client;
   std::string _challenge;
 };
