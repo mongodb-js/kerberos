@@ -242,7 +242,7 @@ gss_result* authenticate_gss_client_step(gss_client_state* state, const char* ch
     if (challenge && *challenge)
     {
         size_t len;
-        input_token.value = base64_decode(challenge, (int *) &len);
+        input_token.value = base64_decode(challenge, &len);
         input_token.length = len;
     }
 
@@ -339,7 +339,7 @@ gss_result* authenticate_gss_client_unwrap(gss_client_state *state, const char *
     if (challenge && *challenge)
     {
         size_t len;
-        input_token.value = base64_decode(challenge, (int *) &len);
+        input_token.value = base64_decode(challenge, &len);
         input_token.length = len;
     }
 
@@ -395,7 +395,7 @@ gss_result* authenticate_gss_client_wrap(gss_client_state* state, const char* ch
     if (challenge && *challenge)
     {
         size_t len;
-        input_token.value = base64_decode(challenge, (int *) &len);
+        input_token.value = base64_decode(challenge, &len);
         input_token.length = len;
     }
 
@@ -560,7 +560,7 @@ gss_result* authenticate_gss_server_step(gss_server_state *state, const char *ch
     if (challenge && *challenge)
     {
         size_t len;
-        input_token.value = base64_decode(challenge, (int *) &len);
+        input_token.value = base64_decode(challenge, &len);
         input_token.length = len;
     }
     else
@@ -704,3 +704,7 @@ static gss_result* gss_error_result_with_message_and_code(const char* message, i
     result->message = msg;
     return result;
 }
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif

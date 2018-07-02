@@ -16,7 +16,9 @@
 #ifndef BASE64_H
 #define BASE64_H
 
-char* base64_encode(const unsigned char* value, int vlen);
-unsigned char* base64_decode(const char* value, int* rlen);
+#include <stddef.h>
+
+char* base64_encode(const unsigned char* value, size_t vlen);
+unsigned char* base64_decode(const char* value, size_t* rlen);
 
 #endif
