@@ -12,6 +12,7 @@ NAN_MODULE_INIT(KerberosServer::Init) {
   Nan::SetAccessor(itpl, Nan::New("username").ToLocalChecked(), KerberosServer::UserNameGetter);
   Nan::SetAccessor(itpl, Nan::New("response").ToLocalChecked(), KerberosServer::ResponseGetter);
   Nan::SetAccessor(itpl, Nan::New("targetName").ToLocalChecked(), KerberosServer::TargetNameGetter);
+  Nan::SetAccessor(itpl, Nan::New("contextComplete").ToLocalChecked(), KerberosServer::ContextCompleteGetter);
 
   constructor.Reset(Nan::GetFunction(tpl).ToLocalChecked());
   Nan::Set(target, Nan::New("KerberosServer").ToLocalChecked(), Nan::GetFunction(tpl).ToLocalChecked());
@@ -27,7 +28,8 @@ v8::Local<v8::Object> KerberosServer::NewInstance(gss_server_state* state) {
 }
 
 KerberosServer::KerberosServer(gss_server_state* state)
-  : _state(state)
+  : _state(state),
+    _contextComplete(false)
 {}
 
 KerberosServer::~KerberosServer() {
@@ -62,6 +64,11 @@ NAN_GETTER(KerberosServer::TargetNameGetter) {
     info.GetReturnValue().Set(Nan::New(server->_state->targetname).ToLocalChecked());
 }
 
+NAN_GETTER(KerberosServer::ContextCompleteGetter) {
+  KerberosServer* server = Nan::ObjectWrap::Unwrap<KerberosServer>(info.This());
+  info.GetReturnValue().Set(Nan::New(server->_contextComplete));
+}
+
 class ServerStepWorker : public Nan::AsyncWorker {
  public:
   ServerStepWorker(KerberosServer* server, std::string challenge, Nan::Callback *callback)
@@ -76,6 +83,10 @@ class ServerStepWorker : public Nan::AsyncWorker {
     if (result->code == AUTH_GSS_ERROR) {
       SetErrorMessage(result->message);
       return;
+    }
+
+    if (result->code == AUTH_GSS_COMPLETE) {
+      _server->_contextComplete = true;
     }
   }
 
