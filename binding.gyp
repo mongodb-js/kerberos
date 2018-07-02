@@ -2,16 +2,11 @@
   'targets': [
     {
       'target_name': 'kerberos',
-      "cflags": [
-        '-std=c++11',
-      ],
-      # 'cflags!': [ '-fno-exceptions', '-std=c++11' ],
-      # 'cflags_cc!': [ '-fno-exceptions' ],
       'include_dirs': [ '<!(node -e "require(\'nan\')")' ],
       'conditions': [
         ['OS=="mac" or OS=="linux"', {
           'sources': [
-            'src/base64.c',
+            'src/base64.cc',
             'src/kerberos.cc',
             'src/kerberos_client.cc',
             'src/kerberos_server.cc',
