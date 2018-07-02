@@ -202,7 +202,6 @@ end:
 
 int authenticate_gss_client_clean(gss_client_state *state)
 {
-    OM_uint32 maj_stat;
     OM_uint32 min_stat;
     int ret = AUTH_GSS_COMPLETE;
 
@@ -268,7 +267,7 @@ gss_result* authenticate_gss_client_step(gss_client_state* state, const char* ch
                                     &input_token,
                                     NULL,
                                     &output_token,
-                                    NULL
+                                    NULL,
                                     NULL);
 
     if ((maj_stat != GSS_S_COMPLETE) && (maj_stat != GSS_S_CONTINUE_NEEDED))

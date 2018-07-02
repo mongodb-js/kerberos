@@ -1,6 +1,8 @@
 'use strict';
 const kerberos = require('..');
 const expect = require('chai').expect;
+const SegfaultHandler = require('segfault-handler');
+SegfaultHandler.registerHandler();
 
 const username = process.env.KERBEROS_USERNAME || 'administrator';
 // const password = process.env.KERBEROS_PASSWORD || 'Password01';
