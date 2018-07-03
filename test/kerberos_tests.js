@@ -1,105 +1,97 @@
 'use strict';
+const kerberos = require('..');
+const request = require('request');
+const chai = require('chai');
+const expect = chai.expect;
+const SegfaultHandler = require('segfault-handler');
+SegfaultHandler.registerHandler();
+chai.use(require('chai-string'));
 
-const expect = require('chai').expect;
-const http = require('http');
-const Kerberos = require('..').Kerberos;
+const username = process.env.KERBEROS_USERNAME || 'administrator';
+// const password = process.env.KERBEROS_PASSWORD || 'Password01';
+const realm = process.env.KERBEROS_REALM || 'example.com';
+const hostname = process.env.KERBEROS_HOSTNAME || 'hostname.example.com';
+const port = process.env.KERBEROS_PORT || '80';
 
 describe('Kerberos', function() {
-  it('simple initialize of Kerberos object', function(done) {
-    const kerberos = new Kerberos();
+  it('should authenticate against a kerberos server using GSSAPI', function(done) {
+    const service = `HTTP@${hostname}`;
 
-    // Initiate kerberos client
-    kerberos.authGSSClientInit('mongodb@kdc.10gen.me', Kerberos.GSS_C_MUTUAL_FLAG, function(
-      err,
-      context
-    ) {
+    kerberos.initializeClient(service, {}, (err, client) => {
       expect(err).to.not.exist;
-      expect(context).to.exist;
 
-      // Perform the first step
-      kerberos.authGSSClientStep(context, function(/* err, result */) {
-        // TODO: reenable next lines when osx support is complete
-        // expect(err).to.not.exist;
-        // expect(result).to.exist;
+      kerberos.initializeServer(service, (err, server) => {
+        expect(err).to.not.exist;
+        expect(client.contextComplete).to.be.false;
+        expect(server.contextComplete).to.be.false;
 
-        done();
+        client.step('', (err, clientResponse) => {
+          expect(err).to.not.exist;
+          expect(client.contextComplete).to.be.false;
+
+          server.step(clientResponse, (err, serverResponse) => {
+            expect(err).to.not.exist;
+            expect(client.contextComplete).to.be.false;
+
+            client.step(serverResponse, err => {
+              expect(err).to.not.exist;
+              expect(client.contextComplete).to.be.true;
+
+              const expectedUsername = `${username}@${realm.toUpperCase()}`;
+              expect(server.username).to.equal(expectedUsername);
+              expect(client.username).to.equal(expectedUsername);
+              expect(server.targetName).to.not.exist;
+              done();
+            });
+          });
+        });
       });
     });
   });
 
-  // for this test, please set the environment variables shown below.
-  it('simple username password test', function(done) {
-    const kerberos = new Kerberos();
+  it('should authenticate against a kerberos HTTP endpoint', function(done) {
+    const service = `HTTP@${hostname}`;
+    const url = `http://${hostname}:${port}/`;
 
-    if (!process.env.KRB5_PW_TEST_USERNAME) {
-      return done();
-    }
+    // send the initial request un-authenticated
+    request.get(url, (err, response) => {
+      expect(response.statusCode).to.equal(401);
 
-    kerberos.authUserKrb5Password(
-      process.env.KRB5_PW_TEST_USERNAME,
-      process.env.KRB5_PW_TEST_PASSWORD,
-      process.env.KRB5_PW_TEST_SERVICE,
-      function(err, ok) {
-        expect(err).to.not.exist;
-        expect(ok).to.be.true;
-        done();
-      }
-    );
-  });
+      // validate the response supports the Negotiate protocol
+      const authenticateHeader = response.headers['www-authenticate'];
+      expect(authenticateHeader).to.exist;
+      expect(authenticateHeader).to.equal('Negotiate');
 
-  //for this test, please set the environment variables shown below.
-  it('negotiate HTTP Client Test', function(done) {
-    ///// REQUIRED ENVIRONMENT VARIABLES /////
-    // give the host and path to a Negotiate protected resource on your network
-    const httpHostname = process.env.NEGOTIATE_TEST_HOSTNAME;
-    const httpPath = process.env.NEGOTIATE_TEST_PATH;
-    ////  OPTIONAL ENVIRONMENT VARIABLES
-    // don't use the cache in $KRB5CCNAME, use the one in $NEGOTIATE_TEST_KRB5CCNAME instead
-    const krb5CcName = process.env.NEGOTIATE_TEST_KRB5CCNAME || '';
-    /////
-
-    if (!httpHostname) {
-      return done();
-    }
-
-    const serviceName = 'HTTP@' + httpHostname;
-    const kerberos = new Kerberos();
-
-    kerberos.authGSSClientInit(serviceName, 0, krb5CcName, function(err, ctx) {
-      expect(err).to.not.exist;
-
-      kerberos.authGSSClientStep(ctx, '', function(err) {
+      // generate the first Kerberos token
+      const mechOID = kerberos.GSS_MECH_OID_KRB5;
+      kerberos.initializeClient(service, { mechOID }, (err, client) => {
         expect(err).to.not.exist;
 
-        const cleanupCtx = function() {
-          kerberos.authGSSClientClean(ctx, function(err) {
-            expect(err).to.not.exist;
-            done();
-          });
-        };
+        client.step('', (err, kerberosToken) => {
+          expect(err).to.not.exist;
 
-        const negotiateHeader = 'Negotiate ' + ctx.response;
+          // attach the Kerberos token and resend back to the host
+          request.get(
+            { url, headers: { Authorization: `Negotiate ${kerberosToken}` } },
+            (err, response) => {
+              expect(err).to.not.exist;
+              expect(response.statusCode).to.equal(200);
 
-        const req = http.get(
-          {
-            hostname: httpHostname,
-            path: httpPath,
-            headers: {
-              authorization: negotiateHeader
+              // validate the headers exist and contain a www-authenticate message
+              const authenticateHeader = response.headers['www-authenticate'];
+              expect(authenticateHeader).to.exist;
+              expect(authenticateHeader).to.startWith('Negotiate');
+
+              // verify the return Kerberos token
+              const tokenParts = authenticateHeader.split(' ');
+              const serverKerberosToken = tokenParts[tokenParts.length - 1];
+              client.step(serverKerberosToken, err => {
+                expect(err).to.not.exist;
+                expect(client.contextComplete).to.be.true;
+                done();
+              });
             }
-          },
-          function(res) {
-            expect(res.statusCode).to.be.at.least(200);
-            expect(res.statusCode).to.be.at.most(299);
-
-            res.on('data', data => console.log(` >> ${data}`));
-            res.on('end', () => cleanupCtx());
-          }
-        );
-
-        req.on('error', function(err) {
-          done(`http.get request failed: ${err.message}`);
-          cleanupCtx();
+          );
         });
       });
     });
