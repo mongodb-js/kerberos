@@ -124,5 +124,4 @@ nvm install --lts=$NODE_LTS
 
 echo "Installing dependencies and running test"
 npm install --unsafe-perm
-npx mocha test/kerberos_tests.js
-
+npm test
