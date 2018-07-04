@@ -1,17 +1,17 @@
 #ifndef KERBEROS_CLIENT_H
 #define KERBEROS_CLIENT_H
 
-#include "nan.h"
 #include "common.h"
+#include "nan.h"
 
 class KerberosClient : public Nan::ObjectWrap {
- public:
+   public:
     static NAN_MODULE_INIT(Init);
     static v8::Local<v8::Object> NewInstance(gss_client_state* state);
 
     gss_client_state* state() const;
 
- private:
+   private:
     static Nan::Persistent<v8::Function> constructor;
 
     static NAN_GETTER(UserNameGetter);
@@ -23,7 +23,7 @@ class KerberosClient : public Nan::ObjectWrap {
     static NAN_METHOD(UnwrapData);
     static NAN_METHOD(WrapData);
 
- private:
+   private:
     friend class ClientStepWorker;
     explicit KerberosClient(gss_client_state* client_state);
     ~KerberosClient();
