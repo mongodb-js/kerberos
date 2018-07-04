@@ -1,17 +1,26 @@
-language: node_js
-sudo: false
-node_js:
-  - 6
-  - 8
-  - 10
+sudo: required
 
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - g++-4.8
+language: generic
 
-env:
-  - CXX=g++-4.8
+services:
+  - docker
 
+matrix:
+  include:
+  - env: NODE_LTS=argon
+  - env: NODE_LTS=boron
+  - env: NODE_LTS=carbon
+
+script:
+- >
+  docker run
+  -i
+  -v $(pwd):/app
+  -w /app
+  -e NODE_LTS=$NODE_LTS
+  -e KERBEROS_USERNAME=administrator
+  -e KERBEROS_PASSWORD=Password01
+  -e KERBEROS_REALM=example.com
+  -e KERBEROS_PORT=80
+  ubuntu:16.04
+  /bin/bash ./test/scripts/travis.sh
