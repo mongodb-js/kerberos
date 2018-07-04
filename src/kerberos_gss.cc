@@ -668,6 +668,93 @@ end:
     return ret;
 }
 
+gss_result* authenticate_user_krb5pwd(
+    const char *user, const char *pswd, const char *service,
+    const char *default_realm
+) {
+    krb5_context    kcontext = NULL;
+    krb5_error_code code;
+    krb5_principal  client = NULL;
+    krb5_principal  server = NULL;
+    gss_result*     result = NULL;
+    int             ret = 0;
+    char            *name = NULL;
+    char            *p = NULL;
+
+    code = krb5_init_context(&kcontext);
+    if (code) {
+        result = gss_error_result_with_message_and_code("Cannot initialize Kerberos5 context", code);
+        return result;
+    }
+
+    ret = krb5_parse_name (kcontext, service, &server);
+    if (ret) {
+        result = gss_error_result_with_message_and_code(krb5_get_err_text(kcontext, ret), ret);
+        goto end;
+    }
+
+    code = krb5_unparse_name(kcontext, server, &name);
+    if (code) {
+        result = gss_error_result_with_message_and_code(krb5_get_err_text(kcontext, code), code);
+        goto end;
+    }
+
+    free(name);
+    name = NULL;
+    name = (char *)malloc(256);
+    if (name == NULL) {
+        result = gss_error_result_with_message("Ran out of memory allocating name");
+        goto end;
+    }
+
+    p = strchr((char *)user, '@');
+    if (p == NULL) {
+        snprintf(name, 256, "%s@%s", user, default_realm);
+    } else {
+        snprintf(name, 256, "%s", user);
+    }
+
+    code = krb5_parse_name(kcontext, name, &client);
+    if (code) {
+        result = gss_error_result_with_message_and_code(krb5_get_err_text(kcontext, code), code);
+        goto end;
+    }
+
+    // verify krb5 user
+    krb5_creds creds;
+    krb5_get_init_creds_opt gic_options;
+    krb5_error_code verifyRet;
+
+    memset(&creds, 0, sizeof(creds));
+    krb5_get_init_creds_opt_init(&gic_options);
+    verifyRet = krb5_get_init_creds_password(
+        kcontext, &creds, client, (char *)pswd,
+        NULL, NULL, 0, NULL, &gic_options
+    );
+    if (verifyRet) {
+        result = gss_error_result_with_message_and_code(krb5_get_err_text(kcontext, verifyRet), verifyRet);
+        krb5_free_cred_contents(kcontext, &creds);
+        goto end;
+    }
+
+    krb5_free_cred_contents(kcontext, &creds);
+    result = gss_success_result(1);
+
+end:
+    if (name) {
+        free(name);
+    }
+    if (client) {
+        krb5_free_principal(kcontext, client);
+    }
+    if (server) {
+        krb5_free_principal(kcontext, server);
+    }
+    krb5_free_context(kcontext);
+
+    return result;
+}
+
 static gss_result* gss_success_result(int ret)
 {
     gss_result* result = (gss_result *) malloc(sizeof(gss_result));
@@ -723,7 +810,7 @@ static gss_result* gss_error_result_with_message(const char* message)
 {
     gss_result* result = (gss_result *) malloc(sizeof(gss_result));
     result->code = AUTH_GSS_ERROR;
-    result->message = strdup("Ran out of memory decoding challenge");
+    result->message = strdup(message);
     return result;
 }
 
