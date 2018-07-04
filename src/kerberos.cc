@@ -115,6 +115,48 @@ NAN_METHOD(InitializeServer) {
   AsyncQueueWorker(new InitializeServerWorker(service, callback));
 }
 
+class ServerPrincipalDetailsWorker : public Nan::AsyncWorker {
+ public:
+  ServerPrincipalDetailsWorker(std::string service, std::string hostname, Nan::Callback *callback)
+    : AsyncWorker(callback, "kerberos:ServerPrincipalDetails"),
+      _service(service),
+      _hostname(hostname)
+  {}
+
+  virtual void Execute() {
+    std::unique_ptr<gss_result, FreeDeleter> result(
+      server_principal_details(_service.c_str(), _hostname.c_str()));
+
+    if (result->code == AUTH_GSS_ERROR) {
+      SetErrorMessage(result->message);
+      return;
+    }
+
+    _details = std::string(result->data);
+  }
+
+ protected:
+  virtual void HandleOKCallback() {
+    Nan::HandleScope scope;
+    v8::Local<v8::Value> argv[] = { Nan::Null(), Nan::New(_details).ToLocalChecked() };
+    callback->Call(2, argv, async_resource);
+  }
+
+ private:
+  std::string _service;
+  std::string _hostname;
+  std::string _details;
+
+};
+
+NAN_METHOD(ServerPrincipalDetails) {
+  std::string service(*Nan::Utf8String(info[0]));
+  std::string hostname(*Nan::Utf8String(info[1]));
+  Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
+
+  AsyncQueueWorker(new ServerPrincipalDetailsWorker(service, hostname, callback));
+}
+
 NAN_MODULE_INIT(Init) {
   // Custom types
   KerberosClient::Init(target);
@@ -124,6 +166,8 @@ NAN_MODULE_INIT(Init) {
     Nan::GetFunction(Nan::New<FunctionTemplate>(InitializeClient)).ToLocalChecked());
   Nan::Set(target, Nan::New("initializeServer").ToLocalChecked(),
     Nan::GetFunction(Nan::New<FunctionTemplate>(InitializeServer)).ToLocalChecked());
+  Nan::Set(target, Nan::New("serverPrincipalDetails").ToLocalChecked(),
+    Nan::GetFunction(Nan::New<FunctionTemplate>(ServerPrincipalDetails)).ToLocalChecked());
 }
 
 NODE_MODULE(kerberos, Init)

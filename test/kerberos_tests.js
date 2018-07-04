@@ -14,6 +14,15 @@ const hostname = process.env.KERBEROS_HOSTNAME || 'hostname.example.com';
 const port = process.env.KERBEROS_PORT || '80';
 
 describe('Kerberos', function() {
+  it('should lookup principal details on a server', function(done) {
+    const expected = `HTTP/${hostname}@${realm.toUpperCase()}`;
+    kerberos.serverPrincipalDetails('HTTP', hostname, (err, details) => {
+      expect(err).to.not.exist;
+      expect(details).to.equal(expected);
+      done();
+    });
+  });
+
   it('should authenticate against a kerberos server using GSSAPI', function(done) {
     const service = `HTTP@${hostname}`;
 
