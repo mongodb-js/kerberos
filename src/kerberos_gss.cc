@@ -110,11 +110,13 @@ gss_result* server_principal_details(const char* service, const char* hostname)
     }
 
     if (details == NULL)
+    {
         result = gss_error_result_with_message_and_code("Principal not found in keytab", -1);
+    }
     else
     {
         result = gss_success_result(AUTH_GSS_COMPLETE);
-        result->message = details;
+        result->data = details;
     }
 end:
     if (cursor)

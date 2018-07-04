@@ -4,6 +4,7 @@
 
 #include <nan.h>
 
+NAN_METHOD(ServerPrincipalDetails);
 NAN_METHOD(InitializeClient);
 NAN_METHOD(InitializeServer);
 
