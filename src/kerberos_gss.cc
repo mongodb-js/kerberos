@@ -18,41 +18,38 @@
 
 #include "base64.h"
 
+#include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <arpa/inet.h>
 
 #if defined(__clang__)
- #pragma clang diagnostic push
- #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
 static gss_result* gss_success_result(int ret);
 static gss_result* gss_error_result(OM_uint32 err_maj, OM_uint32 err_min);
 static gss_result* gss_error_result_with_message(const char* message);
-static gss_result* gss_error_result_with_message_and_code(const char *mesage, int code);
+static gss_result* gss_error_result_with_message_and_code(const char* mesage, int code);
 
-gss_client_state* gss_client_state_new()
-{
-    gss_client_state* state = (gss_client_state *) malloc(sizeof(gss_client_state));
+gss_client_state* gss_client_state_new() {
+    gss_client_state* state = (gss_client_state*)malloc(sizeof(gss_client_state));
     state->username = NULL;
     state->response = NULL;
     state->responseConf = 0;
     return state;
 }
 
-gss_server_state* gss_server_state_new()
-{
-    gss_server_state* state = (gss_server_state *) malloc(sizeof(gss_server_state));
+gss_server_state* gss_server_state_new() {
+    gss_server_state* state = (gss_server_state*)malloc(sizeof(gss_server_state));
     state->username = NULL;
     state->response = NULL;
     state->targetname = NULL;
     return state;
 }
 
-gss_result* server_principal_details(const char* service, const char* hostname)
-{
+gss_result* server_principal_details(const char* service, const char* hostname) {
     char match[1024];
     size_t match_len = 0;
     char* details = NULL;
@@ -70,35 +67,32 @@ gss_result* server_principal_details(const char* service, const char* hostname)
     match_len = strlen(match);
 
     code = krb5_init_context(&kcontext);
-    if (code)
-    {
-        result = gss_error_result_with_message_and_code("Cannot initialize Kerberos5 context", code);
+    if (code) {
+        result =
+            gss_error_result_with_message_and_code("Cannot initialize Kerberos5 context", code);
         return result;
     }
 
-    if ((code = krb5_kt_default(kcontext, &kt)))
-    {
+    if ((code = krb5_kt_default(kcontext, &kt))) {
         result = gss_error_result_with_message_and_code("Cannot get default keytab", code);
         goto end;
     }
 
-    if ((code = krb5_kt_start_seq_get(kcontext, kt, &cursor)))
-    {
-        result = gss_error_result_with_message_and_code("Cannot get sequence cursor from keytab", code);
+    if ((code = krb5_kt_start_seq_get(kcontext, kt, &cursor))) {
+        result =
+            gss_error_result_with_message_and_code("Cannot get sequence cursor from keytab", code);
         goto end;
     }
 
-    while ((code = krb5_kt_next_entry(kcontext, kt, &entry, &cursor)) == 0)
-    {
-        if ((code = krb5_unparse_name(kcontext, entry.principal, &pname)))
-        {
-            result = gss_error_result_with_message_and_code("Cannot parse principal name from keytab", code);
+    while ((code = krb5_kt_next_entry(kcontext, kt, &entry, &cursor)) == 0) {
+        if ((code = krb5_unparse_name(kcontext, entry.principal, &pname))) {
+            result = gss_error_result_with_message_and_code(
+                "Cannot parse principal name from keytab", code);
             goto end;
         }
 
-        if (strncmp(pname, match, match_len) == 0)
-        {
-            details = (char *)malloc(strlen(pname) + 1);
+        if (strncmp(pname, match, match_len) == 0) {
+            details = (char*)malloc(strlen(pname) + 1);
             strcpy(details, pname);
             krb5_free_unparsed_name(kcontext, pname);
             krb5_free_keytab_entry_contents(kcontext, &entry);
@@ -109,12 +103,9 @@ gss_result* server_principal_details(const char* service, const char* hostname)
         krb5_free_keytab_entry_contents(kcontext, &entry);
     }
 
-    if (details == NULL)
-    {
+    if (details == NULL) {
         result = gss_error_result_with_message_and_code("Principal not found in keytab", -1);
-    }
-    else
-    {
+    } else {
         result = gss_success_result(AUTH_GSS_COMPLETE);
         result->data = details;
     }
@@ -128,11 +119,12 @@ end:
     return result;
 }
 
-gss_result* authenticate_gss_client_init(
-    const char* service, const char* principal, long int gss_flags,
-    gss_server_state* delegatestate, gss_OID mech_oid, gss_client_state* state
-)
-{
+gss_result* authenticate_gss_client_init(const char* service,
+                                         const char* principal,
+                                         long int gss_flags,
+                                         gss_server_state* delegatestate,
+                                         gss_OID mech_oid,
+                                         gss_client_state* state) {
     OM_uint32 maj_stat;
     OM_uint32 min_stat;
     gss_buffer_desc name_token = GSS_C_EMPTY_BUFFER;
@@ -149,14 +141,12 @@ gss_result* authenticate_gss_client_init(
 
     // Import server name first
     name_token.length = strlen(service);
-    name_token.value = (char *)service;
+    name_token.value = (char*)service;
 
-    maj_stat = gss_import_name(
-        &min_stat, &name_token, gss_krb5_nt_service_name, &state->server_name
-    );
+    maj_stat =
+        gss_import_name(&min_stat, &name_token, gss_krb5_nt_service_name, &state->server_name);
 
-    if (GSS_ERROR(maj_stat))
-    {
+    if (GSS_ERROR(maj_stat)) {
         ret = gss_error_result(maj_stat, min_stat);
         goto end;
     }
@@ -166,32 +156,32 @@ gss_result* authenticate_gss_client_init(
         state->client_creds = delegatestate->client_creds;
     }
     // If available use the principal to extract its associated credentials
-    else if (principal && *principal)
-    {
+    else if (principal && *principal) {
         gss_name_t name;
         principal_token.length = strlen(principal);
-        principal_token.value = (char *)principal;
+        principal_token.value = (char*)principal;
 
         maj_stat = gss_import_name(&min_stat, &principal_token, GSS_C_NT_USER_NAME, &name);
-        if (GSS_ERROR(maj_stat))
-        {
+        if (GSS_ERROR(maj_stat)) {
             ret = gss_error_result(maj_stat, min_stat);
             goto end;
         }
 
-        maj_stat = gss_acquire_cred(
-            &min_stat, name, GSS_C_INDEFINITE, GSS_C_NO_OID_SET,
-            GSS_C_INITIATE, &state->client_creds, NULL, NULL
-        );
-        if (GSS_ERROR(maj_stat))
-        {
+        maj_stat = gss_acquire_cred(&min_stat,
+                                    name,
+                                    GSS_C_INDEFINITE,
+                                    GSS_C_NO_OID_SET,
+                                    GSS_C_INITIATE,
+                                    &state->client_creds,
+                                    NULL,
+                                    NULL);
+        if (GSS_ERROR(maj_stat)) {
             ret = gss_error_result(maj_stat, min_stat);
             goto end;
         }
 
         maj_stat = gss_release_name(&min_stat, &name);
-        if (GSS_ERROR(maj_stat))
-        {
+        if (GSS_ERROR(maj_stat)) {
             ret = gss_error_result(maj_stat, min_stat);
             goto end;
         }
@@ -202,8 +192,7 @@ end:
     return ret;
 }
 
-int authenticate_gss_client_clean(gss_client_state *state)
-{
+int authenticate_gss_client_clean(gss_client_state* state) {
     OM_uint32 min_stat;
     int ret = AUTH_GSS_COMPLETE;
 
@@ -213,13 +202,11 @@ int authenticate_gss_client_clean(gss_client_state *state)
         gss_release_name(&min_stat, &state->server_name);
     if (state->client_creds != GSS_C_NO_CREDENTIAL && !(state->gss_flags & GSS_C_DELEG_FLAG))
         gss_release_cred(&min_stat, &state->client_creds);
-    if (state->username != NULL)
-    {
+    if (state->username != NULL) {
         free(state->username);
         state->username = NULL;
     }
-    if (state->response != NULL)
-    {
+    if (state->response != NULL) {
         free(state->response);
         state->response = NULL;
     }
@@ -227,8 +214,9 @@ int authenticate_gss_client_clean(gss_client_state *state)
     return ret;
 }
 
-gss_result* authenticate_gss_client_step(gss_client_state* state, const char* challenge, struct gss_channel_bindings_struct* channel_bindings)
-{
+gss_result* authenticate_gss_client_step(gss_client_state* state,
+                                         const char* challenge,
+                                         struct gss_channel_bindings_struct* channel_bindings) {
     OM_uint32 maj_stat;
     OM_uint32 min_stat;
     gss_buffer_desc input_token = GSS_C_EMPTY_BUFFER;
@@ -237,19 +225,16 @@ gss_result* authenticate_gss_client_step(gss_client_state* state, const char* ch
     int temp_ret = AUTH_GSS_CONTINUE;
 
     // Always clear out the old response
-    if (state->response != NULL)
-    {
+    if (state->response != NULL) {
         free(state->response);
         state->response = NULL;
     }
 
     // If there is a challenge (data from the server) we need to give it to GSS
-    if (challenge && *challenge)
-    {
+    if (challenge && *challenge) {
         size_t len;
         input_token.value = base64_decode(challenge, &len);
-        if (input_token.value == NULL)
-        {
+        if (input_token.value == NULL) {
             ret = gss_error_result_with_message("Ran out of memory decoding challenge");
             goto end;
         }
@@ -272,19 +257,17 @@ gss_result* authenticate_gss_client_step(gss_client_state* state, const char* ch
                                     NULL,
                                     NULL);
 
-    if ((maj_stat != GSS_S_COMPLETE) && (maj_stat != GSS_S_CONTINUE_NEEDED))
-    {
+    if ((maj_stat != GSS_S_COMPLETE) && (maj_stat != GSS_S_CONTINUE_NEEDED)) {
         ret = gss_error_result(maj_stat, min_stat);
         goto end;
     }
 
     temp_ret = (maj_stat == GSS_S_COMPLETE) ? AUTH_GSS_COMPLETE : AUTH_GSS_CONTINUE;
     // Grab the client response to send back to the server
-    if (output_token.length)
-    {
-        state->response = base64_encode((const unsigned char *)output_token.value, output_token.length);
-        if (state->response == NULL)
-        {
+    if (output_token.length) {
+        state->response =
+            base64_encode((const unsigned char*)output_token.value, output_token.length);
+        if (state->response == NULL) {
             ret = gss_error_result_with_message("Ran out of memory encoding response");
             goto end;
         }
@@ -293,12 +276,11 @@ gss_result* authenticate_gss_client_step(gss_client_state* state, const char* ch
     }
 
     // Try to get the user name if we have completed all GSS operations
-    if (temp_ret == AUTH_GSS_COMPLETE)
-    {
+    if (temp_ret == AUTH_GSS_COMPLETE) {
         gss_name_t gssuser = GSS_C_NO_NAME;
-        maj_stat = gss_inquire_context(&min_stat, state->context, &gssuser, NULL, NULL, NULL,  NULL, NULL, NULL);
-        if (GSS_ERROR(maj_stat))
-        {
+        maj_stat = gss_inquire_context(
+            &min_stat, state->context, &gssuser, NULL, NULL, NULL, NULL, NULL, NULL);
+        if (GSS_ERROR(maj_stat)) {
             ret = gss_error_result(maj_stat, min_stat);
             goto end;
         }
@@ -306,8 +288,7 @@ gss_result* authenticate_gss_client_step(gss_client_state* state, const char* ch
         gss_buffer_desc name_token;
         name_token.length = 0;
         maj_stat = gss_display_name(&min_stat, gssuser, &name_token, NULL);
-        if (GSS_ERROR(maj_stat))
-        {
+        if (GSS_ERROR(maj_stat)) {
             if (name_token.value) {
                 gss_release_buffer(&min_stat, &name_token);
             }
@@ -315,19 +296,17 @@ gss_result* authenticate_gss_client_step(gss_client_state* state, const char* ch
 
             ret = gss_error_result(maj_stat, min_stat);
             goto end;
-        }
-        else
-        {
+        } else {
             if (state->username != NULL) {
                 free(state->username);
                 state->username = NULL;
             }
-            state->username = (char *)malloc(name_token.length + 1);
+            state->username = (char*)malloc(name_token.length + 1);
             if (state->username == NULL) {
                 ret = gss_error_result_with_message("Ran out of memory allocating username");
                 goto end;
             }
-            strncpy(state->username, (char*) name_token.value, name_token.length);
+            strncpy(state->username, (char*)name_token.value, name_token.length);
             state->username[name_token.length] = 0;
             gss_release_buffer(&min_stat, &name_token);
             gss_release_name(&min_stat, &gssuser);
@@ -345,8 +324,7 @@ end:
     return ret;
 }
 
-gss_result* authenticate_gss_client_unwrap(gss_client_state *state, const char *challenge)
-{
+gss_result* authenticate_gss_client_unwrap(gss_client_state* state, const char* challenge) {
     OM_uint32 maj_stat;
     OM_uint32 min_stat;
     gss_buffer_desc input_token = GSS_C_EMPTY_BUFFER;
@@ -355,39 +333,31 @@ gss_result* authenticate_gss_client_unwrap(gss_client_state *state, const char *
     gss_result* ret = NULL;
 
     // Always clear out the old response
-    if (state->response != NULL)
-    {
+    if (state->response != NULL) {
         free(state->response);
         state->response = NULL;
         state->responseConf = 0;
     }
 
     // If there is a challenge (data from the server) we need to give it to GSS
-    if (challenge && *challenge)
-    {
+    if (challenge && *challenge) {
         size_t len;
         input_token.value = base64_decode(challenge, &len);
         input_token.length = len;
     }
 
     // Do GSSAPI step
-    maj_stat = gss_unwrap(&min_stat,
-                          state->context,
-                          &input_token,
-                          &output_token,
-                          &conf,
-                          NULL);
+    maj_stat = gss_unwrap(&min_stat, state->context, &input_token, &output_token, &conf, NULL);
 
-    if (maj_stat != GSS_S_COMPLETE)
-    {
+    if (maj_stat != GSS_S_COMPLETE) {
         ret = gss_error_result(maj_stat, min_stat);
         goto end;
     }
 
     // Grab the client response
-    if (output_token.length)
-    {
-        state->response = base64_encode((const unsigned char *)output_token.value, output_token.length);
+    if (output_token.length) {
+        state->response =
+            base64_encode((const unsigned char*)output_token.value, output_token.length);
         state->responseConf = conf;
         maj_stat = gss_release_buffer(&min_stat, &output_token);
     }
@@ -402,8 +372,10 @@ end:
     return ret;
 }
 
-gss_result* authenticate_gss_client_wrap(gss_client_state* state, const char* challenge, const char* user, int protect)
-{
+gss_result* authenticate_gss_client_wrap(gss_client_state* state,
+                                         const char* challenge,
+                                         const char* user,
+                                         int protect) {
     OM_uint32 maj_stat;
     OM_uint32 min_stat;
     gss_buffer_desc input_token = GSS_C_EMPTY_BUFFER;
@@ -413,14 +385,12 @@ gss_result* authenticate_gss_client_wrap(gss_client_state* state, const char* ch
     gss_result* ret = NULL;
 
     // Always clear out the old response
-    if (state->response != NULL)
-    {
+    if (state->response != NULL) {
         free(state->response);
         state->response = NULL;
     }
 
-    if (challenge && *challenge)
-    {
+    if (challenge && *challenge) {
         size_t len;
         input_token.value = base64_decode(challenge, &len);
         input_token.length = len;
@@ -429,19 +399,20 @@ gss_result* authenticate_gss_client_wrap(gss_client_state* state, const char* ch
     if (user) {
         // get bufsize
         // server_conf_flags = ((char*) input_token.value)[0];
-        ((char*) input_token.value)[0] = 0;
-        buf_size = ntohl(*((long *) input_token.value));
+        ((char*)input_token.value)[0] = 0;
+        buf_size = ntohl(*((long*)input_token.value));
         free(input_token.value);
 #ifdef PRINTFS
-        printf("User: %s, %c%c%c\n", user,
-               server_conf_flags & GSS_AUTH_P_NONE      ? 'N' : '-',
+        printf("User: %s, %c%c%c\n",
+               user,
+               server_conf_flags & GSS_AUTH_P_NONE ? 'N' : '-',
                server_conf_flags & GSS_AUTH_P_INTEGRITY ? 'I' : '-',
-               server_conf_flags & GSS_AUTH_P_PRIVACY   ? 'P' : '-');
+               server_conf_flags & GSS_AUTH_P_PRIVACY ? 'P' : '-');
         printf("Maximum GSS token size is %ld\n", buf_size);
 #endif
 
         // agree to terms (hack!)
-        buf_size = htonl(buf_size); // not relevant without integrity/privacy
+        buf_size = htonl(buf_size);  // not relevant without integrity/privacy
         memcpy(buf, &buf_size, 4);
         buf[0] = GSS_AUTH_P_NONE;
         // server decides if principal can log in as user
@@ -451,24 +422,19 @@ gss_result* authenticate_gss_client_wrap(gss_client_state* state, const char* ch
     }
 
     // Do GSSAPI wrap
-    maj_stat = gss_wrap(&min_stat,
-                        state->context,
-                        protect,
-                        GSS_C_QOP_DEFAULT,
-                        &input_token,
-                        NULL,
-                        &output_token);
+    maj_stat = gss_wrap(
+        &min_stat, state->context, protect, GSS_C_QOP_DEFAULT, &input_token, NULL, &output_token);
 
-    if (maj_stat != GSS_S_COMPLETE)
-    {
+    if (maj_stat != GSS_S_COMPLETE) {
         ret = gss_error_result(maj_stat, min_stat);
         goto end;
     }
 
     // Grab the client response to send back to the server
-    if (output_token.length)
-    {
-        state->response = base64_encode((const unsigned char *)output_token.value, output_token.length);;
+    if (output_token.length) {
+        state->response =
+            base64_encode((const unsigned char*)output_token.value, output_token.length);
+        ;
         maj_stat = gss_release_buffer(&min_stat, &output_token);
     }
 
@@ -483,8 +449,7 @@ end:
     return ret;
 }
 
-gss_result* authenticate_gss_server_init(const char *service, gss_server_state *state)
-{
+gss_result* authenticate_gss_server_init(const char* service, gss_server_state* state) {
     OM_uint32 maj_stat;
     OM_uint32 min_stat;
     size_t service_len;
@@ -502,26 +467,30 @@ gss_result* authenticate_gss_server_init(const char *service, gss_server_state *
 
     // Server name may be empty which means we aren't going to create our own creds
     service_len = strlen(service);
-    if (service_len != 0)
-    {
+    if (service_len != 0) {
         // Import server name first
         name_token.length = strlen(service);
-        name_token.value = (char *)service;
+        name_token.value = (char*)service;
 
-        maj_stat = gss_import_name(&min_stat, &name_token, GSS_C_NT_HOSTBASED_SERVICE, &state->server_name);
+        maj_stat = gss_import_name(
+            &min_stat, &name_token, GSS_C_NT_HOSTBASED_SERVICE, &state->server_name);
 
-        if (GSS_ERROR(maj_stat))
-        {
+        if (GSS_ERROR(maj_stat)) {
             ret = gss_error_result(maj_stat, min_stat);
             goto end;
         }
 
         // Get credentials
-        maj_stat = gss_acquire_cred(&min_stat, state->server_name, GSS_C_INDEFINITE,
-                                    GSS_C_NO_OID_SET, GSS_C_ACCEPT, &state->server_creds, NULL, NULL);
+        maj_stat = gss_acquire_cred(&min_stat,
+                                    state->server_name,
+                                    GSS_C_INDEFINITE,
+                                    GSS_C_NO_OID_SET,
+                                    GSS_C_ACCEPT,
+                                    &state->server_creds,
+                                    NULL,
+                                    NULL);
 
-        if (GSS_ERROR(maj_stat))
-        {
+        if (GSS_ERROR(maj_stat)) {
             ret = gss_error_result(maj_stat, min_stat);
             goto end;
         }
@@ -532,8 +501,7 @@ end:
     return ret;
 }
 
-int authenticate_gss_server_clean(gss_server_state *state)
-{
+int authenticate_gss_server_clean(gss_server_state* state) {
     OM_uint32 min_stat;
     int ret = AUTH_GSS_COMPLETE;
 
@@ -547,18 +515,15 @@ int authenticate_gss_server_clean(gss_server_state *state)
         gss_release_cred(&min_stat, &state->server_creds);
     if (state->client_creds != GSS_C_NO_CREDENTIAL)
         gss_release_cred(&min_stat, &state->client_creds);
-    if (state->username != NULL)
-    {
+    if (state->username != NULL) {
         free(state->username);
         state->username = NULL;
     }
-    if (state->targetname != NULL)
-    {
+    if (state->targetname != NULL) {
         free(state->targetname);
         state->targetname = NULL;
     }
-    if (state->response != NULL)
-    {
+    if (state->response != NULL) {
         free(state->response);
         state->response = NULL;
     }
@@ -566,8 +531,7 @@ int authenticate_gss_server_clean(gss_server_state *state)
     return ret;
 }
 
-gss_result* authenticate_gss_server_step(gss_server_state *state, const char *challenge)
-{
+gss_result* authenticate_gss_server_step(gss_server_state* state, const char* challenge) {
     OM_uint32 maj_stat;
     OM_uint32 min_stat;
     gss_buffer_desc input_token = GSS_C_EMPTY_BUFFER;
@@ -577,21 +541,17 @@ gss_result* authenticate_gss_server_step(gss_server_state *state, const char *ch
     gss_result* ret = NULL;
 
     // Always clear out the old response
-    if (state->response != NULL)
-    {
+    if (state->response != NULL) {
         free(state->response);
         state->response = NULL;
     }
 
     // If there is a challenge (data from the server) we need to give it to GSS
-    if (challenge && *challenge)
-    {
+    if (challenge && *challenge) {
         size_t len;
         input_token.value = base64_decode(challenge, &len);
         input_token.length = len;
-    }
-    else
-    {
+    } else {
         ret = gss_error_result_with_message("No challenge parameter in request from client");
         goto end;
     }
@@ -608,36 +568,34 @@ gss_result* authenticate_gss_server_step(gss_server_state *state, const char *ch
                                       NULL,
                                       &state->client_creds);
 
-    if (GSS_ERROR(maj_stat))
-    {
+    if (GSS_ERROR(maj_stat)) {
         ret = gss_error_result(maj_stat, min_stat);
         goto end;
     }
 
     // Grab the server response to send back to the client
-    if (output_token.length)
-    {
-        state->response = base64_encode((const unsigned char *)output_token.value, output_token.length);;
+    if (output_token.length) {
+        state->response =
+            base64_encode((const unsigned char*)output_token.value, output_token.length);
+        ;
         maj_stat = gss_release_buffer(&min_stat, &output_token);
     }
 
     // Get the user name
     maj_stat = gss_display_name(&min_stat, state->client_name, &output_token, NULL);
-    if (GSS_ERROR(maj_stat))
-    {
+    if (GSS_ERROR(maj_stat)) {
         ret = gss_error_result(maj_stat, min_stat);
         goto end;
     }
-    state->username = (char *)malloc(output_token.length + 1);
-    strncpy(state->username, (char*) output_token.value, output_token.length);
+    state->username = (char*)malloc(output_token.length + 1);
+    strncpy(state->username, (char*)output_token.value, output_token.length);
     state->username[output_token.length] = 0;
 
     // Get the target name if no server creds were supplied
-    if (state->server_creds == GSS_C_NO_CREDENTIAL)
-    {
-        maj_stat = gss_inquire_context(&min_stat, state->context, NULL, &target_name, NULL, NULL, NULL, NULL, NULL);
-        if (GSS_ERROR(maj_stat))
-        {
+    if (state->server_creds == GSS_C_NO_CREDENTIAL) {
+        maj_stat = gss_inquire_context(
+            &min_stat, state->context, NULL, &target_name, NULL, NULL, NULL, NULL, NULL);
+        if (GSS_ERROR(maj_stat)) {
             ret = gss_error_result(maj_stat, min_stat);
             goto end;
         }
@@ -647,13 +605,12 @@ gss_result* authenticate_gss_server_step(gss_server_state *state, const char *ch
             gss_release_buffer(&min_stat, &output_token);
 
         maj_stat = gss_display_name(&min_stat, target_name, &output_token, NULL);
-        if (GSS_ERROR(maj_stat))
-        {
+        if (GSS_ERROR(maj_stat)) {
             ret = gss_error_result(maj_stat, min_stat);
             goto end;
         }
-        state->targetname = (char *)malloc(output_token.length + 1);
-        strncpy(state->targetname, (char*) output_token.value, output_token.length);
+        state->targetname = (char*)malloc(output_token.length + 1);
+        strncpy(state->targetname, (char*)output_token.value, output_token.length);
         state->targetname[output_token.length] = 0;
     }
 
@@ -668,26 +625,27 @@ end:
     return ret;
 }
 
-gss_result* authenticate_user_krb5pwd(
-    const char *user, const char *pswd, const char *service,
-    const char *default_realm
-) {
-    krb5_context    kcontext = NULL;
+gss_result* authenticate_user_krb5pwd(const char* user,
+                                      const char* pswd,
+                                      const char* service,
+                                      const char* default_realm) {
+    krb5_context kcontext = NULL;
     krb5_error_code code;
-    krb5_principal  client = NULL;
-    krb5_principal  server = NULL;
-    gss_result*     result = NULL;
-    int             ret = 0;
-    char            *name = NULL;
-    char            *p = NULL;
+    krb5_principal client = NULL;
+    krb5_principal server = NULL;
+    gss_result* result = NULL;
+    int ret = 0;
+    char* name = NULL;
+    char* p = NULL;
 
     code = krb5_init_context(&kcontext);
     if (code) {
-        result = gss_error_result_with_message_and_code("Cannot initialize Kerberos5 context", code);
+        result =
+            gss_error_result_with_message_and_code("Cannot initialize Kerberos5 context", code);
         return result;
     }
 
-    ret = krb5_parse_name (kcontext, service, &server);
+    ret = krb5_parse_name(kcontext, service, &server);
     if (ret) {
         result = gss_error_result_with_message_and_code(krb5_get_err_text(kcontext, ret), ret);
         goto end;
@@ -701,13 +659,13 @@ gss_result* authenticate_user_krb5pwd(
 
     free(name);
     name = NULL;
-    name = (char *)malloc(256);
+    name = (char*)malloc(256);
     if (name == NULL) {
         result = gss_error_result_with_message("Ran out of memory allocating name");
         goto end;
     }
 
-    p = strchr((char *)user, '@');
+    p = strchr((char*)user, '@');
     if (p == NULL) {
         snprintf(name, 256, "%s@%s", user, default_realm);
     } else {
@@ -728,11 +686,10 @@ gss_result* authenticate_user_krb5pwd(
     memset(&creds, 0, sizeof(creds));
     krb5_get_init_creds_opt_init(&gic_options);
     verifyRet = krb5_get_init_creds_password(
-        kcontext, &creds, client, (char *)pswd,
-        NULL, NULL, 0, NULL, &gic_options
-    );
+        kcontext, &creds, client, (char*)pswd, NULL, NULL, 0, NULL, &gic_options);
     if (verifyRet) {
-        result = gss_error_result_with_message_and_code(krb5_get_err_text(kcontext, verifyRet), verifyRet);
+        result = gss_error_result_with_message_and_code(krb5_get_err_text(kcontext, verifyRet),
+                                                        verifyRet);
         krb5_free_cred_contents(kcontext, &creds);
         goto end;
     }
@@ -755,16 +712,14 @@ end:
     return result;
 }
 
-static gss_result* gss_success_result(int ret)
-{
-    gss_result* result = (gss_result *) malloc(sizeof(gss_result));
+static gss_result* gss_success_result(int ret) {
+    gss_result* result = (gss_result*)malloc(sizeof(gss_result));
     result->code = ret;
     result->message = NULL;
     return result;
 }
 
-static gss_result* gss_error_result(OM_uint32 err_maj, OM_uint32 err_min)
-{
+static gss_result* gss_error_result(OM_uint32 err_maj, OM_uint32 err_min) {
     OM_uint32 maj_stat, min_stat;
     OM_uint32 msg_ctx = 0;
     gss_buffer_desc status_string;
@@ -772,53 +727,41 @@ static gss_result* gss_error_result(OM_uint32 err_maj, OM_uint32 err_min)
     char buf_min[512];
     gss_result* result;
 
-    do
-    {
-        maj_stat = gss_display_status (&min_stat,
-                                       err_maj,
-                                       GSS_C_GSS_CODE,
-                                       GSS_C_NO_OID,
-                                       &msg_ctx,
-                                       &status_string);
+    do {
+        maj_stat = gss_display_status(
+            &min_stat, err_maj, GSS_C_GSS_CODE, GSS_C_NO_OID, &msg_ctx, &status_string);
         if (GSS_ERROR(maj_stat))
             break;
-        strncpy(buf_maj, (char*) status_string.value, sizeof(buf_maj));
+        strncpy(buf_maj, (char*)status_string.value, sizeof(buf_maj));
         gss_release_buffer(&min_stat, &status_string);
 
-        maj_stat = gss_display_status (&min_stat,
-                                       err_min,
-                                       GSS_C_MECH_CODE,
-                                       GSS_C_NULL_OID,
-                                       &msg_ctx,
-                                       &status_string);
-        if (!GSS_ERROR(maj_stat))
-        {
-            strncpy(buf_min, (char*) status_string.value, sizeof(buf_min));
+        maj_stat = gss_display_status(
+            &min_stat, err_min, GSS_C_MECH_CODE, GSS_C_NULL_OID, &msg_ctx, &status_string);
+        if (!GSS_ERROR(maj_stat)) {
+            strncpy(buf_min, (char*)status_string.value, sizeof(buf_min));
             gss_release_buffer(&min_stat, &status_string);
         }
     } while (!GSS_ERROR(maj_stat) && msg_ctx != 0);
 
-    result = (gss_result *) malloc(sizeof(gss_result));
+    result = (gss_result*)malloc(sizeof(gss_result));
     result->code = AUTH_GSS_ERROR;
-    result->message = (char *) malloc(sizeof(char) * 1024 + 2);
+    result->message = (char*)malloc(sizeof(char) * 1024 + 2);
     sprintf(result->message, "%s: %s", buf_maj, buf_min);
 
     return result;
 }
 
-static gss_result* gss_error_result_with_message(const char* message)
-{
-    gss_result* result = (gss_result *) malloc(sizeof(gss_result));
+static gss_result* gss_error_result_with_message(const char* message) {
+    gss_result* result = (gss_result*)malloc(sizeof(gss_result));
     result->code = AUTH_GSS_ERROR;
     result->message = strdup(message);
     return result;
 }
 
-static gss_result* gss_error_result_with_message_and_code(const char* message, int code)
-{
-    gss_result* result = (gss_result *) malloc(sizeof(gss_result));
+static gss_result* gss_error_result_with_message_and_code(const char* message, int code) {
+    gss_result* result = (gss_result*)malloc(sizeof(gss_result));
     result->code = AUTH_GSS_ERROR;
-    result->message = (char *) malloc(strlen(message) + 5);
+    result->message = (char*)malloc(strlen(message) + 5);
     sprintf(result->message, "%s (%d)", message, code);
     return result;
 }

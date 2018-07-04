@@ -18,15 +18,15 @@
 #include <gssapi/gssapi_generic.h>
 #include <gssapi/gssapi_krb5.h>
 
-#define krb5_get_err_text(context,code) error_message(code)
+#define krb5_get_err_text(context, code) error_message(code)
 
-#define AUTH_GSS_ERROR      -1
-#define AUTH_GSS_COMPLETE    1
-#define AUTH_GSS_CONTINUE    0
+#define AUTH_GSS_ERROR -1
+#define AUTH_GSS_COMPLETE 1
+#define AUTH_GSS_CONTINUE 0
 
-#define GSS_AUTH_P_NONE         1
-#define GSS_AUTH_P_INTEGRITY    2
-#define GSS_AUTH_P_PRIVACY      4
+#define GSS_AUTH_P_NONE 1
+#define GSS_AUTH_P_INTEGRITY 2
+#define GSS_AUTH_P_PRIVACY 4
 
 typedef struct {
     int code;
@@ -35,25 +35,25 @@ typedef struct {
 } gss_result;
 
 typedef struct {
-    gss_ctx_id_t     context;
-    gss_name_t       server_name;
-    gss_OID          mech_oid;
-    long int         gss_flags;
-    gss_cred_id_t    client_creds;
-    char*            username;
-    char*            response;
-    int              responseConf;
+    gss_ctx_id_t context;
+    gss_name_t server_name;
+    gss_OID mech_oid;
+    long int gss_flags;
+    gss_cred_id_t client_creds;
+    char* username;
+    char* response;
+    int responseConf;
 } gss_client_state;
 
 typedef struct {
-    gss_ctx_id_t     context;
-    gss_name_t       server_name;
-    gss_name_t       client_name;
-    gss_cred_id_t    server_creds;
-    gss_cred_id_t    client_creds;
-    char*            username;
-    char*            targetname;
-    char*            response;
+    gss_ctx_id_t context;
+    gss_name_t server_name;
+    gss_name_t client_name;
+    gss_cred_id_t server_creds;
+    gss_cred_id_t client_creds;
+    char* username;
+    char* targetname;
+    char* response;
 } gss_server_state;
 
 gss_client_state* gss_client_state_new();
@@ -61,20 +61,27 @@ gss_server_state* gss_server_state_new();
 
 gss_result* server_principal_details(const char* service, const char* hostname);
 
-gss_result* authenticate_gss_client_init(
-    const char* service, const char* principal, long int gss_flags,
-    gss_server_state* delegatestate, gss_OID mech_oid, gss_client_state* state
-);
+gss_result* authenticate_gss_client_init(const char* service,
+                                         const char* principal,
+                                         long int gss_flags,
+                                         gss_server_state* delegatestate,
+                                         gss_OID mech_oid,
+                                         gss_client_state* state);
 
 int authenticate_gss_client_clean(gss_client_state* state);
-gss_result* authenticate_gss_client_step(gss_client_state* state, const char* challenge, struct gss_channel_bindings_struct* channel_bindings);
+gss_result* authenticate_gss_client_step(gss_client_state* state,
+                                         const char* challenge,
+                                         struct gss_channel_bindings_struct* channel_bindings);
 gss_result* authenticate_gss_client_unwrap(gss_client_state* state, const char* challenge);
-gss_result* authenticate_gss_client_wrap(gss_client_state* state, const char* challenge, const char* user, int protect);
+gss_result* authenticate_gss_client_wrap(gss_client_state* state,
+                                         const char* challenge,
+                                         const char* user,
+                                         int protect);
 gss_result* authenticate_gss_server_init(const char* service, gss_server_state* state);
 int authenticate_gss_server_clean(gss_server_state* state);
 gss_result* authenticate_gss_server_step(gss_server_state* state, const char* challenge);
 
-gss_result* authenticate_user_krb5pwd(
-    const char *user, const char *pswd, const char *service,
-    const char *default_realm
-);
+gss_result* authenticate_user_krb5pwd(const char* user,
+                                      const char* pswd,
+                                      const char* service,
+                                      const char* default_realm);
