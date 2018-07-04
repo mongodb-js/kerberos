@@ -4,6 +4,7 @@ set -e
 
 IP_ADDRESS=$(hostname -I)
 HOSTNAME=$(cat /etc/hostname)
+NODE_LTS=${NODE_LTS:-argon}
 
 export KERBEROS_HOSTNAME=$HOSTNAME.$KERBEROS_REALM
 export DEBIAN_FRONTEND=noninteractive
@@ -119,7 +120,9 @@ echo "Installing Node.js"
 curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.11/install.sh | bash
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-nvm install --lts=carbon
+nvm install --lts=$NODE_LTS
 
 echo "Installing dependencies and running test"
 npm install --unsafe-perm
+npx mocha test/kerberos_tests.js
+
