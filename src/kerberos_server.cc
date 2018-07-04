@@ -1,3 +1,5 @@
+#include <memory>
+
 #include "kerberos_server.h"
 
 Nan::Persistent<v8::Function> KerberosServer::constructor;
