@@ -146,7 +146,6 @@ class ServerPrincipalDetailsWorker : public Nan::AsyncWorker {
   std::string _service;
   std::string _hostname;
   std::string _details;
-
 };
 
 NAN_METHOD(ServerPrincipalDetails) {
@@ -155,6 +154,47 @@ NAN_METHOD(ServerPrincipalDetails) {
   Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
 
   AsyncQueueWorker(new ServerPrincipalDetailsWorker(service, hostname, callback));
+}
+
+class CheckPasswordWorker : public Nan::AsyncWorker {
+ public:
+  CheckPasswordWorker(std::string username,
+                      std::string password,
+                      std::string service,
+                      std::string defaultRealm,
+                      Nan::Callback *callback)
+    : AsyncWorker(callback, "kerberos:CheckPassword"),
+      _username(username),
+      _password(password),
+      _service(service),
+      _defaultRealm(defaultRealm)
+  {}
+
+  virtual void Execute() {
+    std::unique_ptr<gss_result, FreeDeleter> result(
+      authenticate_user_krb5pwd(_username.c_str(), _password.c_str(), _service.c_str(), _defaultRealm.c_str()));
+
+    if (result->code == AUTH_GSS_ERROR) {
+      SetErrorMessage(result->message);
+      return;
+    }
+  }
+
+ private:
+  std::string _username;
+  std::string _password;
+  std::string _service;
+  std::string _defaultRealm;
+};
+
+NAN_METHOD(CheckPassword) {
+  std::string username(*Nan::Utf8String(info[0]));
+  std::string password(*Nan::Utf8String(info[1]));
+  std::string service(*Nan::Utf8String(info[2]));
+  std::string defaultRealm(*Nan::Utf8String(info[3]));
+  Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[4]).ToLocalChecked());
+
+  AsyncQueueWorker(new CheckPasswordWorker(username, password, service, defaultRealm, callback));
 }
 
 NAN_MODULE_INIT(Init) {
@@ -168,6 +208,8 @@ NAN_MODULE_INIT(Init) {
     Nan::GetFunction(Nan::New<FunctionTemplate>(InitializeServer)).ToLocalChecked());
   Nan::Set(target, Nan::New("serverPrincipalDetails").ToLocalChecked(),
     Nan::GetFunction(Nan::New<FunctionTemplate>(ServerPrincipalDetails)).ToLocalChecked());
+  Nan::Set(target, Nan::New("checkPassword").ToLocalChecked(),
+    Nan::GetFunction(Nan::New<FunctionTemplate>(CheckPassword)).ToLocalChecked());
 }
 
 NODE_MODULE(kerberos, Init)

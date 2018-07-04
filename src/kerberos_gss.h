@@ -73,3 +73,8 @@ gss_result* authenticate_gss_client_wrap(gss_client_state* state, const char* ch
 gss_result* authenticate_gss_server_init(const char* service, gss_server_state* state);
 int authenticate_gss_server_clean(gss_server_state* state);
 gss_result* authenticate_gss_server_step(gss_server_state* state, const char* challenge);
+
+gss_result* authenticate_user_krb5pwd(
+    const char *user, const char *pswd, const char *service,
+    const char *default_realm
+);

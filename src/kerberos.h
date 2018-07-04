@@ -7,5 +7,6 @@
 NAN_METHOD(ServerPrincipalDetails);
 NAN_METHOD(InitializeClient);
 NAN_METHOD(InitializeServer);
+NAN_METHOD(CheckPassword);
 
 #endif
