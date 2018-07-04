@@ -2,7 +2,6 @@
 #define KERBEROS_CLIENT_H
 
 #include "common.h"
-#include "nan.h"
 
 class KerberosClient : public Nan::ObjectWrap {
    public:

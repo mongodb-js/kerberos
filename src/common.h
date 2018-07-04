@@ -1,6 +1,7 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#include <nan.h>
 #include "kerberos_gss.h"
 
 // Provide a default custom delter for the `gss_result` type
