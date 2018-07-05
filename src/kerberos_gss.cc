@@ -638,6 +638,12 @@ gss_result* authenticate_user_krb5pwd(const char* user,
     char* name = NULL;
     char* p = NULL;
 
+    // for verify
+    krb5_creds creds;
+    krb5_get_init_creds_opt gic_options;
+    krb5_error_code verifyRet;
+    char *vName = NULL;
+
     code = krb5_init_context(&kcontext);
     if (code) {
         result =
@@ -679,11 +685,13 @@ gss_result* authenticate_user_krb5pwd(const char* user,
     }
 
     // verify krb5 user
-    krb5_creds creds;
-    krb5_get_init_creds_opt gic_options;
-    krb5_error_code verifyRet;
-
     memset(&creds, 0, sizeof(creds));
+
+    verifyRet = krb5_unparse_name(kcontext, client, &vName);
+    if (verifyRet == 0) {
+        free(vName);
+    }
+
     krb5_get_init_creds_opt_init(&gic_options);
     verifyRet = krb5_get_init_creds_password(
         kcontext, &creds, client, (char*)pswd, NULL, NULL, 0, NULL, &gic_options);
@@ -761,7 +769,7 @@ static gss_result* gss_error_result_with_message(const char* message) {
 static gss_result* gss_error_result_with_message_and_code(const char* message, int code) {
     gss_result* result = (gss_result*)malloc(sizeof(gss_result));
     result->code = AUTH_GSS_ERROR;
-    result->message = (char*)malloc(strlen(message) + 5);
+    result->message = (char*)malloc(strlen(message) + 20);
     sprintf(result->message, "%s (%d)", message, code);
     return result;
 }
