@@ -7,8 +7,9 @@ const SegfaultHandler = require('segfault-handler');
 SegfaultHandler.registerHandler();
 chai.use(require('chai-string'));
 
+// environment variables
 const username = process.env.KERBEROS_USERNAME || 'administrator';
-// const password = process.env.KERBEROS_PASSWORD || 'Password01';
+const password = process.env.KERBEROS_PASSWORD || 'Password01';
 const realm = process.env.KERBEROS_REALM || 'example.com';
 const hostname = process.env.KERBEROS_HOSTNAME || 'hostname.example.com';
 const port = process.env.KERBEROS_PORT || '80';
@@ -19,6 +20,15 @@ describe('Kerberos', function() {
     kerberos.principalDetails('HTTP', hostname, (err, details) => {
       expect(err).to.not.exist;
       expect(details).to.equal(expected);
+      done();
+    });
+  });
+
+  it('should check a given password against a kerberos server', function(done) {
+    const service = `HTTP/${hostname}`;
+    kerberos.checkPassword(username, password, service, realm.toUpperCase(), (err, result) => {
+      expect(err).to.not.exist;
+      expect(result).to.exist;
       done();
     });
   });
