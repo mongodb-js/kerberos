@@ -26,10 +26,13 @@ describe('Kerberos', function() {
 
   it('should check a given password against a kerberos server', function(done) {
     const service = `HTTP/${hostname}`;
-    kerberos.checkPassword(username, password, service, realm.toUpperCase(), (err, result) => {
+    kerberos.checkPassword(username, password, service, realm.toUpperCase(), err => {
       expect(err).to.not.exist;
-      expect(result).to.exist;
-      done();
+
+      kerberos.checkPassword(username, 'incorrect-password', service, realm.toUpperCase, err => {
+        expect(err).to.exist;
+        done();
+      });
     });
   });
 
