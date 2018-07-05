@@ -119,10 +119,10 @@ NAN_METHOD(InitializeServer) {
     AsyncQueueWorker(new InitializeServerWorker(service, callback));
 }
 
-class ServerPrincipalDetailsWorker : public Nan::AsyncWorker {
+class PrincipalDetailsWorker : public Nan::AsyncWorker {
    public:
-    ServerPrincipalDetailsWorker(std::string service, std::string hostname, Nan::Callback* callback)
-        : AsyncWorker(callback, "kerberos:ServerPrincipalDetails"),
+    PrincipalDetailsWorker(std::string service, std::string hostname, Nan::Callback* callback)
+        : AsyncWorker(callback, "kerberos:PrincipalDetails"),
           _service(service),
           _hostname(hostname) {}
 
@@ -151,12 +151,12 @@ class ServerPrincipalDetailsWorker : public Nan::AsyncWorker {
     std::string _details;
 };
 
-NAN_METHOD(ServerPrincipalDetails) {
+NAN_METHOD(PrincipalDetails) {
     std::string service(*Nan::Utf8String(info[0]));
     std::string hostname(*Nan::Utf8String(info[1]));
     Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
 
-    AsyncQueueWorker(new ServerPrincipalDetailsWorker(service, hostname, callback));
+    AsyncQueueWorker(new PrincipalDetailsWorker(service, hostname, callback));
 }
 
 class CheckPasswordWorker : public Nan::AsyncWorker {
@@ -211,8 +211,8 @@ NAN_MODULE_INIT(Init) {
              Nan::New("initializeServer").ToLocalChecked(),
              Nan::GetFunction(Nan::New<FunctionTemplate>(InitializeServer)).ToLocalChecked());
     Nan::Set(target,
-             Nan::New("serverPrincipalDetails").ToLocalChecked(),
-             Nan::GetFunction(Nan::New<FunctionTemplate>(ServerPrincipalDetails)).ToLocalChecked());
+             Nan::New("principalDetails").ToLocalChecked(),
+             Nan::GetFunction(Nan::New<FunctionTemplate>(PrincipalDetails)).ToLocalChecked());
     Nan::Set(target,
              Nan::New("checkPassword").ToLocalChecked(),
              Nan::GetFunction(Nan::New<FunctionTemplate>(CheckPassword)).ToLocalChecked());
