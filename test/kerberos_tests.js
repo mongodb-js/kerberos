@@ -29,7 +29,7 @@ describe('Kerberos', function() {
     kerberos.checkPassword(username, password, service, realm.toUpperCase(), err => {
       expect(err).to.not.exist;
 
-      kerberos.checkPassword(username, 'incorrect-password', service, realm.toUpperCase, err => {
+      kerberos.checkPassword(username, 'incorrect-password', service, realm.toUpperCase(), err => {
         expect(err).to.exist;
         done();
       });
