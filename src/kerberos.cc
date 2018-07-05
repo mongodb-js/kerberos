@@ -76,7 +76,7 @@ NAN_METHOD(InitializeClient) {
     }
 
     AsyncQueueWorker(
-        new InitializeClientWorker(service, principal, gss_flags, GSS_C_NO_OID, callback));
+        new InitializeClientWorker(service, principal, gss_flags, mech_oid, callback));
 }
 
 class InitializeServerWorker : public Nan::AsyncWorker {
