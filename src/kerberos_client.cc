@@ -35,7 +35,7 @@ v8::Local<v8::Object> KerberosClient::NewInstance(krb_client_state* state) {
     return scope.Escape(object);
 }
 
-KerberosClient::KerberosClient(krb_client_state* state) : _state(state), _contextComplete(false) {}
+KerberosClient::KerberosClient(krb_client_state* state) : _state(state) {}
 
 KerberosClient::~KerberosClient() {
     if (_state != NULL) {
@@ -69,7 +69,7 @@ NAN_GETTER(KerberosClient::ResponseConfGetter) {
 
 NAN_GETTER(KerberosClient::ContextCompleteGetter) {
     KerberosClient* client = Nan::ObjectWrap::Unwrap<KerberosClient>(info.This());
-    info.GetReturnValue().Set(Nan::New(client->_contextComplete));
+    info.GetReturnValue().Set(Nan::New(client->_state->context_complete));
 }
 
 class ClientStepWorker : public Nan::AsyncWorker {
@@ -86,18 +86,14 @@ class ClientStepWorker : public Nan::AsyncWorker {
             SetErrorMessage(result->message);
             return;
         }
-
-        if (result->code == AUTH_GSS_COMPLETE) {
-            _client->_contextComplete = true;
-        }
     }
 
    private:
     virtual void HandleOKCallback() {
         Nan::HandleScope scope;
         v8::Local<v8::Value> response = Nan::Null();
-        if (_client->_state->response != NULL) {
-            response = Nan::New(_client->_state->response).ToLocalChecked();
+        if (_client->state()->response != NULL) {
+            response = Nan::New(_client->state()->response).ToLocalChecked();
         }
 
         v8::Local<v8::Value> argv[] = {Nan::Null(), response};

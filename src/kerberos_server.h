@@ -21,12 +21,10 @@ class KerberosServer : public Nan::ObjectWrap {
     static NAN_METHOD(Step);
 
    private:
-    friend class ServerStepWorker;
     explicit KerberosServer(krb_server_state* server_state);
     ~KerberosServer();
 
     krb_server_state* _state;
-    bool _contextComplete;
 };
 
 #endif

@@ -23,12 +23,10 @@ class KerberosClient : public Nan::ObjectWrap {
     static NAN_METHOD(WrapData);
 
    private:
-    friend class ClientStepWorker;
     explicit KerberosClient(krb_client_state* client_state);
     ~KerberosClient();
 
     krb_client_state* _state;
-    bool _contextComplete;
 };
 
 #endif
