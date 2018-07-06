@@ -3,14 +3,16 @@
     {
       'target_name': 'kerberos',
       'include_dirs': [ '<!(node -e "require(\'nan\')")' ],
+      'sources': [
+        'src/kerberos.cc',
+        'src/kerberos_client.cc',
+        'src/kerberos_server.cc'
+      ],
       'conditions': [
         ['OS=="mac" or OS=="linux"', {
           'sources': [
-            'src/base64.cc',
-            'src/kerberos.cc',
-            'src/kerberos_client.cc',
-            'src/kerberos_server.cc',
-            'src/kerberos_gss.cc'
+            'src/gss/base64.cc',
+            'src/gss/kerberos_gss.cc'
           ],
           'link_settings': {
             'libraries': [

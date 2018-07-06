@@ -2,9 +2,8 @@
 #define COMMON_H
 
 #include <nan.h>
-#include "kerberos_gss.h"
+#include "gss/kerberos_gss.h"
 
-// Provide a default custom delter for the `gss_result` type
 struct FreeDeleter {
     void operator()(void* result) {
         free(result);
