@@ -31,8 +31,8 @@ class InitializeClientWorker : public Nan::AsyncWorker {
           _client_state(NULL) {}
 
     virtual void Execute() {
-        std::unique_ptr<gss_client_state, FreeDeleter> state(gss_client_state_new());
-        std::unique_ptr<gss_result, FreeDeleter> result(authenticate_gss_client_init(
+        std::unique_ptr<krb_client_state, FreeDeleter> state(gss_client_state_new());
+        std::unique_ptr<krb_result, FreeDeleter> result(authenticate_gss_client_init(
             _service.c_str(), _principal.c_str(), _gss_flags, NULL, _mech_oid, state.get()));
 
         if (result->code == AUTH_GSS_ERROR) {
@@ -56,7 +56,7 @@ class InitializeClientWorker : public Nan::AsyncWorker {
     std::string _principal;
     long int _gss_flags;
     gss_OID _mech_oid;
-    gss_client_state* _client_state;
+    krb_client_state* _client_state;
 };
 
 NAN_METHOD(InitializeClient) {
@@ -87,8 +87,8 @@ class InitializeServerWorker : public Nan::AsyncWorker {
           _server_state(NULL) {}
 
     virtual void Execute() {
-        std::unique_ptr<gss_server_state, FreeDeleter> state(gss_server_state_new());
-        std::unique_ptr<gss_result, FreeDeleter> result(
+        std::unique_ptr<krb_server_state, FreeDeleter> state(gss_server_state_new());
+        std::unique_ptr<krb_result, FreeDeleter> result(
             authenticate_gss_server_init(_service.c_str(), state.get()));
 
         if (result->code == AUTH_GSS_ERROR) {
@@ -109,7 +109,7 @@ class InitializeServerWorker : public Nan::AsyncWorker {
 
    private:
     std::string _service;
-    gss_server_state* _server_state;
+    krb_server_state* _server_state;
 };
 
 NAN_METHOD(InitializeServer) {
@@ -127,7 +127,7 @@ class PrincipalDetailsWorker : public Nan::AsyncWorker {
           _hostname(hostname) {}
 
     virtual void Execute() {
-        std::unique_ptr<gss_result, FreeDeleter> result(
+        std::unique_ptr<krb_result, FreeDeleter> result(
             server_principal_details(_service.c_str(), _hostname.c_str()));
 
         if (result->code == AUTH_GSS_ERROR) {
@@ -173,7 +173,7 @@ class CheckPasswordWorker : public Nan::AsyncWorker {
           _defaultRealm(defaultRealm) {}
 
     virtual void Execute() {
-        std::unique_ptr<gss_result, FreeDeleter> result(authenticate_user_krb5pwd(
+        std::unique_ptr<krb_result, FreeDeleter> result(authenticate_user_krb5pwd(
             _username.c_str(), _password.c_str(), _service.c_str(), _defaultRealm.c_str()));
 
         if (result->code == AUTH_GSS_ERROR) {

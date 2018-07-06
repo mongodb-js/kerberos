@@ -24,7 +24,7 @@ NAN_MODULE_INIT(KerberosServer::Init) {
              Nan::GetFunction(tpl).ToLocalChecked());
 }
 
-v8::Local<v8::Object> KerberosServer::NewInstance(gss_server_state* state) {
+v8::Local<v8::Object> KerberosServer::NewInstance(krb_server_state* state) {
     Nan::EscapableHandleScope scope;
     v8::Local<v8::Function> ctor = Nan::New<v8::Function>(KerberosServer::constructor);
     v8::Local<v8::Object> object = Nan::NewInstance(ctor).ToLocalChecked();
@@ -33,7 +33,7 @@ v8::Local<v8::Object> KerberosServer::NewInstance(gss_server_state* state) {
     return scope.Escape(object);
 }
 
-KerberosServer::KerberosServer(gss_server_state* state) : _state(state), _contextComplete(false) {}
+KerberosServer::KerberosServer(krb_server_state* state) : _state(state), _contextComplete(false) {}
 
 KerberosServer::~KerberosServer() {
     if (_state != NULL) {
@@ -42,7 +42,7 @@ KerberosServer::~KerberosServer() {
     }
 }
 
-gss_server_state* KerberosServer::state() const {
+krb_server_state* KerberosServer::state() const {
     return _state;
 }
 
@@ -80,7 +80,7 @@ class ServerStepWorker : public Nan::AsyncWorker {
           _challenge(challenge) {}
 
     virtual void Execute() {
-        std::unique_ptr<gss_result, FreeDeleter> result(
+        std::unique_ptr<krb_result, FreeDeleter> result(
             authenticate_gss_server_step(_server->state(), _challenge.c_str()));
         if (result->code == AUTH_GSS_ERROR) {
             SetErrorMessage(result->message);

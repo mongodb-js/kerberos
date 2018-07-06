@@ -2,7 +2,11 @@
 #define COMMON_H
 
 #include <nan.h>
+
 #include "gss/kerberos_gss.h"
+typedef gss_client_state krb_client_state;
+typedef gss_server_state krb_server_state;
+typedef gss_result krb_result;
 
 struct FreeDeleter {
     void operator()(void* result) {

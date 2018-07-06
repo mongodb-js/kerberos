@@ -26,7 +26,7 @@ NAN_MODULE_INIT(KerberosClient::Init) {
              Nan::GetFunction(tpl).ToLocalChecked());
 }
 
-v8::Local<v8::Object> KerberosClient::NewInstance(gss_client_state* state) {
+v8::Local<v8::Object> KerberosClient::NewInstance(krb_client_state* state) {
     Nan::EscapableHandleScope scope;
     v8::Local<v8::Function> ctor = Nan::New<v8::Function>(KerberosClient::constructor);
     v8::Local<v8::Object> object = Nan::NewInstance(ctor).ToLocalChecked();
@@ -35,7 +35,7 @@ v8::Local<v8::Object> KerberosClient::NewInstance(gss_client_state* state) {
     return scope.Escape(object);
 }
 
-KerberosClient::KerberosClient(gss_client_state* state) : _state(state), _contextComplete(false) {}
+KerberosClient::KerberosClient(krb_client_state* state) : _state(state), _contextComplete(false) {}
 
 KerberosClient::~KerberosClient() {
     if (_state != NULL) {
@@ -44,7 +44,7 @@ KerberosClient::~KerberosClient() {
     }
 }
 
-gss_client_state* KerberosClient::state() const {
+krb_client_state* KerberosClient::state() const {
     return _state;
 }
 
@@ -80,7 +80,7 @@ class ClientStepWorker : public Nan::AsyncWorker {
           _challenge(challenge) {}
 
     virtual void Execute() {
-        std::unique_ptr<gss_result, FreeDeleter> result(
+        std::unique_ptr<krb_result, FreeDeleter> result(
             authenticate_gss_client_step(_client->state(), _challenge.c_str(), NULL));
         if (result->code == AUTH_GSS_ERROR) {
             SetErrorMessage(result->message);
@@ -124,7 +124,7 @@ class ClientUnwrapWorker : public Nan::AsyncWorker {
           _challenge(challenge) {}
 
     virtual void Execute() {
-        std::unique_ptr<gss_result, FreeDeleter> result(
+        std::unique_ptr<krb_result, FreeDeleter> result(
             authenticate_gss_client_unwrap(_client->state(), _challenge.c_str()));
         if (result->code == AUTH_GSS_ERROR) {
             SetErrorMessage(result->message);
@@ -159,7 +159,7 @@ class ClientWrapWorker : public Nan::AsyncWorker {
           _protect(protect) {}
 
     virtual void Execute() {
-        std::unique_ptr<gss_result, FreeDeleter> result(authenticate_gss_client_wrap(
+        std::unique_ptr<krb_result, FreeDeleter> result(authenticate_gss_client_wrap(
             _client->state(), _challenge.c_str(), _user.c_str(), _protect));
         if (result->code == AUTH_GSS_ERROR) {
             SetErrorMessage(result->message);
