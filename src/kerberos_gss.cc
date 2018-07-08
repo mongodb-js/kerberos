@@ -38,6 +38,8 @@ gss_client_state* gss_client_state_new() {
     state->username = NULL;
     state->response = NULL;
     state->responseConf = 0;
+    state->context_complete = false;
+
     return state;
 }
 
@@ -46,6 +48,8 @@ gss_server_state* gss_server_state_new() {
     state->username = NULL;
     state->response = NULL;
     state->targetname = NULL;
+    state->context_complete = false;
+
     return state;
 }
 
@@ -277,6 +281,8 @@ gss_result* authenticate_gss_client_step(gss_client_state* state,
 
     // Try to get the user name if we have completed all GSS operations
     if (temp_ret == AUTH_GSS_COMPLETE) {
+        state->context_complete = true;
+
         gss_name_t gssuser = GSS_C_NO_NAME;
         maj_stat = gss_inquire_context(
             &min_stat, state->context, &gssuser, NULL, NULL, NULL, NULL, NULL, NULL);
@@ -615,6 +621,7 @@ gss_result* authenticate_gss_server_step(gss_server_state* state, const char* ch
     }
 
     ret = gss_success_result(AUTH_GSS_COMPLETE);
+    state->context_complete = true;
 end:
     if (target_name != GSS_C_NO_NAME)
         gss_release_name(&min_stat, &target_name);
