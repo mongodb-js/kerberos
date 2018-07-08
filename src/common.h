@@ -9,12 +9,6 @@ inline void ResultDeleter(gss_result* result) {
   free(result);
 }
 
-struct FreeDeleter {
-    void operator()(void* result) {
-        free(result);
-    }
-};
-
 // Useful methods for optional value handling
 NAN_INLINE std::string StringOptionValue(v8::Local<v8::Object> options, const char* _key) {
     Nan::HandleScope scope;
