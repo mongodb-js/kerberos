@@ -5,6 +5,10 @@
 #include "kerberos_gss.h"
 
 // Provide a default custom delter for the `gss_result` type
+inline void ResultDeleter(gss_result* result) {
+  free(result);
+}
+
 struct FreeDeleter {
     void operator()(void* result) {
         free(result);
