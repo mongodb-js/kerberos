@@ -36,7 +36,7 @@ v8::Local<v8::Object> KerberosClient::NewInstance(gss_client_state* state) {
     return scope.Escape(object);
 }
 
-KerberosClient::KerberosClient(gss_client_state* state) : _state(state), _contextComplete(false) {}
+KerberosClient::KerberosClient(gss_client_state* state) : _state(state) {}
 
 KerberosClient::~KerberosClient() {
     if (_state != NULL) {
@@ -70,7 +70,7 @@ NAN_GETTER(KerberosClient::ResponseConfGetter) {
 
 NAN_GETTER(KerberosClient::ContextCompleteGetter) {
     KerberosClient* client = Nan::ObjectWrap::Unwrap<KerberosClient>(info.This());
-    info.GetReturnValue().Set(Nan::New(client->_contextComplete));
+    info.GetReturnValue().Set(Nan::New(client->_state->context_complete));
 }
 
 NAN_METHOD(KerberosClient::Step) {

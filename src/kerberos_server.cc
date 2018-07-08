@@ -34,7 +34,7 @@ v8::Local<v8::Object> KerberosServer::NewInstance(gss_server_state* state) {
     return scope.Escape(object);
 }
 
-KerberosServer::KerberosServer(gss_server_state* state) : _state(state), _contextComplete(false) {}
+KerberosServer::KerberosServer(gss_server_state* state) : _state(state) {}
 
 KerberosServer::~KerberosServer() {
     if (_state != NULL) {
@@ -70,7 +70,7 @@ NAN_GETTER(KerberosServer::TargetNameGetter) {
 
 NAN_GETTER(KerberosServer::ContextCompleteGetter) {
     KerberosServer* server = Nan::ObjectWrap::Unwrap<KerberosServer>(info.This());
-    info.GetReturnValue().Set(Nan::New(server->_contextComplete));
+    info.GetReturnValue().Set(Nan::New(server->_state->context_complete));
 }
 
 NAN_METHOD(KerberosServer::Step) {

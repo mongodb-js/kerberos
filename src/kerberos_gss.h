@@ -45,6 +45,7 @@ typedef struct {
     char* username;
     char* response;
     int responseConf;
+    bool context_complete;
 } gss_client_state;
 
 typedef struct {
@@ -56,6 +57,7 @@ typedef struct {
     char* username;
     char* targetname;
     char* response;
+    bool context_complete;
 } gss_server_state;
 
 gss_client_state* gss_client_state_new();
