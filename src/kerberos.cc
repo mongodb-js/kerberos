@@ -4,6 +4,7 @@
 #include "kerberos.h"
 #include "kerberos_client.h"
 #include "kerberos_server.h"
+#include "kerberos_worker.h"
 
 using v8::FunctionTemplate;
 
@@ -159,36 +160,6 @@ NAN_METHOD(PrincipalDetails) {
     AsyncQueueWorker(new PrincipalDetailsWorker(service, hostname, callback));
 }
 
-class CheckPasswordWorker : public Nan::AsyncWorker {
-   public:
-    CheckPasswordWorker(std::string username,
-                        std::string password,
-                        std::string service,
-                        std::string defaultRealm,
-                        Nan::Callback* callback)
-        : AsyncWorker(callback, "kerberos:CheckPassword"),
-          _username(username),
-          _password(password),
-          _service(service),
-          _defaultRealm(defaultRealm) {}
-
-    virtual void Execute() {
-        std::unique_ptr<gss_result, FreeDeleter> result(authenticate_user_krb5pwd(
-            _username.c_str(), _password.c_str(), _service.c_str(), _defaultRealm.c_str()));
-
-        if (result->code == AUTH_GSS_ERROR) {
-            SetErrorMessage(result->message);
-            return;
-        }
-    }
-
-   private:
-    std::string _username;
-    std::string _password;
-    std::string _service;
-    std::string _defaultRealm;
-};
-
 NAN_METHOD(CheckPassword) {
     std::string username(*Nan::Utf8String(info[0]));
     std::string password(*Nan::Utf8String(info[1]));
@@ -196,7 +167,21 @@ NAN_METHOD(CheckPassword) {
     std::string defaultRealm(*Nan::Utf8String(info[3]));
     Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[4]).ToLocalChecked());
 
-    AsyncQueueWorker(new CheckPasswordWorker(username, password, service, defaultRealm, callback));
+    KerberosWorker::Run(callback, "kerberos:CheckPassword", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
+        std::shared_ptr<gss_result> result(authenticate_user_krb5pwd(
+            username.c_str(), password.c_str(), service.c_str(), defaultRealm.c_str()), ResultDeleter);
+
+        return onFinished([=](KerberosWorker* worker) {
+            Nan::HandleScope scope;
+            if (result->code == AUTH_GSS_ERROR) {
+                v8::Local<v8::Value> argv[] = {Nan::New(result->message).ToLocalChecked(), Nan::Null()};
+                worker->Call(2, argv);
+            } else {
+                v8::Local<v8::Value> argv[] = {Nan::Null(), Nan::Null()};
+                worker->Call(2, argv);
+            }
+        });
+    });
 }
 
 NAN_MODULE_INIT(Init) {
