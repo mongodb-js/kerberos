@@ -17,49 +17,6 @@ gss_OID_desc krb5_mech_oid = {9, &krb5_mech_oid_bytes};
 static char spnego_mech_oid_bytes[] = "\x2b\x06\x01\x05\x05\x02";
 gss_OID_desc spnego_mech_oid = {6, &spnego_mech_oid_bytes};
 
-class InitializeClientWorker : public Nan::AsyncWorker {
-   public:
-    InitializeClientWorker(std::string service,
-                           std::string principal,
-                           long int gss_flags,
-                           gss_OID mech_oid,
-                           Nan::Callback* callback)
-        : AsyncWorker(callback, "kerberos:InitializeClientWorker"),
-          _service(service),
-          _principal(principal),
-          _gss_flags(gss_flags),
-          _mech_oid(mech_oid),
-          _client_state(NULL) {}
-
-    virtual void Execute() {
-        std::unique_ptr<gss_client_state, FreeDeleter> state(gss_client_state_new());
-        std::unique_ptr<gss_result, FreeDeleter> result(authenticate_gss_client_init(
-            _service.c_str(), _principal.c_str(), _gss_flags, NULL, _mech_oid, state.get()));
-
-        if (result->code == AUTH_GSS_ERROR) {
-            SetErrorMessage(result->message);
-            return;
-        }
-
-        _client_state = state.release();
-    }
-
-   protected:
-    virtual void HandleOKCallback() {
-        Nan::HandleScope scope;
-        v8::Local<v8::Object> client = KerberosClient::NewInstance(_client_state);
-        v8::Local<v8::Value> argv[] = {Nan::Null(), client};
-        callback->Call(2, argv, async_resource);
-    }
-
-   private:
-    std::string _service;
-    std::string _principal;
-    long int _gss_flags;
-    gss_OID _mech_oid;
-    gss_client_state* _client_state;
-};
-
 NAN_METHOD(InitializeClient) {
     std::string service(*Nan::Utf8String(info[0]));
     v8::Local<v8::Object> options = Nan::To<v8::Object>(info[1]).ToLocalChecked();
@@ -76,88 +33,81 @@ NAN_METHOD(InitializeClient) {
         mech_oid = &spnego_mech_oid;
     }
 
-    AsyncQueueWorker(
-        new InitializeClientWorker(service, principal, gss_flags, mech_oid, callback));
-}
+    KerberosWorker::Run(callback, "kerberos:InitializeClient", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
+        gss_client_state* client_state = gss_client_state_new();
+        std::shared_ptr<gss_result> result(authenticate_gss_client_init(
+            service.c_str(), principal.c_str(), gss_flags, NULL, mech_oid, client_state), ResultDeleter);
 
-class InitializeServerWorker : public Nan::AsyncWorker {
-   public:
-    InitializeServerWorker(std::string service, Nan::Callback* callback)
-        : AsyncWorker(callback, "kerberos:InitializeServerWorker"),
-          _service(service),
-          _server_state(NULL) {}
-
-    virtual void Execute() {
-        std::unique_ptr<gss_server_state, FreeDeleter> state(gss_server_state_new());
-        std::unique_ptr<gss_result, FreeDeleter> result(
-            authenticate_gss_server_init(_service.c_str(), state.get()));
-
+        // must clean up state if we won't be using it, smart pointers won't help here unfortunately
+        // because we can't `release` a shared pointer.
         if (result->code == AUTH_GSS_ERROR) {
-            SetErrorMessage(result->message);
-            return;
+            free(client_state);
         }
 
-        _server_state = state.release();
-    }
+        return onFinished([=](KerberosWorker* worker) {
+            Nan::HandleScope scope;
+            if (result->code == AUTH_GSS_ERROR) {
+                v8::Local<v8::Value> argv[] = {Nan::New(result->message).ToLocalChecked(), Nan::Null()};
+                worker->Call(2, argv);
+                return;
+            }
 
-   protected:
-    virtual void HandleOKCallback() {
-        Nan::HandleScope scope;
-        v8::Local<v8::Object> server = KerberosServer::NewInstance(_server_state);
-        v8::Local<v8::Value> argv[] = {Nan::Null(), server};
-        callback->Call(2, argv, async_resource);
-    }
-
-   private:
-    std::string _service;
-    gss_server_state* _server_state;
-};
+            v8::Local<v8::Value> argv[] = {Nan::Null(), KerberosClient::NewInstance(client_state)};
+            worker->Call(2, argv);
+        });
+    });
+}
 
 NAN_METHOD(InitializeServer) {
     std::string service(*Nan::Utf8String(info[0]));
     Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[1]).ToLocalChecked());
 
-    AsyncQueueWorker(new InitializeServerWorker(service, callback));
-}
+    KerberosWorker::Run(callback, "kerberos:InitializeServer", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
+        gss_server_state* server_state = gss_server_state_new();
+        std::shared_ptr<gss_result> result(
+            authenticate_gss_server_init(service.c_str(), server_state), ResultDeleter);
 
-class PrincipalDetailsWorker : public Nan::AsyncWorker {
-   public:
-    PrincipalDetailsWorker(std::string service, std::string hostname, Nan::Callback* callback)
-        : AsyncWorker(callback, "kerberos:PrincipalDetails"),
-          _service(service),
-          _hostname(hostname) {}
-
-    virtual void Execute() {
-        std::unique_ptr<gss_result, FreeDeleter> result(
-            server_principal_details(_service.c_str(), _hostname.c_str()));
-
+        // must clean up state if we won't be using it, smart pointers won't help here unfortunately
+        // because we can't `release` a shared pointer.
         if (result->code == AUTH_GSS_ERROR) {
-            SetErrorMessage(result->message);
-            return;
+            free(server_state);
         }
 
-        _details = std::string(result->data);
-    }
+        return onFinished([=](KerberosWorker* worker) {
+            Nan::HandleScope scope;
+            if (result->code == AUTH_GSS_ERROR) {
+                v8::Local<v8::Value> argv[] = {Nan::New(result->message).ToLocalChecked(), Nan::Null()};
+                worker->Call(2, argv);
+                return;
+            }
 
-   protected:
-    virtual void HandleOKCallback() {
-        Nan::HandleScope scope;
-        v8::Local<v8::Value> argv[] = {Nan::Null(), Nan::New(_details).ToLocalChecked()};
-        callback->Call(2, argv, async_resource);
-    }
-
-   private:
-    std::string _service;
-    std::string _hostname;
-    std::string _details;
-};
+            v8::Local<v8::Value> argv[] = {Nan::Null(), KerberosServer::NewInstance(server_state)};
+            worker->Call(2, argv);
+        });
+    });
+}
 
 NAN_METHOD(PrincipalDetails) {
     std::string service(*Nan::Utf8String(info[0]));
     std::string hostname(*Nan::Utf8String(info[1]));
     Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
 
-    AsyncQueueWorker(new PrincipalDetailsWorker(service, hostname, callback));
+    KerberosWorker::Run(callback, "kerberos:PrincipalDetails", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
+        std::shared_ptr<gss_result> result(
+            server_principal_details(service.c_str(), hostname.c_str()), ResultDeleter);
+
+        return onFinished([=](KerberosWorker* worker) {
+            Nan::HandleScope scope;
+            if (result->code == AUTH_GSS_ERROR) {
+                v8::Local<v8::Value> argv[] = {Nan::New(result->message).ToLocalChecked(), Nan::Null()};
+                worker->Call(2, argv);
+                return;
+            }
+
+            v8::Local<v8::Value> argv[] = {Nan::Null(), Nan::New(result->data).ToLocalChecked()};
+            worker->Call(2, argv);
+        });
+    });
 }
 
 NAN_METHOD(CheckPassword) {
