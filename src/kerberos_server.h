@@ -1,7 +1,7 @@
 #ifndef KERBEROS_SERVER_H
 #define KERBEROS_SERVER_H
 
-#include "common.h"
+#include "kerberos_common.h"
 
 class KerberosServer : public Nan::ObjectWrap {
    public:
@@ -27,4 +27,4 @@ class KerberosServer : public Nan::ObjectWrap {
     gss_server_state* _state;
 };
 
-#endif
+#endif  // KERBEROS_SERVER_H
