@@ -26,7 +26,6 @@
         }],
         ['OS=="win"',  {
           'sources': [
-            'src/win32/kerberos_sspi.cc',
             'src/win32/kerberos_win32.cc',
             'src/win32/kerberos_client_win32.cc',
             'src/win32/kerberos_server_win32.cc'
