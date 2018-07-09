@@ -1,7 +1,7 @@
 #ifndef KERBEROS_CLIENT_H
 #define KERBEROS_CLIENT_H
 
-#include "common.h"
+#include "kerberos_common.h"
 
 class KerberosClient : public Nan::ObjectWrap {
    public:
@@ -29,4 +29,4 @@ class KerberosClient : public Nan::ObjectWrap {
     gss_client_state* _state;
 };
 
-#endif
+#endif  // KERBEROS_CLIENT_H
