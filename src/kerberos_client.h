@@ -6,9 +6,9 @@
 class KerberosClient : public Nan::ObjectWrap {
    public:
     static NAN_MODULE_INIT(Init);
-    static v8::Local<v8::Object> NewInstance(gss_client_state* state);
+    static v8::Local<v8::Object> NewInstance(krb_client_state* state);
 
-    gss_client_state* state() const;
+    krb_client_state* state() const;
 
    private:
     static Nan::Persistent<v8::Function> constructor;
@@ -23,10 +23,10 @@ class KerberosClient : public Nan::ObjectWrap {
     static NAN_METHOD(WrapData);
 
    private:
-    explicit KerberosClient(gss_client_state* client_state);
+    explicit KerberosClient(krb_client_state* client_state);
     ~KerberosClient();
 
-    gss_client_state* _state;
+    krb_client_state* _state;
 };
 
 #endif  // KERBEROS_CLIENT_H

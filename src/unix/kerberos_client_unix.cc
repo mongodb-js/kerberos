@@ -3,6 +3,13 @@
 #include "../kerberos_client.h"
 #include "../kerberos_worker.h"
 
+KerberosClient::~KerberosClient() {
+    if (_state != NULL) {
+        authenticate_gss_client_clean(_state);
+        _state = NULL;
+    }
+}
+
 NAN_METHOD(KerberosClient::Step) {
     KerberosClient* client = Nan::ObjectWrap::Unwrap<KerberosClient>(info.This());
     std::string challenge(*Nan::Utf8String(info[0]));
