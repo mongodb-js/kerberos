@@ -25,7 +25,7 @@ NAN_MODULE_INIT(KerberosClient::Init) {
              Nan::GetFunction(tpl).ToLocalChecked());
 }
 
-v8::Local<v8::Object> KerberosClient::NewInstance(gss_client_state* state) {
+v8::Local<v8::Object> KerberosClient::NewInstance(krb_client_state* state) {
     Nan::EscapableHandleScope scope;
     v8::Local<v8::Function> ctor = Nan::New<v8::Function>(KerberosClient::constructor);
     v8::Local<v8::Object> object = Nan::NewInstance(ctor).ToLocalChecked();
@@ -34,16 +34,9 @@ v8::Local<v8::Object> KerberosClient::NewInstance(gss_client_state* state) {
     return scope.Escape(object);
 }
 
-KerberosClient::KerberosClient(gss_client_state* state) : _state(state) {}
+KerberosClient::KerberosClient(krb_client_state* state) : _state(state) {}
 
-KerberosClient::~KerberosClient() {
-    if (_state != NULL) {
-        authenticate_gss_client_clean(_state);
-        _state = NULL;
-    }
-}
-
-gss_client_state* KerberosClient::state() const {
+krb_client_state* KerberosClient::state() const {
     return _state;
 }
 

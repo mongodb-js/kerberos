@@ -14,5 +14,5 @@ NAN_METHOD(KerberosServer::Step) {
     KerberosServer* server = Nan::ObjectWrap::Unwrap<KerberosServer>(info.This());
     std::string challenge(*Nan::Utf8String(info[0]));
     Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[1]).ToLocalChecked());
-    Nan::ThrowError('`KerberosServer::Step` is not implemented yet for windows');
+    Nan::ThrowError("`KerberosServer::Step` is not implemented yet for windows");
 }
