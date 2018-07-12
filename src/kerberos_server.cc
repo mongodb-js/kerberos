@@ -41,21 +41,21 @@ NAN_GETTER(KerberosServer::UserNameGetter) {
     KerberosServer* server = Nan::ObjectWrap::Unwrap<KerberosServer>(info.This());
     (server->_state->username == NULL)
         ? info.GetReturnValue().Set(Nan::Null())
-        : info.GetReturnValue().Set(Nan::New(server->_state->username).ToLocalChecked());
+        : info.GetReturnValue().Set(Nan::New((char*)server->_state->username).ToLocalChecked());
 }
 
 NAN_GETTER(KerberosServer::ResponseGetter) {
     KerberosServer* server = Nan::ObjectWrap::Unwrap<KerberosServer>(info.This());
     (server->_state->response == NULL)
         ? info.GetReturnValue().Set(Nan::Null())
-        : info.GetReturnValue().Set(Nan::New(server->_state->response).ToLocalChecked());
+        : info.GetReturnValue().Set(Nan::New((char*)server->_state->response).ToLocalChecked());
 }
 
 NAN_GETTER(KerberosServer::TargetNameGetter) {
     KerberosServer* server = Nan::ObjectWrap::Unwrap<KerberosServer>(info.This());
     (server->_state->targetname == NULL)
         ? info.GetReturnValue().Set(Nan::Null())
-        : info.GetReturnValue().Set(Nan::New(server->_state->targetname).ToLocalChecked());
+        : info.GetReturnValue().Set(Nan::New((char*)server->_state->targetname).ToLocalChecked());
 }
 
 NAN_GETTER(KerberosServer::ContextCompleteGetter) {
