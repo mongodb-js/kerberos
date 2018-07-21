@@ -26,10 +26,18 @@
         }],
         ['OS=="win"',  {
           'sources': [
+            'src/win32/kerberos_sspi.cc',
             'src/win32/kerberos_win32.cc',
             'src/win32/kerberos_client_win32.cc',
             'src/win32/kerberos_server_win32.cc'
-          ]
+          ],
+          'link_settings': {
+            'libraries': [
+              'crypt32.lib',
+              'secur32.lib',
+              'Shlwapi.lib'
+            ]
+          }
         }],
         ['OS=="mac"', {
           'cflags!': [ '-fno-exceptions' ],

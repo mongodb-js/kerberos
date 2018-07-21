@@ -16,21 +16,17 @@
 
 #define SECURITY_WIN32 1 /* Required for SSPI */
 
-#include <windef.h>
 #include <windows.h>
 #include <sspi.h>
 
-#define AUTH_SSPI_ERROR -1
-#define AUTH_SSPI_COMPLETE 1
-#define AUTH_SSPI_CONTINUE 0
-
-#define GSS_MECH_OID_KRB5 L"Kerberos"
-#define GSS_MECH_OID_SPNEGO L"Negotiate"
+#define AUTH_GSS_ERROR -1
+#define AUTH_GSS_COMPLETE 1
+#define AUTH_GSS_CONTINUE 0
 
 typedef struct {
-    INT code;
-    WCHAR* message;
-    WCHAR* data;
+    int code;
+    char* message;
+    char* data;
 } sspi_result;
 
 typedef struct {
@@ -60,15 +56,15 @@ sspi_client_state* sspi_client_state_new();
 
 VOID auth_sspi_client_clean(sspi_client_state* state);
 sspi_result* auth_sspi_client_init(WCHAR* service,
-                          ULONG flags,
-                          WCHAR* user,
-                          ULONG ulen,
-                          WCHAR* domain,
-                          ULONG dlen,
-                          WCHAR* password,
-                          ULONG plen,
-                          WCHAR* mechoid,
-                          sspi_client_state* state);
+                                   ULONG flags,
+                                   WCHAR* user,
+                                   ULONG ulen,
+                                   WCHAR* domain,
+                                   ULONG dlen,
+                                   WCHAR* password,
+                                   ULONG plen,
+                                   WCHAR* mechoid,
+                                   sspi_client_state* state);
 
 sspi_result* auth_sspi_client_step(sspi_client_state* state, SEC_CHAR* challenge, SecPkgContext_Bindings* sec_pkg_context_bindings);
 // INT auth_sspi_client_unwrap(sspi_client_state* state, SEC_CHAR* challenge);
