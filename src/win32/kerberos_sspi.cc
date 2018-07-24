@@ -19,16 +19,6 @@ sspi_client_state* sspi_client_state_new() {
     return state;
 }
 
-// sspi_server_state* sspi_server_state_new() {
-//     sspi_server_state* state = (sspi_server_state*)malloc(sizeof(sspi_server_state));
-//     state->username = NULL;
-//     state->response = NULL;
-//     state->targetname = NULL;
-//     state->context_complete = false;
-
-//     return state;
-// }
-
 VOID
 auth_sspi_client_clean(sspi_client_state* state) {
     if (state->haveCtx) {
