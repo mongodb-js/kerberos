@@ -40,13 +40,14 @@ function authenticate(options, callback) {
   }
 
   krbClient.step(challenge, (err, payload) => {
-    if (krbClient.contextComplete) {
-      callback(null, { challenge: payload || '', conversationId });
-      return;
-    }
+    payload = payload || '';
 
     db.command({ saslContinue: 1, conversationId, payload }, (err, dbResponse) => {
-      console.log({ dbResponse });
+      if (krbClient.contextComplete) {
+        callback(null, { challenge: dbResponse.payload, conversationId });
+        return;
+      }
+
       if (err) return callback(err, null);
       authenticate({ db, krbClient, conversationId, challenge: payload }, callback);
     });
@@ -77,7 +78,6 @@ describe('Kerberos (win32)', function() {
           expect(err).to.not.exist;
 
           authenticate({ db, krbClient, start: true }, (err, authResponse) => {
-            if (err) console.dir(err);
             expect(err).to.not.exist;
 
             krbClient.unwrap(authResponse.challenge, (err, unwrapped) => {
@@ -91,25 +91,26 @@ describe('Kerberos (win32)', function() {
               // is the "no security layer" message as detailed in RFC-4752,
               // section 3.1, final paragraph. This is also the message created
               // by calling authGSSClientWrap with the "user" option.
-              const UPN = Buffer.from(upn, 'utf8').toString('utf8');
-              const msg = Buffer.from(`\x01\x00\x00\x00${UPN}`).toString('base64');
-              krbClient.wrap(msg, (err, custom) => {
+              // const UPN = Buffer.from(upn, 'utf8').toString('utf8');
+              const msg = Buffer.from(`\x01\x00\x00\x00${upn}`).toString('base64');
+              krbClient.wrap(msg, {}, (err, custom) => {
                 expect(err).to.not.exist;
+                expect(custom).to.exist;
 
                 // Wrap using unwrapped and user principal
-                krbClient.unwrap(unwrapped, { user: upn }, (err, wrapped) => {
+                krbClient.wrap(unwrapped, { user: upn }, (err, wrapped) => {
                   expect(err).to.not.exist;
                   expect(wrapped).to.exist;
 
-                  client.command(
+                  db.command(
                     {
                       saslContinue: 1,
                       conversationId: authResponse.conversationId,
-                      payload: custom
+                      payload: wrapped
                     },
                     err => {
                       expect(err).to.not.exist;
-                      expect(client.username).to.exit;
+                      expect(krbClient.username).to.exist;
                       done();
                     }
                   );
