@@ -15,7 +15,6 @@ sspi_client_state* sspi_client_state_new() {
     state->response = NULL;
     state->responseConf = 0;
     state->context_complete = FALSE;
-
     return state;
 }
 
@@ -69,21 +68,14 @@ auth_sspi_client_init(WCHAR* service,
         return sspi_error_result_with_message("Ran out of memory assigning service");
     }
 
-    /* Convert RFC-2078 format to SPN */
-    if (!wcschr(state->spn, L'/')) {
-        WCHAR* ptr = wcschr(state->spn, L'@');
-        if (ptr) {
-            *ptr = L'/';
-        }
-    }
-
     if (user) {
         authIdentity.User = (unsigned short*)user;
         authIdentity.UserLength = ulen;
-        authIdentity.Domain = (unsigned short*)domain;
-        authIdentity.DomainLength = dlen;
         authIdentity.Password = (unsigned short*)password;
         authIdentity.PasswordLength = plen;
+        authIdentity.Domain = NULL;
+        authIdentity.DomainLength = 0;
+
         authIdentity.Flags = SEC_WINNT_AUTH_IDENTITY_UNICODE;
     }
 
@@ -197,6 +189,7 @@ auth_sspi_client_step(sspi_client_state* state, SEC_CHAR* challenge, SecPkgConte
     }
 
     state->haveCtx = 1;
+    state->context_complete = TRUE;
     if (outBufs[0].cbBuffer) {
         state->response = base64_encode((const SEC_CHAR*)outBufs[0].pvBuffer, outBufs[0].cbBuffer);
         if (!state->response) {
@@ -291,7 +284,7 @@ done:
         free(wrapBufs[0].pvBuffer);
     }
 
-    return sspi_success_result(status);
+    return result;
 }
 
 sspi_result*
@@ -442,11 +435,12 @@ static sspi_result* sspi_error_result(DWORD errCode, const SEC_CHAR* msg) {
     DWORD flags = (FORMAT_MESSAGE_ALLOCATE_BUFFER |
                    FORMAT_MESSAGE_FROM_SYSTEM |
                    FORMAT_MESSAGE_IGNORE_INSERTS);
+
     status = FormatMessageA(flags,
                             NULL,
                             errCode,
                             MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                            (LPTSTR)&err,
+                            (LPSTR)&err,
                             0,
                             NULL);
 
@@ -526,7 +520,6 @@ base64_decode(const SEC_CHAR* value, DWORD* rlen) {
         }
     }
 
-    // PyErr_Format(GSSError, "CryptStringToBinary failed.");
     return NULL;
 }
 
