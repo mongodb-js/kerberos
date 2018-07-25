@@ -42,24 +42,24 @@ krb_client_state* KerberosClient::state() const {
 
 NAN_GETTER(KerberosClient::UserNameGetter) {
     KerberosClient* client = Nan::ObjectWrap::Unwrap<KerberosClient>(info.This());
-    (client->_state->username == NULL)
+    (client->state()->username == NULL)
         ? info.GetReturnValue().Set(Nan::Null())
-        : info.GetReturnValue().Set(Nan::New(client->_state->username).ToLocalChecked());
+        : info.GetReturnValue().Set(Nan::New(client->state()->username).ToLocalChecked());
 }
 
 NAN_GETTER(KerberosClient::ResponseGetter) {
     KerberosClient* client = Nan::ObjectWrap::Unwrap<KerberosClient>(info.This());
-    (client->_state->response == NULL)
+    (client->state()->response == NULL)
         ? info.GetReturnValue().Set(Nan::Null())
-        : info.GetReturnValue().Set(Nan::New(client->_state->response).ToLocalChecked());
+        : info.GetReturnValue().Set(Nan::New(client->state()->response).ToLocalChecked());
 }
 
 NAN_GETTER(KerberosClient::ResponseConfGetter) {
     KerberosClient* client = Nan::ObjectWrap::Unwrap<KerberosClient>(info.This());
-    info.GetReturnValue().Set(Nan::New(client->_state->responseConf));
+    info.GetReturnValue().Set(Nan::New(client->state()->responseConf));
 }
 
 NAN_GETTER(KerberosClient::ContextCompleteGetter) {
     KerberosClient* client = Nan::ObjectWrap::Unwrap<KerberosClient>(info.This());
-    info.GetReturnValue().Set(Nan::New(client->_state->context_complete));
+    info.GetReturnValue().Set(Nan::New(client->state()->context_complete));
 }
