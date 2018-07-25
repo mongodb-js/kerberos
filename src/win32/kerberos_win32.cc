@@ -11,6 +11,10 @@
 #define GSS_MECH_OID_KRB5_STR L"Kerberos"
 #define GSS_MECH_OID_SPNEGO_STR L"Negotiate"
 
+#define GSS_C_MUTUAL_FLAG 2
+#define GSS_C_REPLAY_FLAG 4
+#define GSS_C_SEQUENCE_FLAG 8
+
 const wchar_t* to_wstring(const v8::String::Utf8Value& str) {
     const char *bytes = *str;
     unsigned int sizeOfStr = MultiByteToWideChar(CP_UTF8, 0, bytes, -1, NULL, 0);
@@ -32,11 +36,10 @@ NAN_METHOD(InitializeClient) {
     v8::Local<v8::Object> options = Nan::To<v8::Object>(info[1]).ToLocalChecked();
     Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
 
-    ULONG gss_flags = 0;
     std::wstring user = WStringOptionValue(options, "user");
     std::wstring domain = WStringOptionValue(options, "domain");
     std::wstring password = WStringOptionValue(options, "password");
-
+    ULONG gss_flags = (ULONG)UInt32OptionValue(options, "flags", GSS_C_MUTUAL_FLAG|GSS_C_SEQUENCE_FLAG);
     uint32_t mech_oid_int = UInt32OptionValue(options, "mechOID", 0);
     std::wstring mech_oid = GSS_MECH_OID_KRB5_STR;
     if (mech_oid_int == GSS_MECH_OID_SPNEGO) {
