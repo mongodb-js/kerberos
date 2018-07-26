@@ -4,18 +4,14 @@
       'target_name': 'kerberos',
       'include_dirs': [ '<!(node -e "require(\'nan\')")' ],
       'sources': [
-        'src/kerberos.cc',
-        'src/kerberos_client.cc',
-        'src/kerberos_server.cc',
+        'src/kerberos.cc'
       ],
       'conditions': [
         ['OS=="mac" or OS=="linux"', {
           'sources': [
             'src/unix/base64.cc',
             'src/unix/kerberos_gss.cc',
-            'src/unix/kerberos_unix.cc',
-            'src/unix/kerberos_client_unix.cc',
-            'src/unix/kerberos_server_unix.cc'
+            'src/unix/kerberos_unix.cc'
           ],
           'link_settings': {
             'libraries': [
@@ -27,9 +23,7 @@
         ['OS=="win"',  {
           'sources': [
             'src/win32/kerberos_sspi.cc',
-            'src/win32/kerberos_win32.cc',
-            'src/win32/kerberos_client_win32.cc',
-            'src/win32/kerberos_server_win32.cc'
+            'src/win32/kerberos_win32.cc'
           ],
           'link_settings': {
             'libraries': [
