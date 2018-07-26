@@ -2,7 +2,7 @@
 const kerberos = require('..');
 const MongoClient = require('mongodb').MongoClient;
 const expect = require('chai').expect;
-
+const os = require('os');
 const SegfaultHandler = require('segfault-handler');
 SegfaultHandler.registerHandler();
 
@@ -57,6 +57,10 @@ function authenticate(options, callback) {
 const test = {};
 describe('Kerberos (win32)', function() {
   this.timeout(60000);
+  before(function() {
+    if (os.type() !== 'Windows_NT') this.skip();
+  });
+
   beforeEach(function() {
     test.client = new MongoClient(`mongodb://${hostname}:${port}/`);
   });
