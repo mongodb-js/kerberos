@@ -21,6 +21,16 @@ function authenticate(options, callback) {
   const start = options.start || false;
   const conversationId = options.conversationId;
 
+  let promise;
+  if (callback == null || typeof callback !== 'function') {
+    promise = new Promise((resolve, reject) => {
+      callback = function(err, res) {
+        if (err) return reject(err);
+        resolve(res);
+      };
+    });
+  }
+
   if (start) {
     krbClient.step('', (err, payload) => {
       db.command({ saslStart: 1, mechanism: 'GSSAPI', payload }, (err, dbResponse) => {
@@ -36,7 +46,7 @@ function authenticate(options, callback) {
       });
     });
 
-    return;
+    return promise;
   }
 
   krbClient.step(challenge, (err, payload) => {
@@ -52,6 +62,8 @@ function authenticate(options, callback) {
       authenticate({ db, krbClient, conversationId, challenge: payload }, callback);
     });
   });
+
+  return promise;
 }
 
 const test = {};
@@ -97,7 +109,7 @@ describe('Kerberos (win32)', function() {
               // by calling authGSSClientWrap with the "user" option.
               // const UPN = Buffer.from(upn, 'utf8').toString('utf8');
               const msg = Buffer.from(`\x01\x00\x00\x00${upn}`).toString('base64');
-              krbClient.wrap(msg, {}, (err, custom) => {
+              krbClient.wrap(msg, (err, custom) => {
                 expect(err).to.not.exist;
                 expect(custom).to.exist;
 
@@ -124,6 +136,50 @@ describe('Kerberos (win32)', function() {
           });
         }
       );
+    });
+  });
+
+  it('should work from windows using promises', function() {
+    return test.client.connect().then(client => {
+      const db = client.db('$external');
+
+      return kerberos
+        .initializeClient(service, { user: username, domain: realm, password })
+        .then(krbClient => {
+          return authenticate({ db, krbClient, start: true }).then(authResponse => {
+            return krbClient.unwrap(authResponse.challenge).then(unwrapped => {
+              // RFC-4752
+              const challengeBytes = Buffer.from(unwrapped, 'base64');
+              expect(challengeBytes).to.have.length(4);
+
+              // Manually create an authorization message and encrypt it. This
+              // is the "no security layer" message as detailed in RFC-4752,
+              // section 3.1, final paragraph. This is also the message created
+              // by calling authGSSClientWrap with the "user" option.
+              // const UPN = Buffer.from(upn, 'utf8').toString('utf8');
+              const msg = Buffer.from(`\x01\x00\x00\x00${upn}`).toString('base64');
+              return krbClient
+                .wrap(msg)
+                .then(custom => {
+                  expect(custom).to.exist;
+
+                  // Wrap using unwrapped and user principal
+                  return krbClient.wrap(unwrapped, { user: upn });
+                })
+                .then(wrapped => {
+                  expect(wrapped).to.exist;
+                  return db.command({
+                    saslContinue: 1,
+                    conversationId: authResponse.conversationId,
+                    payload: wrapped
+                  });
+                })
+                .then(() => {
+                  expect(krbClient.username).to.exist;
+                });
+            });
+          });
+        });
     });
   });
 });
