@@ -3,6 +3,7 @@ const kerberos = require('..');
 const request = require('request');
 const chai = require('chai');
 const expect = chai.expect;
+const os = require('os');
 const SegfaultHandler = require('segfault-handler');
 SegfaultHandler.registerHandler();
 chai.use(require('chai-string'));
@@ -15,6 +16,10 @@ const hostname = process.env.KERBEROS_HOSTNAME || 'hostname.example.com';
 const port = process.env.KERBEROS_PORT || '80';
 
 describe('Kerberos', function() {
+  before(function() {
+    if (os.type() === 'Windows_NT') this.skip();
+  });
+
   it('should lookup principal details on a server', function(done) {
     const expected = `HTTP/${hostname}@${realm.toUpperCase()}`;
     kerberos.principalDetails('HTTP', hostname, (err, details) => {
