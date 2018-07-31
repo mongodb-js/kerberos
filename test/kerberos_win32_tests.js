@@ -6,13 +6,13 @@ const os = require('os');
 const SegfaultHandler = require('segfault-handler');
 SegfaultHandler.registerHandler();
 
-const password = 'redacted';
-const realm = 'redacted';
-const hostname = 'redacted';
-const username = `redacted`;
-const service = `redacted`;
-const port = 'redacted';
-const upn = `redacted`;
+const password = process.env.KERBEROS_PASSWORD;
+const realm = process.env.KERBEROS_REALM;
+const hostname = process.env.KERBEROS_HOSTNAME;
+const username = `${process.env.KERBEROS_USERNAME}@${realm}`;
+const service = `mongodb/${hostname}`;
+const port = process.env.KERBEROS_POR || '27017';
+const upn = username;
 
 function authenticate(options, callback) {
   const db = options.db;
