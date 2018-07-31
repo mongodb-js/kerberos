@@ -1,70 +1,227 @@
 Kerberos
 ========
+[![Build Status](https://travis-ci.org/mongodb-js/kerberos.svg?branch=master)](https://travis-ci.org/mongodb-js/kerberos)
 
-The `kerberos` package is a C++ extension that requires a build environment to be installed on your system. You must be able to build node.js itself to be able to compile and install the `kerberos` module. Furthermore the `kerberos` module requires the MIT Kerberos package to correctly compile on UNIX operating systems. Consult your UNIX operation system package manager what libraries to install.
+The `kerberos` package is a C++ extension for Node.js that provides cross-platform support for kerberos authentication using GSSAPI on linux/osx, and SSPI on windows. Much of the code in this module is adapted from [ccs-kerberos](https://github.com/apple/ccs-pykerberos) and [winkerberos](https://github.com/mongodb-labs/winkerberos).
 
-{{% note class="important" %}}
-Windows already contains the SSPI API used for Kerberos authentication. However you will need to install a full compiler tool chain using visual studio C++ to correctly install the kerberos extension.
-{{% /note %}}
+### Requirements
 
-### Diagnosing on UNIX
+**Linux**
+- `python` v2.7
+- `make`
+- A proper C/C++ compiler toolchain, like [GCC](https://gcc.gnu.org/)
+- Distribution-specific kerberos packages (e.g. `krb5-dev` on Ubuntu)
 
-If you don’t have the build essentials it won’t build. In the case of linux you will need gcc and g++, node.js with all the headers and python. The easiest way to figure out what’s missing is by trying to build the kerberos project. You can do this by performing the following steps.
+**macOS**
+- `Xcode Command Line Tools`: Can be installed with `xcode-select --install`
+- Distribution-specific kerberos packages (e.g. `krb5` on Homebrew)
 
-```
-git clone https://github.com/christkv/kerberos.git
-cd kerberos
-npm install
-```
+**Windows**
+- **Option 1:** Install all the required tools and configurations using Microsoft's [windows-build-tools](https://github.com/felixrieseberg/windows-build-tools) by running `npm install -g windows-build-tools` from an elevated PowerShell (run as Administrator).
+- **Option 2:** Install dependencies and configuration manually
+   1. Visual C++ Build Environment:
+     * **Option 1:** Install [Visual C++ Build Tools](http://go.microsoft.com/fwlink/?LinkId=691126) using the *Default Install* option.
+     * **Option 2:** Install [Visual Studio 2015](https://www.visualstudio.com/products/visual-studio-community-vs) (or modify an existing installation) and select *Common Tools for Visual C++* during setup.
 
-If all the steps complete you have the right toolchain installed. If you get node-gyp not found you need to install it globally by doing.
+  > :bulb: [Windows Vista / 7 only] requires [.NET Framework 4.5.1](http://www.microsoft.com/en-us/download/details.aspx?id=40773)
 
-```
-npm install -g node-gyp
-```
+  2. Install [Python 2.7](https://www.python.org/downloads/) or [Miniconda 2.7](http://conda.pydata.org/miniconda.html) (`v3.x.x` is not supported), and run `npm config set python python2.7`
+  3. Launch cmd, `npm config set msvs_version 2015`
 
-If correctly compiles and runs the tests you are golden. We can now try to install the kerberos module by performing the following command.
+### Installation
 
-```
-cd yourproject
-npm install kerberos --save
-```
+Now you can install `kerberos` with the following:
 
-If it still fails the next step is to examine the npm log. Rerun the command but in this case in verbose mode.
-
-```
-npm --loglevel verbose install kerberos
-```
-
-This will print out all the steps npm is performing while trying to install the module.
-
-### Diagnosing on Windows
-
-A known compiler tool chain known to work for compiling `kerberos` on windows is the following.
-
-* Visual Studio c++ 2010 (do not use higher versions)
-* Windows 7 64bit SDK
-* Python 2.7 or higher
-
-Open visual studio command prompt. Ensure node.exe is in your path and install node-gyp.
-
-```
-npm install -g node-gyp
+```bash
+npm install kerberos
 ```
 
-Next you will have to build the project manually to test it. Use any tool you use with git and grab the repo.
+### Testing
 
+Run the test suite using:
+
+```bash
+npm test
 ```
-git clone https://github.com/christkv/kerberos.git
-cd kerberos
-npm install
-node-gyp rebuild
-```
 
-This should rebuild the driver successfully if you have everything set up correctly.
+NOTE: The test suite requires an active kerberos deployment, see `test/scripts/travis.sh` to better understand these requirements.
 
-### Other possible issues
+# Documentation
 
-Your python installation might be hosed making gyp break. I always recommend that you test your deployment environment first by trying to build node itself on the server in question as this should unearth any issues with broken packages (and there are a lot of broken packages out there).
+## Classes
 
-Another thing is to ensure your user has write permission to wherever the node modules are being installed.
+<dl>
+<dt><a href="#KerberosClient">KerberosClient</a></dt>
+<dd></dd>
+<dt><a href="#KerberosServer">KerberosServer</a></dt>
+<dd></dd>
+</dl>
+
+## Functions
+
+<dl>
+<dt><a href="#checkPassword">checkPassword(username, password, service, [defaultRealm], [callback])</a> ⇒ <code>Promise</code></dt>
+<dd><p>This function provides a simple way to verify that a user name and password
+match those normally used for Kerberos authentication.
+It does this by checking that the supplied user name and password can be
+used to get a ticket for the supplied service.
+If the user name does not contain a realm, then the default realm supplied
+is used.</p>
+<p>For this to work properly the Kerberos must be configured properly on this
+machine.
+That will likely mean ensuring that the edu.mit.Kerberos preference file
+has the correct realms and KDCs listed.</p>
+<p>IMPORTANT: This method is vulnerable to KDC spoofing attacks and it should
+only used for testing. Do not use this in any production system - your
+security could be compromised if you do.</p>
+</dd>
+<dt><a href="#principalDetails">principalDetails(service, hostname, [callback])</a> ⇒ <code>Promise</code></dt>
+<dd><p>This function returns the service principal for the server given a service type and hostname.</p>
+<p>Details are looked up via the <code>/etc/keytab</code> file.</p>
+</dd>
+<dt><a href="#initializeClient">initializeClient(service, [options], [callback])</a> ⇒ <code>Promise</code></dt>
+<dd><p>Initializes a context for client-side authentication with the given service principal.</p>
+</dd>
+<dt><a href="#initializeServer">initializeServer(service, [callback])</a> ⇒ <code>Promise</code></dt>
+<dd><p>Initializes a context for server-side authentication with the given service principal.</p>
+</dd>
+</dl>
+
+<a name="KerberosClient"></a>
+
+## KerberosClient
+
+* [KerberosClient](#KerberosClient)
+
+    * [.step(challenge, [callback])](#KerberosClient+step)
+
+    * [.wrap(challenge, [options], [callback])](#KerberosClient+wrap)
+
+    * [.unwrap(challenge, [callback])](#KerberosClient+unwrap)
+
+
+<a name="KerberosClient+step"></a>
+
+### *kerberosClient*.step(challenge, [callback])
+
+| Param | Type | Description |
+| --- | --- | --- |
+| challenge | <code>string</code> | A string containing the base64-encoded server data (which may be empty for the first step) |
+| [callback] | <code>function</code> |  |
+
+Processes a single kerberos client-side step using the supplied server challenge.
+
+**Returns**: <code>Promise</code> - returns Promise if no callback passed  
+<a name="KerberosClient+wrap"></a>
+
+### *kerberosClient*.wrap(challenge, [options], [callback])
+
+| Param | Type | Description |
+| --- | --- | --- |
+| challenge | <code>string</code> | The response returned after calling `unwrap` |
+| [options] | <code>object</code> | Optional settings |
+| [options.user] | <code>string</code> | The user to authorize |
+| [callback] | <code>function</code> |  |
+
+Perform the client side kerberos wrap step.
+
+**Returns**: <code>Promise</code> - returns Promise if no callback passed  
+<a name="KerberosClient+unwrap"></a>
+
+### *kerberosClient*.unwrap(challenge, [callback])
+
+| Param | Type | Description |
+| --- | --- | --- |
+| challenge | <code>string</code> | A string containing the base64-encoded server data |
+| [callback] | <code>function</code> |  |
+
+Perform the client side kerberos unwrap step
+
+**Returns**: <code>Promise</code> - returns Promise if no callback passed  
+<a name="KerberosServer"></a>
+
+## KerberosServer
+<a name="KerberosServer+step"></a>
+
+### *kerberosServer*.step(challenge, callback)
+
+| Param | Type | Description |
+| --- | --- | --- |
+| challenge | <code>string</code> | A string containing the base64-encoded client data |
+| callback | <code>function</code> |  |
+
+Processes a single kerberos server-side step using the supplied client data.
+
+**Returns**: <code>Promise</code> - returns Promise if no callback passed  
+<a name="checkPassword"></a>
+
+## checkPassword(username, password, service, [defaultRealm], [callback])
+
+| Param | Type | Description |
+| --- | --- | --- |
+| username | <code>string</code> | The Kerberos user name. If no realm is supplied, then the `defaultRealm` will be used. |
+| password | <code>string</code> | The password for the user. |
+| service | <code>string</code> | The Kerberos service to check access for. |
+| [defaultRealm] | <code>string</code> | The default realm to use if one is not supplied in the user argument. |
+| [callback] | <code>function</code> |  |
+
+This function provides a simple way to verify that a user name and password
+match those normally used for Kerberos authentication.
+It does this by checking that the supplied user name and password can be
+used to get a ticket for the supplied service.
+If the user name does not contain a realm, then the default realm supplied
+is used.
+
+For this to work properly the Kerberos must be configured properly on this
+machine.
+That will likely mean ensuring that the edu.mit.Kerberos preference file
+has the correct realms and KDCs listed.
+
+IMPORTANT: This method is vulnerable to KDC spoofing attacks and it should
+only used for testing. Do not use this in any production system - your
+security could be compromised if you do.
+
+**Returns**: <code>Promise</code> - returns Promise if no callback passed  
+<a name="principalDetails"></a>
+
+## principalDetails(service, hostname, [callback])
+
+| Param | Type | Description |
+| --- | --- | --- |
+| service | <code>string</code> | The Kerberos service type for the server. |
+| hostname | <code>string</code> | The hostname of the server. |
+| [callback] | <code>function</code> |  |
+
+This function returns the service principal for the server given a service type and hostname.
+
+Details are looked up via the `/etc/keytab` file.
+
+**Returns**: <code>Promise</code> - returns Promise if no callback passed  
+<a name="initializeClient"></a>
+
+## initializeClient(service, [options], [callback])
+
+| Param | Type | Description |
+| --- | --- | --- |
+| service | <code>string</code> | A string containing the service principal in the form 'type@fqdn' (e.g. 'imap@mail.apple.com'). |
+| [options] | <code>object</code> | Optional settings |
+| [options.principal] | <code>string</code> | Optional string containing the client principal in the form 'user@realm' (e.g. 'jdoe@example.com'). |
+| [options.gssFlags] | <code>number</code> | Optional integer used to set GSS flags. (e.g.  GSS_C_DELEG_FLAG|GSS_C_MUTUAL_FLAG|GSS_C_SEQUENCE_FLAG will allow for forwarding credentials to the remote host) |
+| [options.mechOID] | <code>number</code> | Optional GSS mech OID. Defaults to None (GSS_C_NO_OID). Other possible values are `GSS_MECH_OID_KRB5`, `GSS_MECH_OID_SPNEGO`. |
+| [callback] | <code>function</code> |  |
+
+Initializes a context for client-side authentication with the given service principal.
+
+**Returns**: <code>Promise</code> - returns Promise if no callback passed  
+<a name="initializeServer"></a>
+
+## initializeServer(service, [callback])
+
+| Param | Type | Description |
+| --- | --- | --- |
+| service | <code>string</code> | A string containing the service principal in the form 'type@fqdn' (e.g. 'imap@mail.apple.com'). |
+| [callback] | <code>function</code> |  |
+
+Initializes a context for server-side authentication with the given service principal.
+
+**Returns**: <code>Promise</code> - returns Promise if no callback passed  
