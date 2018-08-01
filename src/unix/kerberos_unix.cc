@@ -65,7 +65,7 @@ NAN_METHOD(KerberosClient::UnwrapData) {
                 return;
             }
 
-            v8::Local<v8::Value> argv[] = {Nan::Null(), Nan::Null()};
+            v8::Local<v8::Value> argv[] = {Nan::Null(), Nan::New(client->state()->response).ToLocalChecked()};
             worker->Call(2, argv);
         });
     });
@@ -92,7 +92,7 @@ NAN_METHOD(KerberosClient::WrapData) {
                 return;
             }
 
-            v8::Local<v8::Value> argv[] = {Nan::Null(), Nan::Null()};
+            v8::Local<v8::Value> argv[] = {Nan::Null(), Nan::New(client->state()->response).ToLocalChecked()};
             worker->Call(2, argv);
         });
     });
