@@ -72,7 +72,7 @@ machine.
 That will likely mean ensuring that the edu.mit.Kerberos preference file
 has the correct realms and KDCs listed.</p>
 <p>IMPORTANT: This method is vulnerable to KDC spoofing attacks and it should
-only used for testing. Do not use this in any production system - your
+only be used for testing. Do not use this in any production system - your
 security could be compromised if you do.</p>
 </dd>
 <dt><a href="#principalDetails">principalDetails(service, hostname, [callback])</a> ⇒ <code>Promise</code></dt>
@@ -178,7 +178,7 @@ That will likely mean ensuring that the edu.mit.Kerberos preference file
 has the correct realms and KDCs listed.
 
 IMPORTANT: This method is vulnerable to KDC spoofing attacks and it should
-only used for testing. Do not use this in any production system - your
+only be used for testing. Do not use this in any production system - your
 security could be compromised if you do.
 
 **Returns**: <code>Promise</code> - returns Promise if no callback passed  
