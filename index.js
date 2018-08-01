@@ -3,10 +3,10 @@
 const kerberos = require('./lib/kerberos');
 
 // Get the Kerberos library
-module.exports = kerberos; 
+module.exports = kerberos;
 
-// Support for legacy versions of the mongodb driver expect this export
-module.exports.Kerberos = kerberos; 
+// Support legacy versions of the mongodb driver which expect this export
+module.exports.Kerberos = kerberos;
 
 // Set up the auth processes
 module.exports.processes = {
