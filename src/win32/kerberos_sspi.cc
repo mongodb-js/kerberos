@@ -73,8 +73,8 @@ auth_sspi_client_init(WCHAR* service,
         authIdentity.UserLength = ulen;
         authIdentity.Password = (unsigned short*)password;
         authIdentity.PasswordLength = plen;
-        authIdentity.Domain = NULL;
-        authIdentity.DomainLength = 0;
+        authIdentity.Domain = (unsigned short*)domain;
+        authIdentity.DomainLength = dlen;
 
         authIdentity.Flags = SEC_WINNT_AUTH_IDENTITY_UNICODE;
     }
@@ -269,7 +269,7 @@ auth_sspi_client_unwrap(sspi_client_state* state, SEC_CHAR* challenge) {
         result = sspi_error_result(status, "DecryptMessage");
         goto done;
     }
-    
+
     if (wrapBufs[1].cbBuffer) {
         state->response = base64_encode((const SEC_CHAR*)wrapBufs[1].pvBuffer, wrapBufs[1].cbBuffer);
         if (!state->response) {
