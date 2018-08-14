@@ -11,7 +11,7 @@ const realm = process.env.KERBEROS_REALM;
 const hostname = process.env.KERBEROS_HOSTNAME;
 const username = `${process.env.KERBEROS_USERNAME}@${realm}`;
 const service = `mongodb/${hostname}`;
-const port = process.env.KERBEROS_POR || '27017';
+const port = process.env.KERBEROS_PORT || '27017';
 const upn = username;
 
 function authenticate(options, callback) {
@@ -33,7 +33,11 @@ function authenticate(options, callback) {
 
   if (start) {
     krbClient.step('', (err, payload) => {
+      expect(err).to.not.exist;
+
       db.command({ saslStart: 1, mechanism: 'GSSAPI', payload }, (err, dbResponse) => {
+        expect(err).to.not.exist;
+
         authenticate(
           {
             db,
@@ -89,7 +93,7 @@ describe('Kerberos (win32)', function() {
 
       kerberos.initializeClient(
         service,
-        { user: username, domain: realm, password },
+        { user: username, password },
         (err, krbClient) => {
           expect(err).to.not.exist;
 
@@ -144,7 +148,7 @@ describe('Kerberos (win32)', function() {
       const db = client.db('$external');
 
       return kerberos
-        .initializeClient(service, { user: username, domain: realm, password })
+        .initializeClient(service, { user: username, password })
         .then(krbClient => {
           return authenticate({ db, krbClient, start: true }).then(authResponse => {
             return krbClient.unwrap(authResponse.challenge).then(unwrapped => {
