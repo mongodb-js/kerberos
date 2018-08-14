@@ -3,6 +3,7 @@
 
 #include <nan.h>
 #include "kerberos_common.h"
+
 class KerberosServer : public Nan::ObjectWrap {
    public:
     static NAN_MODULE_INIT(Init);

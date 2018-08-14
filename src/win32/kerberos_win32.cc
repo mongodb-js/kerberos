@@ -30,10 +30,10 @@ NAN_INLINE std::wstring WStringOptionValue(v8::Local<v8::Object> options, const 
 
 /// KerberosClient
 KerberosClient::~KerberosClient() {
-    // if (_state != NULL) {
-    //     authenticate_gss_client_clean(_state);
-    //     _state = NULL;
-    // }
+    if (_state != NULL) {
+        auth_sspi_client_clean(_state);
+        _state = NULL;
+    }
 }
 
 NAN_METHOD(KerberosClient::Step) {
