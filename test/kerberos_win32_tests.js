@@ -91,55 +91,51 @@ describe('Kerberos (win32)', function() {
 
       const db = client.db('$external');
 
-      kerberos.initializeClient(
-        service,
-        { user: username, password },
-        (err, krbClient) => {
+      kerberos.initializeClient(service, { user: username, password }, (err, krbClient) => {
+        expect(err).to.not.exist;
+
+        authenticate({ db, krbClient, start: true }, (err, authResponse) => {
           expect(err).to.not.exist;
 
-          authenticate({ db, krbClient, start: true }, (err, authResponse) => {
+          krbClient.unwrap(authResponse.challenge, (err, unwrapped) => {
             expect(err).to.not.exist;
 
-            krbClient.unwrap(authResponse.challenge, (err, unwrapped) => {
+            // RFC-4752
+            const challengeBytes = Buffer.from(unwrapped, 'base64');
+            expect(challengeBytes).to.have.length(4);
+
+            // Manually create an authorization message and encrypt it. This
+            // is the "no security layer" message as detailed in RFC-4752,
+            // section 3.1, final paragraph. This is also the message created
+            // by calling authGSSClientWrap with the "user" option.
+            // const UPN = Buffer.from(upn, 'utf8').toString('utf8');
+            const msg = Buffer.from(`\x01\x00\x00\x00${upn}`).toString('base64');
+            krbClient.wrap(msg, (err, custom) => {
               expect(err).to.not.exist;
+              expect(custom).to.exist;
 
-              // RFC-4752
-              const challengeBytes = Buffer.from(unwrapped, 'base64');
-              expect(challengeBytes).to.have.length(4);
-
-              // Manually create an authorization message and encrypt it. This
-              // is the "no security layer" message as detailed in RFC-4752,
-              // section 3.1, final paragraph. This is also the message created
-              // by calling authGSSClientWrap with the "user" option.
-              // const UPN = Buffer.from(upn, 'utf8').toString('utf8');
-              const msg = Buffer.from(`\x01\x00\x00\x00${upn}`).toString('base64');
-              krbClient.wrap(msg, (err, custom) => {
+              // Wrap using unwrapped and user principal
+              krbClient.wrap(unwrapped, { user: upn }, (err, wrapped) => {
                 expect(err).to.not.exist;
-                expect(custom).to.exist;
+                expect(wrapped).to.exist;
 
-                // Wrap using unwrapped and user principal
-                krbClient.wrap(unwrapped, { user: upn }, (err, wrapped) => {
-                  expect(err).to.not.exist;
-                  expect(wrapped).to.exist;
-
-                  db.command(
-                    {
-                      saslContinue: 1,
-                      conversationId: authResponse.conversationId,
-                      payload: wrapped
-                    },
-                    err => {
-                      expect(err).to.not.exist;
-                      expect(krbClient.username).to.exist;
-                      done();
-                    }
-                  );
-                });
+                db.command(
+                  {
+                    saslContinue: 1,
+                    conversationId: authResponse.conversationId,
+                    payload: wrapped
+                  },
+                  err => {
+                    expect(err).to.not.exist;
+                    expect(krbClient.username).to.exist;
+                    done();
+                  }
+                );
               });
             });
           });
-        }
-      );
+        });
+      });
     });
   });
 
@@ -147,43 +143,41 @@ describe('Kerberos (win32)', function() {
     return test.client.connect().then(client => {
       const db = client.db('$external');
 
-      return kerberos
-        .initializeClient(service, { user: username, password })
-        .then(krbClient => {
-          return authenticate({ db, krbClient, start: true }).then(authResponse => {
-            return krbClient.unwrap(authResponse.challenge).then(unwrapped => {
-              // RFC-4752
-              const challengeBytes = Buffer.from(unwrapped, 'base64');
-              expect(challengeBytes).to.have.length(4);
+      return kerberos.initializeClient(service, { user: username, password }).then(krbClient => {
+        return authenticate({ db, krbClient, start: true }).then(authResponse => {
+          return krbClient.unwrap(authResponse.challenge).then(unwrapped => {
+            // RFC-4752
+            const challengeBytes = Buffer.from(unwrapped, 'base64');
+            expect(challengeBytes).to.have.length(4);
 
-              // Manually create an authorization message and encrypt it. This
-              // is the "no security layer" message as detailed in RFC-4752,
-              // section 3.1, final paragraph. This is also the message created
-              // by calling authGSSClientWrap with the "user" option.
-              // const UPN = Buffer.from(upn, 'utf8').toString('utf8');
-              const msg = Buffer.from(`\x01\x00\x00\x00${upn}`).toString('base64');
-              return krbClient
-                .wrap(msg)
-                .then(custom => {
-                  expect(custom).to.exist;
+            // Manually create an authorization message and encrypt it. This
+            // is the "no security layer" message as detailed in RFC-4752,
+            // section 3.1, final paragraph. This is also the message created
+            // by calling authGSSClientWrap with the "user" option.
+            // const UPN = Buffer.from(upn, 'utf8').toString('utf8');
+            const msg = Buffer.from(`\x01\x00\x00\x00${upn}`).toString('base64');
+            return krbClient
+              .wrap(msg)
+              .then(custom => {
+                expect(custom).to.exist;
 
-                  // Wrap using unwrapped and user principal
-                  return krbClient.wrap(unwrapped, { user: upn });
-                })
-                .then(wrapped => {
-                  expect(wrapped).to.exist;
-                  return db.command({
-                    saslContinue: 1,
-                    conversationId: authResponse.conversationId,
-                    payload: wrapped
-                  });
-                })
-                .then(() => {
-                  expect(krbClient.username).to.exist;
+                // Wrap using unwrapped and user principal
+                return krbClient.wrap(unwrapped, { user: upn });
+              })
+              .then(wrapped => {
+                expect(wrapped).to.exist;
+                return db.command({
+                  saslContinue: 1,
+                  conversationId: authResponse.conversationId,
+                  payload: wrapped
                 });
-            });
+              })
+              .then(() => {
+                expect(krbClient.username).to.exist;
+              });
           });
         });
+      });
     });
   });
 });

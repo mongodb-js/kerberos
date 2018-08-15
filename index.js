@@ -12,4 +12,3 @@ module.exports.Kerberos = kerberos;
 module.exports.processes = {
   MongoAuthProcess: require('./lib/auth_processes/mongodb').MongoAuthProcess
 };
-
