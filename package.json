@@ -5,7 +5,7 @@
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/christkv/kerberos.git"
+    "url": "https://github.com/mongodb-js/kerberos.git"
   },
   "keywords": [
     "kerberos",
@@ -44,7 +44,7 @@
     "rebuild": "prebuild --compile",
     "prebuild": "prebuild --all --strip --verbose"
   },
-  "author": "Christian Amor Kvalheim",
+  "author": "Matt Broadstone <mbroadst@gmail.com>",
   "license": "Apache-2.0",
   "readmeFilename": "README.md",
   "gitHead": "035be2e4619d7f3d7ea5103da1f60a6045ef8d7c"
