@@ -10,6 +10,17 @@ matrix:
   - env: NODE_LTS=argon
   - env: NODE_LTS=boron
   - env: NODE_LTS=carbon
+  include:
+    - language: node_js
+    - os:
+        - osx
+        - linux
+    - node_js:
+        - 4
+        - 6
+        - 8
+        - 10
+    - script: ./node_modules/.bin/prebuild-ci
 
 script:
 - >
