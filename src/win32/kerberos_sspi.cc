@@ -68,7 +68,7 @@ auth_sspi_client_init(WCHAR* service,
         return sspi_error_result_with_message("Ran out of memory assigning service");
     }
 
-    if (user) {
+    if (*user) {
         authIdentity.User = (unsigned short*)user;
         authIdentity.UserLength = ulen;
         authIdentity.Password = (unsigned short*)password;
@@ -92,7 +92,7 @@ auth_sspi_client_init(WCHAR* service,
                                        /* LogonID (We don't use this) */
                                        NULL,
                                        /* AuthData */
-                                       user ? &authIdentity : NULL,
+                                       *user ? &authIdentity : NULL,
                                        /* Always NULL */
                                        NULL,
                                        /* Always NULL */
@@ -319,7 +319,7 @@ auth_sspi_client_wrap(sspi_client_state* state,
         return sspi_error_result(status, "QueryContextAttributes");
     }
 
-    if (user) {
+    if (*user) {
         /* Length of user + 4 bytes for security layer (see below). */
         plaintextMessageSize = ulen + 4;
     } else {
@@ -338,10 +338,10 @@ auth_sspi_client_wrap(sspi_client_state* state,
     }
 
     plaintextMessage = inbuf + sizes.cbSecurityTrailer;
-    if (user) {
+    if (*user) {
         /* Authenticate the provided user. Unlike pykerberos, we don't
          * need any information from "data" to do that.
-         * */
+         */
         plaintextMessage[0] = 1; /* No security layer */
         plaintextMessage[1] = 0;
         plaintextMessage[2] = 0;
@@ -488,7 +488,6 @@ base64_encode(const SEC_CHAR* value, DWORD vlen) {
         }
     }
 
-    // PyErr_Format(GSSError, "CryptBinaryToString failed.");
     return NULL;
 }
 
@@ -537,7 +536,6 @@ wide_to_utf8(WCHAR* value) {
     if (len) {
         out = (CHAR*)malloc(sizeof(CHAR) * len);
         if (!out) {
-            // PyErr_SetNone(PyExc_MemoryError);
             return NULL;
         }
 
@@ -555,7 +553,5 @@ wide_to_utf8(WCHAR* value) {
         }
     }
 
-    // set_gsserror(GetLastError(), "WideCharToMultiByte");
     return NULL;
 }
-

@@ -170,8 +170,6 @@ NAN_METHOD(InitializeClient) {
             worker->Call(2, argv);
         });
     });
-
-
 }
 
 NAN_METHOD(InitializeServer) {
