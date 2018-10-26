@@ -1,3 +1,22 @@
+# Change Log
+
+All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+
+<a name="1.1.0"></a>
+# [1.1.0](https://github.com/mongodb-js/kerberos/compare/v1.0.0...v1.1.0) (2018-10-26)
+
+
+### Bug Fixes
+
+* **sspi:** correct invalid null checks for user data ([163bdb9](https://github.com/mongodb-js/kerberos/commit/163bdb9))
+
+
+### Features
+
+* **package:** export the package version ([5be618f](https://github.com/mongodb-js/kerberos/commit/5be618f))
+
+
+
 0.0.23 07-03-2017
 -----------------
 - SSPI implemented missing _sspi_FreeCredentialsHandle to correctly cleanup credentials allocation on call to destructor of the C++ instance.
