@@ -31,7 +31,8 @@
     "prebuild-ci": "^2.2.3",
     "prettier": "^1.14.2",
     "request": "^2.88.0",
-    "segfault-handler": "^1.0.1"
+    "segfault-handler": "^1.0.1",
+    "standard-version": "^4.4.0"
   },
   "scripts": {
     "install": "prebuild-install || node-gyp rebuild",
@@ -42,7 +43,8 @@
     "test": "mocha ./test && prebuild-ci",
     "docs": "jsdoc2md --template etc/README.hbs --plugin dmd-clear --files lib/kerberos.js > README.md",
     "rebuild": "prebuild --compile",
-    "prebuild": "prebuild --all --strip --verbose"
+    "prebuild": "prebuild --all --strip --verbose",
+    "release": "standard-version -i HISTORY.md"
   },
   "author": "Matt Broadstone <mbroadst@gmail.com>",
   "license": "Apache-2.0",
