@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="1.1.1"></a>
+## [1.1.1](https://github.com/mongodb-js/kerberos/compare/v1.1.0...v1.1.1) (2018-10-30)
+
+
+### Bug Fixes
+
+* **sspi:** only add password and domain if they are provided ([bc48814](https://github.com/mongodb-js/kerberos/commit/bc48814))
+
+
+
 <a name="1.1.0"></a>
 # [1.1.0](https://github.com/mongodb-js/kerberos/compare/v1.0.0...v1.1.0) (2018-10-26)
 
