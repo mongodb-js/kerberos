@@ -71,10 +71,16 @@ auth_sspi_client_init(WCHAR* service,
     if (*user) {
         authIdentity.User = (unsigned short*)user;
         authIdentity.UserLength = ulen;
-        authIdentity.Password = (unsigned short*)password;
-        authIdentity.PasswordLength = plen;
-        authIdentity.Domain = (unsigned short*)domain;
-        authIdentity.DomainLength = dlen;
+
+        if (*password) {
+            authIdentity.Password = (unsigned short*)password;
+            authIdentity.PasswordLength = plen;
+        }
+
+        if (*domain) {
+            authIdentity.Domain = (unsigned short*)domain;
+            authIdentity.DomainLength = dlen;
+        }
 
         authIdentity.Flags = SEC_WINNT_AUTH_IDENTITY_UNICODE;
     }
