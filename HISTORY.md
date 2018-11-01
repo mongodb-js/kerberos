@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="1.1.2"></a>
+## [1.1.2](https://github.com/mongodb-js/kerberos/compare/v1.1.1...v1.1.2) (2018-11-01)
+
+
+### Bug Fixes
+
+* **auth-process:** only send username/password if provided ([334ca9c](https://github.com/mongodb-js/kerberos/commit/334ca9c))
+* **auth-process:** use canonicalized hostname in client init ([b1802d1](https://github.com/mongodb-js/kerberos/commit/b1802d1))
+
+
+
 <a name="1.1.1"></a>
 ## [1.1.1](https://github.com/mongodb-js/kerberos/compare/v1.1.0...v1.1.1) (2018-10-30)
 
