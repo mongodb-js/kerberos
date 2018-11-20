@@ -132,7 +132,15 @@ NAN_GETTER(KerberosServer::ContextCompleteGetter) {
 NAN_METHOD(TestMethod) {
     std::string string(*Nan::Utf8String(info[0]));
     bool shouldError = info[1]->BooleanValue();
-    Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
+
+    std::string optionalString;
+    Nan::Callback* callback;
+    if (info[2]->IsFunction()) {
+        callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
+    } else {
+        optionalString = *Nan::Utf8String(info[2]);
+        callback = new Nan::Callback(Nan::To<v8::Function>(info[3]).ToLocalChecked());
+    }
 
     KerberosWorker::Run(callback, "kerberos:TestMethod", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
         return onFinished([=](KerberosWorker* worker) {
@@ -141,7 +149,7 @@ NAN_METHOD(TestMethod) {
                 v8::Local<v8::Value> argv[] = {Nan::Error("an error occurred"), Nan::Null()};
                 worker->Call(2, argv);
             } else {
-                v8::Local<v8::Value> argv[] = {Nan::Null(), Nan::Null()};
+                v8::Local<v8::Value> argv[] = {Nan::Null(), Nan::New(optionalString.c_str()).ToLocalChecked()};
                 worker->Call(2, argv);
             }
         });
