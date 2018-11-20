@@ -4,13 +4,13 @@ const chai = require('chai');
 const expect = chai.expect;
 const api = require('../index');
 
-describe('module', function () {
-  it('should export version', function () {
+describe('module', function() {
+  it('should export version', function() {
     expect(api.version).to.be.a('string');
     expect(api.version).to.match(/\d+\.\d+/);
   });
 
-  it('should export flags and ids', function () {
+  it('should export flags and ids', function() {
     [
       api.GSS_C_DELEG_FLAG,
       api.GSS_C_MUTUAL_FLAG,
@@ -27,7 +27,7 @@ describe('module', function () {
     ].forEach(flag => expect(flag).to.be.a('number'));
   });
 
-  it('should export functions', function () {
+  it('should export functions', function() {
     expect(api.initializeClient).to.be.a('function');
     expect(api.initializeServer).to.be.a('function');
     expect(api.principalDetails).to.be.a('function');
