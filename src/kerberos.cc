@@ -1,4 +1,5 @@
 #include "kerberos.h"
+#include "kerberos_worker.h"
 
 /// KerberosClient
 Nan::Persistent<v8::Function> KerberosClient::constructor;
@@ -128,6 +129,25 @@ NAN_GETTER(KerberosServer::ContextCompleteGetter) {
     info.GetReturnValue().Set(Nan::New(server->_state->context_complete));
 }
 
+NAN_METHOD(TestMethod) {
+    std::string string(*Nan::Utf8String(info[0]));
+    bool shouldError = info[1]->BooleanValue();
+    Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
+
+    KerberosWorker::Run(callback, "kerberos:TestMethod", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
+        return onFinished([=](KerberosWorker* worker) {
+            Nan::HandleScope scope;
+            if (shouldError) {
+                v8::Local<v8::Value> argv[] = {Nan::Error("an error occurred"), Nan::Null()};
+                worker->Call(2, argv);
+            } else {
+                v8::Local<v8::Value> argv[] = {Nan::Null(), Nan::Null()};
+                worker->Call(2, argv);
+            }
+        });
+    });
+}
+
 NAN_MODULE_INIT(Init) {
     // Custom types
     KerberosClient::Init(target);
@@ -145,6 +165,9 @@ NAN_MODULE_INIT(Init) {
     Nan::Set(target,
              Nan::New("checkPassword").ToLocalChecked(),
              Nan::GetFunction(Nan::New<v8::FunctionTemplate>(CheckPassword)).ToLocalChecked());
+    Nan::Set(target,
+             Nan::New("_testMethod").ToLocalChecked(),
+             Nan::GetFunction(Nan::New<v8::FunctionTemplate>(TestMethod)).ToLocalChecked());
 }
 
 NODE_MODULE(kerberos, Init)
