@@ -15,6 +15,12 @@ describe('defineOperation', () => {
     expect(() => testMethod(42)).to.throw(/Invalid type for parameter/);
   });
 
+  it('should validate optional parameters, with valid parameters after', function() {
+    expect(() => testMethod('llamas', false, true, () => {})).to.throw(
+      /Invalid type for parameter `optionalString`/
+    );
+  });
+
   it('should support defaults', function(done) {
     expect(() => testMethod('testing')).to.not.throw();
     testMethod('testing', true, err => {
