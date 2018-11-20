@@ -59,4 +59,7 @@ NAN_METHOD(InitializeClient);
 NAN_METHOD(InitializeServer);
 NAN_METHOD(CheckPassword);
 
+// NOTE: explicitly used for unit testing `defineOperation`, not meant to be exported
+NAN_METHOD(TestMethod);
+
 #endif  // KERBEROS_NATIVE_EXTENSION_H
