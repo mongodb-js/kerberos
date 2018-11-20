@@ -232,8 +232,15 @@ NAN_METHOD(CheckPassword) {
     std::string username(*Nan::Utf8String(info[0]));
     std::string password(*Nan::Utf8String(info[1]));
     std::string service(*Nan::Utf8String(info[2]));
-    std::string defaultRealm(*Nan::Utf8String(info[3]));
-    Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[4]).ToLocalChecked());
+
+    std::string defaultRealm;
+    Nan::Callback* callback;
+    if (info[3]->IsFunction()) {
+        callback = new Nan::Callback(Nan::To<v8::Function>(info[3]).ToLocalChecked());
+    } else {
+        defaultRealm = *Nan::Utf8String(info[3]);
+        callback = new Nan::Callback(Nan::To<v8::Function>(info[4]).ToLocalChecked());
+    }
 
     KerberosWorker::Run(callback, "kerberos:CheckPassword", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
         std::shared_ptr<gss_result> result(authenticate_user_krb5pwd(
