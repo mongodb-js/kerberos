@@ -48,7 +48,7 @@ NAN_METHOD(KerberosClient::Step) {
         return onFinished([=](KerberosWorker* worker) {
             Nan::HandleScope scope;
             if (result->code == AUTH_GSS_ERROR) {
-                v8::Local<v8::Value> argv[] = {Nan::New(result->message).ToLocalChecked(), Nan::Null()};
+                v8::Local<v8::Value> argv[] = {Nan::Error(result->message), Nan::Null()};
                 worker->Call(2, argv);
                 return;
             }
@@ -76,7 +76,7 @@ NAN_METHOD(KerberosClient::UnwrapData) {
         return onFinished([=](KerberosWorker* worker) {
             Nan::HandleScope scope;
             if (result->code == AUTH_GSS_ERROR) {
-                v8::Local<v8::Value> argv[] = {Nan::New(result->message).ToLocalChecked(), Nan::Null()};
+                v8::Local<v8::Value> argv[] = {Nan::Error(result->message), Nan::Null()};
                 worker->Call(2, argv);
                 return;
             }
@@ -103,7 +103,7 @@ NAN_METHOD(KerberosClient::WrapData) {
             Nan::HandleScope scope;
 
             if (result->code == AUTH_GSS_ERROR) {
-                v8::Local<v8::Value> argv[] = {Nan::New(result->message).ToLocalChecked(), Nan::Null()};
+                v8::Local<v8::Value> argv[] = {Nan::Error(result->message), Nan::Null()};
                 worker->Call(2, argv);
                 return;
             }
@@ -161,7 +161,7 @@ NAN_METHOD(InitializeClient) {
         return onFinished([=](KerberosWorker* worker) {
             Nan::HandleScope scope;
             if (result->code == AUTH_GSS_ERROR) {
-                v8::Local<v8::Value> argv[] = {Nan::New(result->message).ToLocalChecked(), Nan::Null()};
+                v8::Local<v8::Value> argv[] = {Nan::Error(result->message), Nan::Null()};
                 worker->Call(2, argv);
                 return;
             }
