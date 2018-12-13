@@ -2,6 +2,9 @@
 #include <cstdio>
 #include "kerberos_sspi.h"
 
+// https://blogs.technet.microsoft.com/shanecothran/2010/07/16/maxtokensize-and-kerberos-token-bloat/
+const int SSPI_MAX_TOKEN_SIZE = 48000;
+
 static sspi_result* sspi_success_result(INT ret);
 static sspi_result* sspi_error_result(DWORD errCode, const SEC_CHAR* msg);
 static sspi_result* sspi_error_result_with_message(const char* message);
@@ -11,8 +14,9 @@ static CHAR* wide_to_utf8(WCHAR* value);
 
 sspi_client_state* sspi_client_state_new() {
     sspi_client_state* state = (sspi_client_state*)malloc(sizeof(sspi_client_state));
-    state->username = NULL;
+    state->spn = NULL;
     state->response = NULL;
+    state->username = NULL;
     state->responseConf = 0;
     state->context_complete = FALSE;
     return state;
@@ -291,6 +295,139 @@ done:
     }
 
     return result;
+}
+
+sspi_result*
+auth_sspi_server_step(sspi_server_state* state, const char* challenge)
+{
+    sspi_result* ret = NULL;
+    ULONG Attribs = 0;
+    SecBufferDesc OutBuffDesc;
+    SecBuffer OutSecBuff;
+    SecBufferDesc InBuffDesc;
+    SecBuffer InSecBuff;
+    TimeStamp Lifetime;
+
+    // Clear the context if it is a new request
+    if (state->context_complete) {
+        if (SecIsValidHandle(&state->ctx)) {
+            DeleteSecurityContext(&state->ctx);
+            SecInvalidateHandle(&state->ctx);
+        }
+        if (state->username != NULL) {
+            free(state->username);
+            state->username = NULL;
+        }
+        state->context_complete = FALSE;
+    }
+
+    // Always clear the old response
+    if (state->response != NULL) {
+        free(state->response);
+        state->response = NULL;
+    }
+
+    // If there is a challenge (data from the client) we need to give it to SSPI
+    if (challenge && *challenge) {
+        // Prepare input buffer
+        DWORD len;
+        InSecBuff.pvBuffer = base64_decode(challenge, &len);
+        InSecBuff.cbBuffer = len;
+        InSecBuff.BufferType = SECBUFFER_TOKEN;
+
+        InBuffDesc.ulVersion = SECBUFFER_VERSION;
+        InBuffDesc.cBuffers = 1;
+        InBuffDesc.pBuffers = &InSecBuff;
+    } else {
+        ret = sspi_error_result_with_message("No challenge parameter in request from client");
+        goto end;
+    }
+
+    // Prepare output buffer
+    OutSecBuff.cbBuffer = SSPI_MAX_TOKEN_SIZE;
+    OutSecBuff.BufferType = SECBUFFER_TOKEN;
+    OutSecBuff.pvBuffer = malloc(SSPI_MAX_TOKEN_SIZE);;
+
+    OutBuffDesc.ulVersion = SECBUFFER_VERSION;
+    OutBuffDesc.cBuffers = 1;
+    OutBuffDesc.pBuffers = &OutSecBuff;
+
+    SECURITY_STATUS ss = AcceptSecurityContext(&state->cred,
+                                               SecIsValidHandle(&state->ctx) ? &state->ctx : NULL,
+                                               &InBuffDesc,
+                                               Attribs,
+                                               SECURITY_NATIVE_DREP,
+                                               &state->ctx,
+                                               &OutBuffDesc,
+                                               &Attribs,
+                                               &Lifetime);
+
+    // Check if ready.
+    if (ss == SEC_E_OK) {
+        state->context_complete = TRUE;
+        ret = sspi_success_result(AUTH_GSS_COMPLETE);
+
+        // Get authenticated username.
+        SecPkgContext_NativeNamesW names;
+        SECURITY_STATUS ss = QueryContextAttributesW(&state->ctx, SECPKG_ATTR_NATIVE_NAMES, &names);
+
+        if (ss == SEC_E_OK) {
+            state->username = wide_to_utf8(names.sClientName);
+            FreeContextBuffer(names.sClientName);
+            if (state->username == NULL) {
+                ret = sspi_error_result_with_message("Unable to allocate memory for username");
+                goto end;
+            }
+            goto end;
+        }
+
+        // Impersonate the client (only if native names failed).
+        ss = ImpersonateSecurityContext(&state->ctx);
+        if (ss == SEC_E_OK) {
+            // Get username
+            DWORD cbUserName = 0;
+            GetUserName(NULL, &cbUserName);
+            state->username = (PCHAR)malloc(cbUserName);
+            if (state->username == NULL) {
+                ret = sspi_error_result_with_message("Unable to allocate memory for username");
+                goto end;
+            }
+
+            if (!GetUserName(state->username, &cbUserName)) {
+                ret = sspi_error_result_with_message("Unable to obtain username");
+                goto end;
+            }
+
+            RevertSecurityContext(&state->ctx);
+        } else {
+            ret = sspi_error_result_with_message("Unable to obtain username");
+            goto end;
+        }
+
+        goto end;
+    }
+
+    // Continue if applicable.
+    if (ss == SEC_I_CONTINUE_NEEDED) {
+        state->response = base64_encode((const SEC_CHAR*)OutSecBuff.pvBuffer, OutSecBuff.cbBuffer);
+
+        ret = sspi_success_result(AUTH_GSS_CONTINUE);
+        goto end;
+    }
+
+    if (ss > 0)
+    {
+        ret = sspi_error_result_with_message("AcceptSecurityContext failed");
+        goto end;
+    }
+
+end:
+    if (InSecBuff.pvBuffer)
+        free(InSecBuff.pvBuffer);
+    if (OutSecBuff.pvBuffer)
+        free(OutSecBuff.pvBuffer);
+
+    return ret;
 }
 
 sspi_result*
