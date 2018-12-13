@@ -116,10 +116,10 @@ NAN_METHOD(KerberosClient::WrapData) {
 
 /// KerberosServer
 KerberosServer::~KerberosServer() {
-    // if (_state != NULL) {
-    //     authenticate_gss_server_clean(_state);
-    //     _state = NULL;
-    // }
+    if (_state != NULL) {
+        auth_sspi_server_clean(_state);
+        _state = NULL;
+    }
 }
 
 NAN_METHOD(KerberosServer::Step) {
@@ -173,7 +173,32 @@ NAN_METHOD(InitializeClient) {
 }
 
 NAN_METHOD(InitializeServer) {
-    Nan::ThrowError("`initializeServer` is not implemented yet for windows");
+    std::wstring service(to_wstring(v8::String::Utf8Value(info[0]->ToString())));
+    Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[1]).ToLocalChecked());
+
+    KerberosWorker::Run(callback, "kerberos:InitializeServer", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
+        sspi_server_state* server_state = sspi_server_state_new();
+        std::shared_ptr<sspi_result> result(auth_sspi_server_init(
+            (WCHAR*)service.c_str(), server_state), ResultDeleter);
+
+        // must clean up state if we won't be using it, smart pointers won't help here unfortunately
+        // because we can't `release` a shared pointer.
+        if (result->code == AUTH_GSS_ERROR) {
+            free(server_state);
+        }
+
+        return onFinished([=](KerberosWorker* worker) {
+            Nan::HandleScope scope;
+            if (result->code == AUTH_GSS_ERROR) {
+                v8::Local<v8::Value> argv[] = {Nan::Error(result->message), Nan::Null()};
+                worker->Call(2, argv);
+                return;
+            }
+
+            v8::Local<v8::Value> argv[] = {Nan::Null(), KerberosServer::NewInstance(server_state)};
+            worker->Call(2, argv);
+        });
+    });
 }
 
 NAN_METHOD(PrincipalDetails) {

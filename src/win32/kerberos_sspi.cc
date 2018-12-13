@@ -18,6 +18,17 @@ sspi_client_state* sspi_client_state_new() {
     return state;
 }
 
+sspi_server_state* sspi_server_state_new() {
+    sspi_server_state* state = (sspi_server_state*)malloc(sizeof(sspi_server_state));
+    SecInvalidateHandle(&state->ctx);
+    SecInvalidateHandle(&state->cred);
+    state->response = NULL;
+    state->username = NULL;
+    state->context_complete = FALSE;
+    state->targetname = NULL;
+    return state;
+}
+
 VOID
 auth_sspi_client_clean(sspi_client_state* state) {
     if (state->haveCtx) {
@@ -39,6 +50,30 @@ auth_sspi_client_clean(sspi_client_state* state) {
     if (state->username != NULL) {
         free(state->username);
         state->username = NULL;
+    }
+}
+
+VOID
+auth_sspi_server_clean(sspi_server_state* state) {
+    if (SecIsValidHandle(&state->ctx)) {
+        DeleteSecurityContext(&state->ctx);
+        SecInvalidateHandle(&state->ctx);
+    }
+    if (SecIsValidHandle(&state->cred)) {
+        FreeCredentialsHandle(&state->cred);
+        SecInvalidateHandle(&state->cred);
+    }
+    if (state->response != NULL) {
+        free(state->response);
+        state->response = NULL;
+    }
+    if (state->username != NULL) {
+        free(state->username);
+        state->username = NULL;
+    }
+    if (state->targetname != NULL) {
+        free(state->targetname);
+        state->targetname = NULL;
     }
 }
 
@@ -85,7 +120,7 @@ auth_sspi_client_init(WCHAR* service,
         authIdentity.Flags = SEC_WINNT_AUTH_IDENTITY_UNICODE;
     }
 
-    /* Note that the first paramater, pszPrincipal, appears to be
+    /* Note that the first parameter, pszPrincipal, appears to be
      * completely ignored in the Kerberos SSP. For more details see
      * https://github.com/mongodb-labs/winkerberos/issues/11.
      * */
@@ -112,6 +147,27 @@ auth_sspi_client_init(WCHAR* service,
     }
 
     state->haveCred = 1;
+    return sspi_success_result(AUTH_GSS_COMPLETE);
+}
+
+sspi_result*
+auth_sspi_server_init(WCHAR* service,
+                      sspi_server_state* state) {
+    auth_sspi_server_clean(state);
+    TimeStamp ignored;
+    SECURITY_STATUS status = AcquireCredentialsHandleW(NULL,
+                                                       L"Negotiate",
+                                                       SECPKG_CRED_INBOUND,
+                                                       NULL,
+                                                       NULL,
+                                                       NULL,
+                                                       NULL,
+                                                       &state->cred,
+                                                       &ignored);
+    if (status != SEC_E_OK) {
+        return sspi_error_result(status, "AcquireCredentialsHandle");
+    }
+
     return sspi_success_result(AUTH_GSS_COMPLETE);
 }
 
@@ -428,7 +484,7 @@ auth_sspi_client_wrap(sspi_client_state* state,
     return result;
 }
 
-static sspi_result* sspi_success_result(int ret) {
+static sspi_result* sspi_success_result(INT ret) {
     sspi_result* result = (sspi_result*)malloc(sizeof(sspi_result));
     result->code = ret;
     result->message = NULL;
