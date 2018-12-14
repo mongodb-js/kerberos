@@ -3,6 +3,12 @@ build: off
 skip_tags: true
 
 environment:
+  global:
+    KERBEROS_USERNAME: administrator
+    KERBEROS_PASSWORD: Password01
+    KERBEROS_REALM: example.com
+    KERBEROS_PORT: 80
+
   matrix:
     - nodejs_version: "6"
     - nodejs_version: "8"
