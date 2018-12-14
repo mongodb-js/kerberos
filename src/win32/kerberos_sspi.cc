@@ -342,8 +342,7 @@ auth_sspi_server_step(sspi_server_state* state, const char* challenge)
         InBuffDesc.cBuffers = 1;
         InBuffDesc.pBuffers = &InSecBuff;
     } else {
-        ret = sspi_error_result_with_message("No challenge parameter in request from client");
-        goto end;
+        return sspi_error_result_with_message("No challenge parameter in request from client");
     }
 
     // Prepare output buffer
