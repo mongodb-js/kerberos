@@ -332,6 +332,9 @@ auth_sspi_server_step(sspi_server_state* state, const char* challenge)
         // Prepare input buffer
         DWORD len;
         InSecBuff.pvBuffer = base64_decode(challenge, &len);
+        if (!InSecBuff.pvBuffer) {
+            return sspi_error_result_with_message("Unable to base64 decode challenge");
+        }
         InSecBuff.cbBuffer = len;
         InSecBuff.BufferType = SECBUFFER_TOKEN;
 
