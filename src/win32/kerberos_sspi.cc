@@ -2,9 +2,6 @@
 #include <cstdio>
 #include "kerberos_sspi.h"
 
-// https://blogs.technet.microsoft.com/shanecothran/2010/07/16/maxtokensize-and-kerberos-token-bloat/
-const int SSPI_MAX_TOKEN_SIZE = 48000;
-
 static sspi_result* sspi_success_result(INT ret);
 static sspi_result* sspi_error_result(DWORD errCode, const SEC_CHAR* msg);
 static sspi_result* sspi_error_result_with_message(const char* message);
@@ -345,10 +342,16 @@ auth_sspi_server_step(sspi_server_state* state, const char* challenge)
         return sspi_error_result_with_message("No challenge parameter in request from client");
     }
 
+    PSecPkgInfoW pkgInfo;
+    if (QuerySecurityPackageInfoW(L"Negotiate", &pkgInfo) != SEC_E_OK) {
+        ret = sspi_error_result_with_message("Unable to get max token size for output buffer");
+        goto end;
+    }
+
     // Prepare output buffer
-    OutSecBuff.cbBuffer = SSPI_MAX_TOKEN_SIZE;
+    OutSecBuff.cbBuffer = pkgInfo->cbMaxToken;
     OutSecBuff.BufferType = SECBUFFER_TOKEN;
-    OutSecBuff.pvBuffer = malloc(SSPI_MAX_TOKEN_SIZE);
+    OutSecBuff.pvBuffer = malloc(pkgInfo->cbMaxToken);
     if (OutSecBuff.pvBuffer == NULL) {
         ret = sspi_error_result_with_message("Unable to allocate memory for output buffer");
         goto end;
