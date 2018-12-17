@@ -349,6 +349,10 @@ auth_sspi_server_step(sspi_server_state* state, const char* challenge)
     OutSecBuff.cbBuffer = SSPI_MAX_TOKEN_SIZE;
     OutSecBuff.BufferType = SECBUFFER_TOKEN;
     OutSecBuff.pvBuffer = malloc(SSPI_MAX_TOKEN_SIZE);
+    if (OutSecBuff.pvBuffer == NULL) {
+        ret = sspi_error_result_with_message("Unable to allocate memory for output buffer");
+        goto end;
+    }
 
     OutBuffDesc.ulVersion = SECBUFFER_VERSION;
     OutBuffDesc.cBuffers = 1;
