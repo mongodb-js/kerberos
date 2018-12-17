@@ -348,7 +348,7 @@ auth_sspi_server_step(sspi_server_state* state, const char* challenge)
     // Prepare output buffer
     OutSecBuff.cbBuffer = SSPI_MAX_TOKEN_SIZE;
     OutSecBuff.BufferType = SECBUFFER_TOKEN;
-    OutSecBuff.pvBuffer = malloc(SSPI_MAX_TOKEN_SIZE);;
+    OutSecBuff.pvBuffer = malloc(SSPI_MAX_TOKEN_SIZE);
 
     OutBuffDesc.ulVersion = SECBUFFER_VERSION;
     OutBuffDesc.cBuffers = 1;
@@ -412,8 +412,12 @@ auth_sspi_server_step(sspi_server_state* state, const char* challenge)
     // Continue if applicable.
     if (ss == SEC_I_CONTINUE_NEEDED) {
         state->response = base64_encode((const SEC_CHAR*)OutSecBuff.pvBuffer, OutSecBuff.cbBuffer);
+        if (!state->response) {
+            ret = sspi_error_result_with_message("Unable to base64 encode response message");
+        } else {
+            ret = sspi_success_result(AUTH_GSS_CONTINUE);
+        }
 
-        ret = sspi_success_result(AUTH_GSS_CONTINUE);
         goto end;
     }
 
@@ -474,7 +478,7 @@ auth_sspi_client_unwrap(sspi_client_state* state, SEC_CHAR* challenge) {
     if (wrapBufs[1].cbBuffer) {
         state->response = base64_encode((const SEC_CHAR*)wrapBufs[1].pvBuffer, wrapBufs[1].cbBuffer);
         if (!state->response) {
-            result = sspi_error_result_with_message("Unable to base65 encode decrypted message");
+            result = sspi_error_result_with_message("Unable to base64 encode decrypted message");
             goto done;
         }
     }
