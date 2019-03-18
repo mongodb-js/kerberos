@@ -428,9 +428,13 @@ auth_sspi_server_step(sspi_server_state* state, const char* challenge)
         goto end;
     }
 
-    if (ss > 0)
-    {
-        ret = sspi_error_result_with_message("AcceptSecurityContext failed");
+    // Clear the context when reached an invalid/error state that cannot be handled
+    if (ss != SEC_E_OK) {
+        ret = sspi_error_result(ss, "AcceptSecurityContext failed");
+        if (SecIsValidHandle(&state->ctx)) {
+            DeleteSecurityContext(&state->ctx);
+            SecInvalidateHandle(&state->ctx);
+        }
         goto end;
     }
 
