@@ -131,7 +131,7 @@ NAN_GETTER(KerberosServer::ContextCompleteGetter) {
 
 NAN_METHOD(TestMethod) {
     std::string string(*Nan::Utf8String(info[0]));
-    bool shouldError = info[1]->BooleanValue();
+    bool shouldError = Nan::To<bool>(info[1]).FromJust();
 
     std::string optionalString;
     Nan::Callback* callback;
