@@ -7,9 +7,11 @@ services:
 
 matrix:
   include:
-  - env: NODE_LTS=argon
-  - env: NODE_LTS=boron
-  - env: NODE_LTS=carbon
+  - env: NODE_VERSION=4
+  - env: NODE_VERSION=6
+  - env: NODE_VERSION=8
+  - env: NODE_VERSION=10
+  - env: NODE_VERSION=12
 
 script:
 - >
@@ -17,7 +19,7 @@ script:
   -i
   -v $(pwd):/app
   -w /app
-  -e NODE_LTS=$NODE_LTS
+  -e NODE_VERSION=$NODE_VERSION
   -e KERBEROS_USERNAME=administrator
   -e KERBEROS_PASSWORD=Password01
   -e KERBEROS_REALM=example.com

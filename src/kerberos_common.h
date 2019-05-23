@@ -26,9 +26,16 @@ inline void ResultDeleter(krb_result* result) {
 NAN_INLINE std::string StringOptionValue(v8::Local<v8::Object> options, const char* _key) {
     Nan::HandleScope scope;
     v8::Local<v8::String> key = Nan::New(_key).ToLocalChecked();
-    return !options.IsEmpty() && options->Has(key) && options->Get(key)->IsString()
-               ? std::string(*(Nan::Utf8String(options->Get(key))))
-               : std::string();
+    if (options.IsEmpty() || !Nan::Has(options, key).FromMaybe(false)) {
+      return std::string();
+    }
+
+    v8::Local<v8::Value> value = Nan::Get(options, key).ToLocalChecked();
+    if (!value->IsString()) {
+      return std::string();
+    }
+
+    return std::string(*(Nan::Utf8String(value)));
 }
 
 NAN_INLINE uint32_t UInt32OptionValue(v8::Local<v8::Object> options,
@@ -36,9 +43,16 @@ NAN_INLINE uint32_t UInt32OptionValue(v8::Local<v8::Object> options,
                                       uint32_t def) {
     Nan::HandleScope scope;
     v8::Local<v8::String> key = Nan::New(_key).ToLocalChecked();
-    return !options.IsEmpty() && options->Has(key) && options->Get(key)->IsNumber()
-               ? options->Get(key)->Uint32Value()
-               : def;
+    if (options.IsEmpty() || !Nan::Has(options, key).FromMaybe(false)) {
+      return def;
+    }
+
+    v8::Local<v8::Value> value = Nan::Get(options, key).ToLocalChecked();
+    if (!value->IsNumber()) {
+      return def;
+    }
+
+    return value->Uint32Value(Nan::GetCurrentContext()).FromJust();
 }
 
 #endif

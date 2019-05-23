@@ -12,8 +12,7 @@
 #define GSS_C_REPLAY_FLAG 4
 #define GSS_C_SEQUENCE_FLAG 8
 
-const wchar_t* to_wstring(const v8::String::Utf8Value& str) {
-    const char *bytes = *str;
+const wchar_t* to_wstring(const char *bytes) {
     unsigned int sizeOfStr = MultiByteToWideChar(CP_UTF8, 0, bytes, -1, NULL, 0);
     wchar_t *output = new wchar_t[sizeOfStr];
     MultiByteToWideChar(CP_UTF8, 0, bytes, -1, output, sizeOfStr);
@@ -23,9 +22,16 @@ const wchar_t* to_wstring(const v8::String::Utf8Value& str) {
 NAN_INLINE std::wstring WStringOptionValue(v8::Local<v8::Object> options, const char* _key) {
     Nan::HandleScope scope;
     v8::Local<v8::String> key = Nan::New(_key).ToLocalChecked();
-    return !options.IsEmpty() && options->Has(key) && options->Get(key)->IsString()
-               ? std::wstring(to_wstring(v8::String::Utf8Value(options->Get(key)->ToString())))
-               : std::wstring();
+    if (options.IsEmpty() || !Nan::Has(options, key).FromMaybe(false)) {
+      return std::wstring();
+    }
+
+    v8::Local<v8::Value> value = Nan::Get(options, key).ToLocalChecked();
+    if (!value->IsString()) {
+      return std::wstring();
+    }
+
+    return std::wstring(to_wstring(*(Nan::Utf8String(value))));
 }
 
 /// KerberosClient
@@ -131,7 +137,7 @@ NAN_METHOD(KerberosServer::Step) {
 
 /// Global Methods
 NAN_METHOD(InitializeClient) {
-    std::wstring service(to_wstring(v8::String::Utf8Value(info[0]->ToString())));
+    std::wstring service(to_wstring(*(Nan::Utf8String(info[0]))));
     v8::Local<v8::Object> options = Nan::To<v8::Object>(info[1]).ToLocalChecked();
     Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
 
