@@ -85,7 +85,7 @@ describe('Kerberos (win32)', function() {
     test.client.close().then(() => delete test.client);
   });
 
-  it('should create a kerberos client', function() {
+  it.skip('should create a kerberos client', function() {
     // this is a very basic test used to pass appveyor and provide prebuild binaries
     return kerberos.initializeClient(service, { user: username, password }).then(krbClient => {
       expect(krbClient).to.exist;
