@@ -90,6 +90,15 @@ security could be compromised if you do.</p>
 <a name="KerberosClient"></a>
 
 ## KerberosClient
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| username | <code>string</code> | The username used for authentication |
+| response | <code>string</code> | The last response received during authentication steps |
+| responseConf | <code>string</code> | Indicates whether confidentiality was applied or not (GSSAPI only) |
+| contextComplete | <code>boolean</code> | Indicates that authentication has successfully completed or not |
+
 
 * [KerberosClient](#KerberosClient)
 
@@ -111,7 +120,7 @@ security could be compromised if you do.</p>
 
 Processes a single kerberos client-side step using the supplied server challenge.
 
-**Returns**: <code>Promise</code> - returns Promise if no callback passed
+**Returns**: <code>Promise</code> - returns Promise if no callback passed  
 <a name="KerberosClient+wrap"></a>
 
 ### *kerberosClient*.wrap(challenge, [options], [callback])
@@ -125,7 +134,7 @@ Processes a single kerberos client-side step using the supplied server challenge
 
 Perform the client side kerberos wrap step.
 
-**Returns**: <code>Promise</code> - returns Promise if no callback passed
+**Returns**: <code>Promise</code> - returns Promise if no callback passed  
 <a name="KerberosClient+unwrap"></a>
 
 ### *kerberosClient*.unwrap(challenge, [callback])
@@ -137,22 +146,31 @@ Perform the client side kerberos wrap step.
 
 Perform the client side kerberos unwrap step
 
-**Returns**: <code>Promise</code> - returns Promise if no callback passed
+**Returns**: <code>Promise</code> - returns Promise if no callback passed  
 <a name="KerberosServer"></a>
 
 ## KerberosServer
+**Properties**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| username | <code>string</code> | The username used for authentication |
+| response | <code>string</code> | The last response received during authentication steps |
+| targetName | <code>string</code> | The target used for authentication |
+| contextComplete | <code>boolean</code> | Indicates that authentication has successfully completed or not |
+
 <a name="KerberosServer+step"></a>
 
-### *kerberosServer*.step(challenge, callback)
+### *kerberosServer*.step(challenge, [callback])
 
 | Param | Type | Description |
 | --- | --- | --- |
 | challenge | <code>string</code> | A string containing the base64-encoded client data |
-| callback | <code>function</code> |  |
+| [callback] | <code>function</code> |  |
 
 Processes a single kerberos server-side step using the supplied client data.
 
-**Returns**: <code>Promise</code> - returns Promise if no callback passed
+**Returns**: <code>Promise</code> - returns Promise if no callback passed  
 <a name="checkPassword"></a>
 
 ## checkPassword(username, password, service, [defaultRealm], [callback])
@@ -181,7 +199,7 @@ IMPORTANT: This method is vulnerable to KDC spoofing attacks and it should
 only be used for testing. Do not use this in any production system - your
 security could be compromised if you do.
 
-**Returns**: <code>Promise</code> - returns Promise if no callback passed
+**Returns**: <code>Promise</code> - returns Promise if no callback passed  
 <a name="principalDetails"></a>
 
 ## principalDetails(service, hostname, [callback])
@@ -196,7 +214,7 @@ This function returns the service principal for the server given a service type 
 
 Details are looked up via the `/etc/keytab` file.
 
-**Returns**: <code>Promise</code> - returns Promise if no callback passed
+**Returns**: <code>Promise</code> - returns Promise if no callback passed  
 <a name="initializeClient"></a>
 
 ## initializeClient(service, [options], [callback])
@@ -212,7 +230,7 @@ Details are looked up via the `/etc/keytab` file.
 
 Initializes a context for client-side authentication with the given service principal.
 
-**Returns**: <code>Promise</code> - returns Promise if no callback passed
+**Returns**: <code>Promise</code> - returns Promise if no callback passed  
 <a name="initializeServer"></a>
 
 ## initializeServer(service, [callback])
@@ -224,4 +242,4 @@ Initializes a context for client-side authentication with the given service prin
 
 Initializes a context for server-side authentication with the given service principal.
 
-**Returns**: <code>Promise</code> - returns Promise if no callback passed
+**Returns**: <code>Promise</code> - returns Promise if no callback passed  
