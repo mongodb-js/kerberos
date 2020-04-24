@@ -7,7 +7,7 @@ const platformDevDependencies = require('./package.json').platformDevDependencie
 if (process.env.NODE_ENV !== 'production') {
     try {
         require('prettier');
-        Objects.keys(platformDevDependencies).forEach(d => {
+        Object.keys(platformDevDependencies).forEach(d => {
             const { version, targets } = platformDevDependencies[d];
             if (targets.includes(os.type())) {
                 execSync(`npm install --no-save ${d}@${version}`, { stdio: 'inherit' });
