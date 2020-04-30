@@ -11,7 +11,7 @@ if (process.env.NODE_ENV !== 'production') {
     Object.keys(platformDevDependencies).forEach(d => {
       const version = platformDevDependencies[d].version;
       const targets = platformDevDependencies[d].targets;
-      if (targets.includes(os.type())) {
+      if (targets.indexOf(os.type()) > -1) {
         execSync(`npm install --no-save ${d}@${version}`, { stdio: ['ignore', 'ignore', 'inherit'] });
       }
     });
