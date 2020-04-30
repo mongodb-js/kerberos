@@ -9,7 +9,8 @@ if (process.env.NODE_ENV !== 'production') {
   try {
     require('prettier');
     Object.keys(platformDevDependencies).forEach(d => {
-      const { version, targets } = platformDevDependencies[d];
+      const version = platformDevDependencies[d].version;
+      const targets = platformDevDependencies[d].targets;
       if (targets.includes(os.type())) {
         execSync(`npm install --no-save ${d}@${version}`, { stdio: ['ignore', 'ignore', 'inherit'] });
       }
