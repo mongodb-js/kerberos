@@ -14,7 +14,7 @@
   ],
   "dependencies": {
     "bindings": "^1.5.0",
-    "nan": "^2.14.0",
+    "nan": "^2.14.1",
     "prebuild-install": "^5.3.0"
   },
   "devDependencies": {
@@ -27,8 +27,8 @@
     "jsdoc-to-markdown": "^4.0.1",
     "mocha": "^5.2.0",
     "mongodb": "^3.2.5",
-    "prebuild": "^7.6.2",
-    "prebuild-ci": "^2.2.3",
+    "prebuild": "^9.0.1",
+    "prebuild-ci": "^3.1.0",
     "prettier": "^1.17.1",
     "request": "^2.88.0",
     "segfault-handler": "^1.2.0",
@@ -43,7 +43,8 @@
     "test": "mocha ./test && prebuild-ci",
     "docs": "jsdoc2md --template etc/README.hbs --plugin dmd-clear --files lib/kerberos.js > README.md",
     "rebuild": "prebuild --compile",
-    "prebuild": "prebuild --all --strip --verbose",
+    "prebuild": "prebuild  --strip --verbose --all",
+    "prebuild-legacy": "prebuild  --strip --verbose --runtime node --target 4.0.0",
     "release": "standard-version -i HISTORY.md"
   },
   "author": "Matt Broadstone <mbroadst@gmail.com>",

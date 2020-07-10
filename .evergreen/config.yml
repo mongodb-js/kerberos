@@ -62,7 +62,15 @@ functions:
         working_dir: src
         script: >
           ${PREPARE_SHELL}
-          ${PROJECT_DIRECTORY}/.evergreen/run-prebuild.sh
+          NODE_GITHUB_TOKEN=${github_token} ${PROJECT_DIRECTORY}/.evergreen/run-prebuild.sh
+  run prebuild and force publish:
+    - command: shell.exec
+      type: test
+      params:
+        working_dir: src
+        script: >
+          ${PREPARE_SHELL}
+          NODE_FORCE_PUBLISH=1 NODE_GITHUB_TOKEN=${github_token} ${PROJECT_DIRECTORY}/.evergreen/run-prebuild.sh
   install dependencies:
     - command: shell.exec
       type: setup
@@ -70,7 +78,7 @@ functions:
         working_dir: src
         script: |
           ${PREPARE_SHELL}
-          NODE_LTS_NAME=${NODE_LTS_NAME} bash ${PROJECT_DIRECTORY}/.evergreen/install-dependencies.sh
+          NODE_VERSION=${node_version} bash ${PROJECT_DIRECTORY}/.evergreen/install-dependencies.sh
 
 pre:
   - func: fetch source
@@ -80,14 +88,10 @@ tasks:
     commands:
       - func: install dependencies
       - func: run prebuild
-        vars:
-          test_env: NODE_FORCE_PUBLISH=1 NODE_GITHUB_TOKEN=${github_token}
   - name: run-prebuild-force-publish
     commands:
       - func: install dependencies
-      - func: run prebuild
-        vars:
-          test_env: NODE_FORCE_PUBLISH=1 NODE_GITHUB_TOKEN=${github_token}          
+      - func: run prebuild and force publish
 
 buildvariants:
   - name: ubuntu1604

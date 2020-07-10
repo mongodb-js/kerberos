@@ -48,4 +48,5 @@ else
   echo "Will prebuild without submit"
   npm run prebuild
   echo "Local prebuild successful."
+  ls ./prebuilds
 fi
