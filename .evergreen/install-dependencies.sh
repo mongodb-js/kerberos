@@ -58,4 +58,4 @@ registry=https://registry.npmjs.org
 EOT
 
 # install node dependencies
-npm install
+npm install --unsafe-perm

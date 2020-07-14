@@ -56,6 +56,23 @@ functions:
         script: >
           ${PREPARE_SHELL}
           ${PROJECT_DIRECTORY}/.evergreen/run-tests.sh
+  run tests ubuntu:
+    - command: shell.exec
+      type: test
+      params:
+        working_dir: src
+        script: >
+          ${PREPARE_SHELL}
+            docker run -i \
+            -v ${PROJECT_DIRECTORY}:/app \
+            -w /app \
+            -e NODE_VERSION=$NODE_VERSION \
+            -e KERBEROS_USERNAME=administrator \
+            -e KERBEROS_PASSWORD=Password01 \
+            -e KERBEROS_REALM=example.com \
+            -e KERBEROS_PORT=80 \
+            ubuntu:16.04 \
+            /bin/bash /app/.evergreen/run-tests-ubuntu.sh
   run prebuild:
     - command: shell.exec
       type: test
@@ -89,6 +106,9 @@ tasks:
     commands:
       - func: install dependencies
       - func: run tests
+  - name: run-tests-ubuntu
+    commands:
+      - func: run tests ubuntu
   - name: run-prebuild
     commands:
       - func: install dependencies
@@ -103,14 +123,14 @@ buildvariants:
     display_name: "macOS 10.14"
     run_on: macos-1014
     tasks:
-      - run-tests
+      # - run-tests
       - run-prebuild
       - run-prebuild-force-publish
   - name: windows-x64
     display_name: "Windows 2016"
     run_on: windows-64-vs2017-test
     tasks:
-      - run-tests
+      # - run-tests
       - run-prebuild
       - run-prebuild-force-publish
   - name: suse12-s390x
@@ -121,7 +141,7 @@ buildvariants:
       packager_distro: suse12
       packager_arch: s390x
     tasks:
-      - run-tests
+      # - run-tests
       - run-prebuild
       - run-prebuild-force-publish
   - name: ubuntu1804-64
@@ -132,7 +152,7 @@ buildvariants:
       packager_distro: ubuntu1804
       packager_arch: x86_64
     tasks:
-      - run-tests
+      - run-tests-ubuntu
       - run-prebuild
       - run-prebuild-force-publish
   - name: ubuntu1804-arm64
@@ -143,6 +163,6 @@ buildvariants:
       packager_distro: ubuntu1804
       packager_arch: arm64
     tasks:
-      - run-tests
+      # - run-tests
       - run-prebuild
       - run-prebuild-force-publish
