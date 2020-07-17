@@ -6,6 +6,13 @@
       'sources': [
         'src/kerberos.cc'
       ],
+      'xcode_settings': {
+        'MACOSX_DEPLOYMENT_TARGET': '10.12',
+        'OTHER_CFLAGS': [
+          "-std=c++11",
+          "-stdlib=libc++"
+        ],
+      },
       'conditions': [
         ['OS=="mac" or OS=="linux"', {
           'sources': [
@@ -31,16 +38,6 @@
               'secur32.lib',
               'Shlwapi.lib'
             ]
-          }
-        }],
-        ['OS=="mac"', {
-          'cflags!': [ '-fno-exceptions' ],
-          'cflags_cc!': [ '-fno-exceptions' ],
-          'xcode_settings': {
-            'GCC_ENABLE_CPP_RTTI': 'YES',
-            'OTHER_CPLUSPLUSFLAGS' : [ '-std=c++11', '-stdlib=libc++' ],
-            'OTHER_LDFLAGS': [ '-stdlib=libc++' ],
-            'MACOSX_DEPLOYMENT_TARGET': "10.7"
           }
         }]
       ]

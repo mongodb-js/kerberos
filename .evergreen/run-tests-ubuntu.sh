@@ -116,11 +116,31 @@ else
     echo -e "SUCCESS: Apache site built and set for Kerberos auth\nActual Output:\n$CURL_OUTPUT"
 fi
 
+NODE_VERSION=${NODE_VERSION:-14}
+NODE_ARTIFACTS_PATH="${HOME}/node-artifacts"
+NPM_CACHE_DIR="${NODE_ARTIFACTS_PATH}/npm"
+NPM_TMP_DIR="${NODE_ARTIFACTS_PATH}/tmp"
+
+export NVM_DIR="${NODE_ARTIFACTS_PATH}/nvm"
+
+# create node artifacts path if needed
+mkdir -p ${NVM_DIR}
+mkdir -p ${NPM_CACHE_DIR}
+mkdir -p "${NPM_TMP_DIR}"
+
 echo "Installing Node.js"
-curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.11/install.sh | bash
-export NVM_DIR="$HOME/.nvm"
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
+
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 nvm install $NODE_VERSION
+
+cat <<EOT > .npmrc
+devdir=${NPM_CACHE_DIR}/.node-gyp
+init-module=${NPM_CACHE_DIR}/.npm-init.js
+cache=${NPM_CACHE_DIR}
+tmp=${NPM_TMP_DIR}
+registry=https://registry.npmjs.org
+EOT
 
 echo "Installing dependencies and running test"
 npm install --unsafe-perm
