@@ -2,6 +2,7 @@
   'targets': [
     {
       'target_name': 'kerberos',
+      'type': 'loadable_module',
       'include_dirs': [ '<!(node -e "require(\'nan\')")' ],
       'sources': [
         'src/kerberos.cc'
@@ -25,7 +26,16 @@
               '-lkrb5',
               '-lgssapi_krb5'
             ]
-          }
+          },
+          'conditions': [
+            ['_type=="static_library"', {
+              'link_settings': {
+                'libraries': [
+                  '-lcom_err'
+                ]
+              }
+            }]
+          ]
         }],
         ['OS=="win"',  {
           'sources': [
@@ -34,9 +44,9 @@
           ],
           'link_settings': {
             'libraries': [
-              'crypt32.lib',
-              'secur32.lib',
-              'Shlwapi.lib'
+              '-lcrypt32',
+              '-lsecur32',
+              '-lShlwapi'
             ]
           }
         }]
