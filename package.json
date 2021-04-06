@@ -1,6 +1,6 @@
 {
   "name": "kerberos",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "Kerberos library for Node.js",
   "main": "index.js",
   "repository": {
@@ -31,7 +31,7 @@
     "prettier": "^1.17.1",
     "request": "^2.88.0",
     "segfault-handler": "^1.2.0",
-    "standard-version": "^4.4.0"
+    "standard-version": "^9.2.0"
   },
   "scripts": {
     "install": "prebuild-install || node-gyp rebuild",
@@ -48,6 +48,5 @@
   },
   "author": "Matt Broadstone <mbroadst@gmail.com>",
   "license": "Apache-2.0",
-  "readmeFilename": "README.md",
-  "gitHead": "035be2e4619d7f3d7ea5103da1f60a6045ef8d7c"
+  "readmeFilename": "README.md"
 }

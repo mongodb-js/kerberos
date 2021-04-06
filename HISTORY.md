@@ -1,6 +1,14 @@
-# Change Log
+# Changelog
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+
+### [1.1.5](https://github.com/mongodb-js/kerberos/compare/v1.1.4...v1.1.5) (2021-04-06)
+
+
+### Bug Fixes
+
+* temporarily roll back node-abi until lgeiger/node-abi/[#90](https://github.com/mongodb-js/kerberos/issues/90) is resolved ([880ae2e](https://github.com/mongodb-js/kerberos/commit/880ae2eee6a8fe565ab627717d1d81ae85896abf))
+* **build:** make addon buildable as static library ([#119](https://github.com/mongodb-js/kerberos/issues/119)) ([786e7d8](https://github.com/mongodb-js/kerberos/commit/786e7d83672ad5ff2718c9a440dbd180f8e7b24a))
 
 <a name="1.1.4"></a>
 ## [1.1.4](https://github.com/mongodb-js/kerberos/compare/v1.1.3...v1.1.4) (2020-10-13)
