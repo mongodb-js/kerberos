@@ -156,7 +156,7 @@ NAN_METHOD(TestMethod) {
     });
 }
 
-NAN_MODULE_INIT(Init) {
+static NAN_MODULE_INIT(Init) {
     // Custom types
     KerberosClient::Init(target);
     KerberosServer::Init(target);
