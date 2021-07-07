@@ -12,6 +12,13 @@
     "security",
     "authentication"
   ],
+  "author": { 
+    "name" : "The MongoDB NodeJS Team", 
+    "email" : "dbx-node@mongodb.com"
+  },
+  "bugs": {
+    "url": "https://jira.mongodb.org/projects/NODE/issues/"
+  },
   "dependencies": {
     "bindings": "^1.5.0",
     "nan": "^2.14.1",
@@ -46,7 +53,6 @@
     "prebuild-legacy": "prebuild  --strip --verbose --runtime node --target 4.0.0",
     "release": "standard-version -i HISTORY.md"
   },
-  "author": "Matt Broadstone <mbroadst@gmail.com>",
   "license": "Apache-2.0",
   "readmeFilename": "README.md"
 }
