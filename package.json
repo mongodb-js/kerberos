@@ -13,8 +13,8 @@
     "authentication"
   ],
   "author": { 
-    "name" : "The MongoDB NodeJS Team", 
-    "email" : "dbx-node@mongodb.com"
+    "name": "The MongoDB NodeJS Team", 
+    "email": "dbx-node@mongodb.com"
   },
   "bugs": {
     "url": "https://jira.mongodb.org/projects/NODE/issues/"
