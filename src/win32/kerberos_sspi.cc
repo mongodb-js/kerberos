@@ -54,7 +54,7 @@ auth_sspi_client_init(WCHAR* service,
                       WCHAR* mechoid,
                       sspi_client_state* state) {
     SECURITY_STATUS status;
-    SEC_WINNT_AUTH_IDENTITY_W authIdentity;
+    SEC_WINNT_AUTH_IDENTITY_W authIdentity{};
     TimeStamp ignored;
 
     state->response = NULL;
