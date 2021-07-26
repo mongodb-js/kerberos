@@ -279,7 +279,7 @@ auth_sspi_client_unwrap(sspi_client_state* state, SEC_CHAR* challenge) {
     if (wrapBufs[1].cbBuffer) {
         state->response = base64_encode((const SEC_CHAR*)wrapBufs[1].pvBuffer, wrapBufs[1].cbBuffer);
         if (!state->response) {
-            result = sspi_error_result_with_message("Unable to base65 encode decrypted message");
+            result = sspi_error_result_with_message("Unable to base64 encode decrypted message");
             goto done;
         }
     }
