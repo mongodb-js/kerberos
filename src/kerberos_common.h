@@ -1,5 +1,5 @@
-#ifndef COMMON_H
-#define COMMON_H
+#ifndef KERBEROS_COMMON_H
+#define KERBEROS_COMMON_H
 
 #include <nan.h>
 

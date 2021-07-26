@@ -14,6 +14,9 @@
  * limitations under the License.
  **/
 
+#ifndef KERBEROS_GSS_H
+#define KERBEROS_GSS_H
+
 extern "C" {
     #include <gssapi/gssapi.h>
     #include <gssapi/gssapi_generic.h>
@@ -91,3 +94,5 @@ gss_result* authenticate_user_krb5pwd(const char* user,
                                       const char* pswd,
                                       const char* service,
                                       const char* default_realm);
+
+#endif
