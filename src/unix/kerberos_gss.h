@@ -20,7 +20,9 @@ extern "C" {
     #include <gssapi/gssapi_krb5.h>
 }
 
-#define krb5_get_err_text(context, code) error_message(code)
+inline const char* krb5_get_err_text(const krb5_context&, krb5_error_code code) {
+    return error_message(code);
+}
 
 #define AUTH_GSS_ERROR -1
 #define AUTH_GSS_COMPLETE 1
