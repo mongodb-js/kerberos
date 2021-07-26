@@ -51,13 +51,13 @@ NAN_METHOD(KerberosClient::Step) {
     Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[1]).ToLocalChecked());
 
     KerberosWorker::Run(callback, "kerberos:ClientStep", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
-        std::shared_ptr<sspi_result> result(
-            auth_sspi_client_step(client->state(), (SEC_CHAR*)challenge.c_str(), NULL), ResultDeleter);
+        sspi_result result =
+            auth_sspi_client_step(client->state(), (SEC_CHAR*)challenge.c_str(), NULL);
 
         return onFinished([=](KerberosWorker* worker) {
             Nan::HandleScope scope;
-            if (result->code == AUTH_GSS_ERROR) {
-                v8::Local<v8::Value> argv[] = {Nan::Error(result->message), Nan::Null()};
+            if (result.code == AUTH_GSS_ERROR) {
+                v8::Local<v8::Value> argv[] = {Nan::Error(result.message.c_str()), Nan::Null()};
                 worker->Call(2, argv);
                 return;
             }
@@ -79,13 +79,13 @@ NAN_METHOD(KerberosClient::UnwrapData) {
     Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[1]).ToLocalChecked());
 
     KerberosWorker::Run(callback, "kerberos:ClientUnwrap", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
-        std::shared_ptr<sspi_result> result(
-            auth_sspi_client_unwrap(client->state(), (SEC_CHAR*)challenge.c_str()), ResultDeleter);
+        sspi_result result =
+            auth_sspi_client_unwrap(client->state(), (SEC_CHAR*)challenge.c_str());
 
         return onFinished([=](KerberosWorker* worker) {
             Nan::HandleScope scope;
-            if (result->code == AUTH_GSS_ERROR) {
-                v8::Local<v8::Value> argv[] = {Nan::Error(result->message), Nan::Null()};
+            if (result.code == AUTH_GSS_ERROR) {
+                v8::Local<v8::Value> argv[] = {Nan::Error(result.message.c_str()), Nan::Null()};
                 worker->Call(2, argv);
                 return;
             }
@@ -105,14 +105,14 @@ NAN_METHOD(KerberosClient::WrapData) {
     int protect = 0; // NOTE: this should be an option
 
     KerberosWorker::Run(callback, "kerberos:ClientWrap", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
-        std::shared_ptr<sspi_result> result(auth_sspi_client_wrap(
-            client->state(), (SEC_CHAR*)challenge.c_str(), (SEC_CHAR*)user.c_str(), user.length(), protect), ResultDeleter);
+        sspi_result result = auth_sspi_client_wrap(
+            client->state(), (SEC_CHAR*)challenge.c_str(), (SEC_CHAR*)user.c_str(), user.length(), protect);
 
         return onFinished([=](KerberosWorker* worker) {
             Nan::HandleScope scope;
 
-            if (result->code == AUTH_GSS_ERROR) {
-                v8::Local<v8::Value> argv[] = {Nan::Error(result->message), Nan::Null()};
+            if (result.code == AUTH_GSS_ERROR) {
+                v8::Local<v8::Value> argv[] = {Nan::Error(result.message.c_str()), Nan::Null()};
                 worker->Call(2, argv);
                 return;
             }
@@ -156,21 +156,22 @@ NAN_METHOD(InitializeClient) {
 
     KerberosWorker::Run(callback, "kerberos:InitializeClient", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
         sspi_client_state* client_state = sspi_client_state_new();
-        std::shared_ptr<sspi_result> result(auth_sspi_client_init(
+        sspi_result result = auth_sspi_client_init(
             (WCHAR*)service.c_str(), gss_flags, (WCHAR*)user.c_str(), user.length(),
             (WCHAR*)domain.c_str(), domain.length(), (WCHAR*)password.c_str(), password.length(),
-            (WCHAR*)mech_oid.c_str(), client_state), ResultDeleter);
+            (WCHAR*)mech_oid.c_str(), client_state);
 
+        // XXX a) The comment is wrong; b) This leaks memory
         // must clean up state if we won't be using it, smart pointers won't help here unfortunately
         // because we can't `release` a shared pointer.
-        if (result->code == AUTH_GSS_ERROR) {
+        if (result.code == AUTH_GSS_ERROR) {
             free(client_state);
         }
 
         return onFinished([=](KerberosWorker* worker) {
             Nan::HandleScope scope;
-            if (result->code == AUTH_GSS_ERROR) {
-                v8::Local<v8::Value> argv[] = {Nan::Error(result->message), Nan::Null()};
+            if (result.code == AUTH_GSS_ERROR) {
+                v8::Local<v8::Value> argv[] = {Nan::Error(result.message.c_str()), Nan::Null()};
                 worker->Call(2, argv);
                 return;
             }

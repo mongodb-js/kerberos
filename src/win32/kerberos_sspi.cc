@@ -2,9 +2,9 @@
 #include <cstdio>
 #include "kerberos_sspi.h"
 
-static sspi_result* sspi_success_result(INT ret);
-static sspi_result* sspi_error_result(DWORD errCode, const SEC_CHAR* msg);
-static sspi_result* sspi_error_result_with_message(const char* message);
+static sspi_result sspi_success_result(INT ret);
+static sspi_result sspi_error_result(DWORD errCode, const SEC_CHAR* msg);
+static sspi_result sspi_error_result_with_message(const char* message);
 static SEC_CHAR* base64_encode(const SEC_CHAR* value, DWORD vlen);
 static SEC_CHAR* base64_decode(const SEC_CHAR* value, DWORD* rlen);
 static CHAR* wide_to_utf8(WCHAR* value);
@@ -42,7 +42,7 @@ auth_sspi_client_clean(sspi_client_state* state) {
     }
 }
 
-sspi_result*
+sspi_result
 auth_sspi_client_init(WCHAR* service,
                       ULONG flags,
                       WCHAR* user,
@@ -115,7 +115,7 @@ auth_sspi_client_init(WCHAR* service,
     return sspi_success_result(AUTH_GSS_COMPLETE);
 }
 
-sspi_result*
+sspi_result
 auth_sspi_client_step(sspi_client_state* state, SEC_CHAR* challenge, SecPkgContext_Bindings* sec_pkg_context_bindings) {
     SecBufferDesc inbuf;
     SecBuffer inBufs[2];
@@ -126,7 +126,7 @@ auth_sspi_client_step(sspi_client_state* state, SEC_CHAR* challenge, SecPkgConte
     DWORD len;
     BOOL haveToken = FALSE;
     INT tokenBufferIndex = 0;
-    sspi_result* result;
+    sspi_result result;
 
     if (state->response != NULL) {
         free(state->response);
@@ -237,9 +237,9 @@ done:
     return result;
 }
 
-sspi_result*
+sspi_result
 auth_sspi_client_unwrap(sspi_client_state* state, SEC_CHAR* challenge) {
-    sspi_result* result;
+    sspi_result result;
     SECURITY_STATUS status;
     DWORD len;
     SecBuffer wrapBufs[2];
@@ -293,7 +293,7 @@ done:
     return result;
 }
 
-sspi_result*
+sspi_result
 auth_sspi_client_wrap(sspi_client_state* state,
                       SEC_CHAR* data,
                       SEC_CHAR* user,
@@ -416,7 +416,7 @@ auth_sspi_client_wrap(sspi_client_state* state,
              wrapBufs[2].cbBuffer);
     state->response = base64_encode(outbuf, outbufSize);
 
-    sspi_result* result;
+    sspi_result result;
     if (!state->response) {
         result = sspi_error_result_with_message("Unable to base64 decode outbuf");
     } else {
@@ -428,14 +428,11 @@ auth_sspi_client_wrap(sspi_client_state* state,
     return result;
 }
 
-static sspi_result* sspi_success_result(int ret) {
-    sspi_result* result = (sspi_result*)malloc(sizeof(sspi_result));
-    result->code = ret;
-    result->message = NULL;
-    return result;
+static sspi_result sspi_success_result(int ret) {
+    return { ret, "", "" };
 }
 
-static sspi_result* sspi_error_result(DWORD errCode, const SEC_CHAR* msg) {
+static sspi_result sspi_error_result(DWORD errCode, const SEC_CHAR* msg) {
     SEC_CHAR* err = NULL;
     DWORD status;
     DWORD flags = (FORMAT_MESSAGE_ALLOCATE_BUFFER |
@@ -450,24 +447,20 @@ static sspi_result* sspi_error_result(DWORD errCode, const SEC_CHAR* msg) {
                             0,
                             NULL);
 
-    sspi_result* result = (sspi_result*)malloc(sizeof(sspi_result));
-    result->code = AUTH_GSS_ERROR;
-    result->message = (char*)malloc(1024 + 2);
+    sspi_result result;
+    result.code = AUTH_GSS_ERROR;
     if (status) {
-        snprintf(result->message, 1024 + 2, "%s: %s", msg, err);
+        result.message = std::string(msg) + ": " + err;
     } else {
-        snprintf(result->message, 1024 + 2, "%s", msg);
+        result.message = msg;
     }
     LocalFree(err);
 
     return result;
 }
 
-static sspi_result* sspi_error_result_with_message(const char* message) {
-    sspi_result* result = (sspi_result*)malloc(sizeof(sspi_result));
-    result->code = AUTH_GSS_ERROR;
-    result->message = strdup(message);
-    return result;
+static sspi_result sspi_error_result_with_message(const char* message) {
+    return { AUTH_GSS_ERROR, message, "" };
 }
 
 static SEC_CHAR*
