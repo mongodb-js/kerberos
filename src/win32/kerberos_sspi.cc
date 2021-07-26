@@ -436,7 +436,7 @@ static sspi_result* sspi_success_result(int ret) {
 }
 
 static sspi_result* sspi_error_result(DWORD errCode, const SEC_CHAR* msg) {
-    SEC_CHAR* err;
+    SEC_CHAR* err = NULL;
     DWORD status;
     DWORD flags = (FORMAT_MESSAGE_ALLOCATE_BUFFER |
                    FORMAT_MESSAGE_FROM_SYSTEM |
@@ -458,6 +458,7 @@ static sspi_result* sspi_error_result(DWORD errCode, const SEC_CHAR* msg) {
     } else {
         snprintf(result->message, 1024 + 2, "%s", msg);
     }
+    LocalFree(err);
 
     return result;
 }
