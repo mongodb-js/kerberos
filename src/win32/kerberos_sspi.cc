@@ -452,11 +452,11 @@ static sspi_result* sspi_error_result(DWORD errCode, const SEC_CHAR* msg) {
 
     sspi_result* result = (sspi_result*)malloc(sizeof(sspi_result));
     result->code = AUTH_GSS_ERROR;
-    result->message = (char*)malloc(sizeof(char) * 1024 + 2);
+    result->message = (char*)malloc(1024 + 2);
     if (status) {
-        sprintf(result->message, "%s: %s", msg, err);
+        snprintf(result->message, 1024 + 2, "%s: %s", msg, err);
     } else {
-        sprintf(result->message, "%s", msg);
+        snprintf(result->message, 1024 + 2, "%s", msg);
     }
 
     return result;

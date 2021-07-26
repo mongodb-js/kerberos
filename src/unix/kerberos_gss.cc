@@ -763,8 +763,8 @@ static gss_result* gss_error_result(OM_uint32 err_maj, OM_uint32 err_min) {
 
     result = (gss_result*)malloc(sizeof(gss_result));
     result->code = AUTH_GSS_ERROR;
-    result->message = (char*)malloc(sizeof(char) * 1024 + 2);
-    sprintf(result->message, "%s: %s", buf_maj, buf_min);
+    result->message = (char*)malloc(strlen(buf_maj) + strlen(buf_min) + 3);
+    snprintf(result->message, strlen(buf_maj) + strlen(buf_min) + 3, "%s: %s", buf_maj, buf_min);
 
     return result;
 }
@@ -780,7 +780,7 @@ static gss_result* gss_error_result_with_message_and_code(const char* message, i
     gss_result* result = (gss_result*)malloc(sizeof(gss_result));
     result->code = AUTH_GSS_ERROR;
     result->message = (char*)malloc(strlen(message) + 20);
-    sprintf(result->message, "%s (%d)", message, code);
+    snprintf(result->message, strlen(message) + 20, "%s (%d)", message, code);
     return result;
 }
 
