@@ -41,6 +41,7 @@ NAN_INLINE std::wstring WStringOptionValue(v8::Local<v8::Object> options, const 
 KerberosClient::~KerberosClient() {
     if (_state != NULL) {
         auth_sspi_client_clean(_state);
+        free(_state);
         _state = NULL;
     }
 }
@@ -127,6 +128,7 @@ NAN_METHOD(KerberosClient::WrapData) {
 KerberosServer::~KerberosServer() {
     // if (_state != NULL) {
     //     authenticate_gss_server_clean(_state);
+    //     free(_state);
     //     _state = NULL;
     // }
 }
@@ -155,16 +157,15 @@ NAN_METHOD(InitializeClient) {
     }
 
     KerberosWorker::Run(callback, "kerberos:InitializeClient", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
+        // TODO: Manage server_state as a proper C++ class with a destructor + through shared pointers
         sspi_client_state* client_state = sspi_client_state_new();
         sspi_result result = auth_sspi_client_init(
             (WCHAR*)service.c_str(), gss_flags, (WCHAR*)user.c_str(), user.length(),
             (WCHAR*)domain.c_str(), domain.length(), (WCHAR*)password.c_str(), password.length(),
             (WCHAR*)mech_oid.c_str(), client_state);
 
-        // XXX a) The comment is wrong; b) This leaks memory
-        // must clean up state if we won't be using it, smart pointers won't help here unfortunately
-        // because we can't `release` a shared pointer.
         if (result.code == AUTH_GSS_ERROR) {
+            auth_sspi_client_clean(client_state);
             free(client_state);
         }
 

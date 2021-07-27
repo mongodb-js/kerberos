@@ -16,6 +16,7 @@ gss_OID_desc spnego_mech_oid = {6, &spnego_mech_oid_bytes};
 KerberosClient::~KerberosClient() {
     if (_state != NULL) {
         authenticate_gss_client_clean(_state);
+        free(_state);
         _state = NULL;
     }
 }
@@ -152,14 +153,13 @@ NAN_METHOD(InitializeClient) {
     }
 
     KerberosWorker::Run(callback, "kerberos:InitializeClient", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
+        // TODO: Manage client_state as a proper C++ class with a destructor + through shared pointers
         gss_client_state* client_state = gss_client_state_new();
         gss_result result = authenticate_gss_client_init(
             service.c_str(), principal.c_str(), gss_flags, NULL, mech_oid, client_state);
 
-        // XXX The comment is wrong
-        // must clean up state if we won't be using it, smart pointers won't help here unfortunately
-        // because we can't `release` a shared pointer.
         if (result.code == AUTH_GSS_ERROR) {
+            authenticate_gss_client_clean(client_state);
             free(client_state);
         }
 
@@ -182,14 +182,13 @@ NAN_METHOD(InitializeServer) {
     Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[1]).ToLocalChecked());
 
     KerberosWorker::Run(callback, "kerberos:InitializeServer", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
+        // TODO: Manage server_state as a proper C++ class with a destructor + through shared pointers
         gss_server_state* server_state = gss_server_state_new();
         gss_result result =
             authenticate_gss_server_init(service.c_str(), server_state);
 
-        // XXX ditto, the comment is wrong
-        // must clean up state if we won't be using it, smart pointers won't help here unfortunately
-        // because we can't `release` a shared pointer.
         if (result.code == AUTH_GSS_ERROR) {
+            authenticate_gss_server_clean(server_state);
             free(server_state);
         }
 
