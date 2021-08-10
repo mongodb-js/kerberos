@@ -13,16 +13,6 @@ All notable changes to this project will be documented in this file. See [standa
 
 * **NODE-3472:** convert to Node-API ([#137](https://github.com/mongodb-js/kerberos/issues/137)) ([f9481a4](https://github.com/mongodb-js/kerberos/commit/f9481a42877c604f8aac961536fc5674ce8baa6c))
 
-### [1.1.7](https://github.com/mongodb-js/kerberos/compare/v1.1.6...v1.1.7) (2021-09-14)
-
-### [1.1.6](https://github.com/mongodb-js/kerberos/compare/v1.1.5...v1.1.6) (2021-07-20)
-
-
-### Bug Fixes
-
-* **NODE-2129:** fix sporadic AcquireCredentialsHandle error ([#133](https://github.com/mongodb-js/kerberos/issues/133)) ([adf8346](https://github.com/mongodb-js/kerberos/commit/adf834665d7b927778669c1197d53d6f4ed6e797))
-* **NODE-3350:** do not export Init function symbol ([#130](https://github.com/mongodb-js/kerberos/issues/130)) ([acdd746](https://github.com/mongodb-js/kerberos/commit/acdd7466c131494e9a2ca36eb9ad64ecda2d1366))
-
 ### [1.1.7](https://github.com/mongodb-js/kerberos/compare/v1.1.5...v1.1.7) (2021-07-20)
 
 
@@ -31,7 +21,8 @@ All notable changes to this project will be documented in this file. See [standa
 * **NODE-2129:** fix sporadic AcquireCredentialsHandle error ([#133](https://github.com/mongodb-js/kerberos/issues/133)) ([adf8346](https://github.com/mongodb-js/kerberos/commit/adf834665d7b927778669c1197d53d6f4ed6e797))
 * **NODE-3350:** do not export Init function symbol ([#130](https://github.com/mongodb-js/kerberos/issues/130)) ([acdd746](https://github.com/mongodb-js/kerberos/commit/acdd7466c131494e9a2ca36eb9ad64ecda2d1366))
 
-### [1.1.6](https://github.com/mongodb-js/kerberos/compare/v1.1.5...v1.1.6) (2021-07-20)
+<a name="1.1.6"></a>
+## [1.1.6](https://github.com/mongodb-js/kerberos/compare/v1.1.5...v1.1.6) (2021-07-20)
 
 
 ### Bug Fixes
@@ -39,7 +30,9 @@ All notable changes to this project will be documented in this file. See [standa
 * **NODE-2129:** fix sporadic AcquireCredentialsHandle error ([#133](https://github.com/mongodb-js/kerberos/issues/133)) ([adf8346](https://github.com/mongodb-js/kerberos/commit/adf834665d7b927778669c1197d53d6f4ed6e797))
 * **NODE-3350:** do not export Init function symbol ([#130](https://github.com/mongodb-js/kerberos/issues/130)) ([acdd746](https://github.com/mongodb-js/kerberos/commit/acdd7466c131494e9a2ca36eb9ad64ecda2d1366))
 
-### [1.1.5](https://github.com/mongodb-js/kerberos/compare/v1.1.4...v1.1.5) (2021-04-06)
+
+<a name="1.1.5"></a>
+## [1.1.5](https://github.com/mongodb-js/kerberos/compare/v1.1.4...v1.1.5) (2021-04-06)
 
 
 ### Bug Fixes
