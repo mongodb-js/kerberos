@@ -1,5 +1,5 @@
-#ifndef ASYNC_WORKER_H
-#define ASYNC_WORKER_H
+#ifndef KERBEROS_ASYNC_WORKER_H
+#define KERBEROS_ASYNC_WORKER_H
 
 #include <functional>
 #include <nan.h>

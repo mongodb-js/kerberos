@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
+#ifndef KERBEROS_SSPI_H
+#define KERBEROS_SSPI_H
+
 #define SECURITY_WIN32 1 /* Required for SSPI */
 
 #include <windows.h>
 #include <sspi.h>
+#include <string>
 
 #define AUTH_GSS_ERROR -1
 #define AUTH_GSS_COMPLETE 1
@@ -25,8 +29,8 @@
 
 typedef struct {
     int code;
-    char* message;
-    char* data;
+    std::string message;
+    std::string data;
 } sspi_result;
 
 typedef struct {
@@ -53,7 +57,7 @@ typedef struct {
 
 sspi_client_state* sspi_client_state_new();
 VOID auth_sspi_client_clean(sspi_client_state* state);
-sspi_result* auth_sspi_client_init(WCHAR* service,
+sspi_result auth_sspi_client_init(WCHAR* service,
                                    ULONG flags,
                                    WCHAR* user,
                                    ULONG ulen,
@@ -64,6 +68,8 @@ sspi_result* auth_sspi_client_init(WCHAR* service,
                                    WCHAR* mechoid,
                                    sspi_client_state* state);
 
-sspi_result* auth_sspi_client_step(sspi_client_state* state, SEC_CHAR* challenge, SecPkgContext_Bindings* sec_pkg_context_bindings);
-sspi_result* auth_sspi_client_unwrap(sspi_client_state* state, SEC_CHAR* challenge);
-sspi_result* auth_sspi_client_wrap(sspi_client_state* state, SEC_CHAR* data, SEC_CHAR* user, ULONG ulen, INT protect);
+sspi_result auth_sspi_client_step(sspi_client_state* state, SEC_CHAR* challenge, SecPkgContext_Bindings* sec_pkg_context_bindings);
+sspi_result auth_sspi_client_unwrap(sspi_client_state* state, SEC_CHAR* challenge);
+sspi_result auth_sspi_client_wrap(sspi_client_state* state, SEC_CHAR* data, SEC_CHAR* user, ULONG ulen, INT protect);
+
+#endif

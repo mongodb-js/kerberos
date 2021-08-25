@@ -1,5 +1,5 @@
-#ifndef COMMON_H
-#define COMMON_H
+#ifndef KERBEROS_COMMON_H
+#define KERBEROS_COMMON_H
 
 #include <nan.h>
 
@@ -16,11 +16,6 @@ typedef sspi_client_state krb_client_state;
 typedef sspi_server_state krb_server_state;
 typedef sspi_result krb_result;
 #endif
-
-// Provide a default custom delter for the `gss_result` type
-inline void ResultDeleter(krb_result* result) {
-  free(result);
-}
 
 // Useful methods for optional value handling
 NAN_INLINE std::string StringOptionValue(v8::Local<v8::Object> options, const char* _key) {
