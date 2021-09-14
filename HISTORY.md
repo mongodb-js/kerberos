@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.7](https://github.com/mongodb-js/kerberos/compare/v1.1.6...v1.1.7) (2021-09-14)
+
 ### [1.1.6](https://github.com/mongodb-js/kerberos/compare/v1.1.5...v1.1.6) (2021-07-20)
 
 
