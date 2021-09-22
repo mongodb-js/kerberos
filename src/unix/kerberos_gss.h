@@ -25,6 +25,8 @@ extern "C" {
 
 #include <string>
 
+namespace node_kerberos {
+
 inline const char* krb5_get_err_text(const krb5_context&, krb5_error_code code) {
     return error_message(code);
 }
@@ -101,5 +103,7 @@ gss_result authenticate_user_krb5pwd(const char* user,
                                      const char* pswd,
                                      const char* service,
                                      const char* default_realm);
+
+}
 
 #endif

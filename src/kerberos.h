@@ -1,63 +1,74 @@
 #ifndef KERBEROS_NATIVE_EXTENSION_H
 #define KERBEROS_NATIVE_EXTENSION_H
 
-#include <nan.h>
+// We generally only target N-API version 4, but the instance data
+// feature is only available in N-API version 6. However, it is
+// available in all Node.js versions that have N-API version 4
+#define NAPI_VERSION 6
+// as an experimental feature (that has not been changed since then).
+#define NAPI_EXPERIMENTAL
+
+#include <napi.h>
 #include "kerberos_common.h"
 
-class KerberosServer : public Nan::ObjectWrap {
+namespace node_kerberos {
+
+class KerberosServer : public Napi::ObjectWrap<KerberosServer> {
    public:
-    static NAN_MODULE_INIT(Init);
-    static v8::Local<v8::Object> NewInstance(std::shared_ptr<krb_server_state> state);
+    static Napi::Function Init(Napi::Env env);
+    static Napi::Object NewInstance(Napi::Env env, std::shared_ptr<krb_server_state> state);
 
     std::shared_ptr<krb_server_state> state() const;
 
    private:
-    static Nan::Persistent<v8::Function> constructor;
+    Napi::Value UserNameGetter(const Napi::CallbackInfo& info);
+    Napi::Value ResponseGetter(const Napi::CallbackInfo& info);
+    Napi::Value TargetNameGetter(const Napi::CallbackInfo& info);
+    Napi::Value ContextCompleteGetter(const Napi::CallbackInfo& info);
 
-    static NAN_GETTER(UserNameGetter);
-    static NAN_GETTER(ResponseGetter);
-    static NAN_GETTER(TargetNameGetter);
-    static NAN_GETTER(ContextCompleteGetter);
-
-    static NAN_METHOD(Step);
+    void Step(const Napi::CallbackInfo& info);
 
    private:
-    explicit KerberosServer(std::shared_ptr<krb_server_state> server_state);
+    friend class Napi::ObjectWrap<KerberosServer>;
+    explicit KerberosServer(const Napi::CallbackInfo& info);
 
     std::shared_ptr<krb_server_state> _state;
 };
 
-class KerberosClient : public Nan::ObjectWrap {
+class KerberosClient : public Napi::ObjectWrap<KerberosClient> {
    public:
-    static NAN_MODULE_INIT(Init);
-    static v8::Local<v8::Object> NewInstance(std::shared_ptr<krb_client_state> state);
+    static Napi::Function Init(Napi::Env env);
+    static Napi::Object NewInstance(Napi::Env env, std::shared_ptr<krb_client_state> state);
 
     std::shared_ptr<krb_client_state> state() const;
 
    private:
-    static Nan::Persistent<v8::Function> constructor;
+    Napi::Value UserNameGetter(const Napi::CallbackInfo& info);
+    Napi::Value ResponseGetter(const Napi::CallbackInfo& info);
+    Napi::Value ResponseConfGetter(const Napi::CallbackInfo& info);
+    Napi::Value ContextCompleteGetter(const Napi::CallbackInfo& info);
 
-    static NAN_GETTER(UserNameGetter);
-    static NAN_GETTER(ResponseGetter);
-    static NAN_GETTER(ResponseConfGetter);
-    static NAN_GETTER(ContextCompleteGetter);
-
-    static NAN_METHOD(Step);
-    static NAN_METHOD(UnwrapData);
-    static NAN_METHOD(WrapData);
+    void Step(const Napi::CallbackInfo& info);
+    void UnwrapData(const Napi::CallbackInfo& info);
+    void WrapData(const Napi::CallbackInfo& info);
 
    private:
-    explicit KerberosClient(std::shared_ptr<krb_client_state> client_state);
+    friend class Napi::ObjectWrap<KerberosClient>;
+    explicit KerberosClient(const Napi::CallbackInfo& info);
 
     std::shared_ptr<krb_client_state> _state;
 };
 
-NAN_METHOD(PrincipalDetails);
-NAN_METHOD(InitializeClient);
-NAN_METHOD(InitializeServer);
-NAN_METHOD(CheckPassword);
+void PrincipalDetails(const Napi::CallbackInfo& info);
+void InitializeClient(const Napi::CallbackInfo& info);
+void InitializeServer(const Napi::CallbackInfo& info);
+void CheckPassword(const Napi::CallbackInfo& info);
 
 // NOTE: explicitly used for unit testing `defineOperation`, not meant to be exported
-NAN_METHOD(TestMethod);
+void TestMethod(const Napi::CallbackInfo& info);
+
+std::string ToStringWithNonStringAsEmpty(Napi::Value value);
+
+}
 
 #endif  // KERBEROS_NATIVE_EXTENSION_H

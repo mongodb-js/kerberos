@@ -2,6 +2,8 @@
 #include <cstdio>
 #include "kerberos_sspi.h"
 
+namespace node_kerberos {
+
 static sspi_result sspi_success_result(INT ret);
 static sspi_result sspi_error_result(DWORD errCode, const SEC_CHAR* msg);
 static sspi_result sspi_error_result_with_message(const char* message);
@@ -14,11 +16,11 @@ sspi_client_state::~sspi_client_state() {
         DeleteSecurityContext(&ctx);
     }
     if (haveCred) {
-        FreeCredentialsHandle(&state->cred);
+        FreeCredentialsHandle(&cred);
     }
-    free(state->spn);
-    free(state->response);
-    free(state->username);
+    free(spn);
+    free(response);
+    free(username);
 }
 
 sspi_result
@@ -533,4 +535,6 @@ wide_to_utf8(WCHAR* value) {
     }
 
     return NULL;
+}
+
 }

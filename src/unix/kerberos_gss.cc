@@ -28,6 +28,8 @@
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
+namespace node_kerberos {
+
 static gss_result gss_success_result(int ret);
 static gss_result gss_error_result(OM_uint32 err_maj, OM_uint32 err_min);
 static gss_result gss_error_result_with_message(const char* message);
@@ -733,6 +735,8 @@ static gss_result gss_error_result_with_message_and_code(const char* message, in
         std::string(message) + " (" + std::to_string(code) + ")",
         ""
     };
+}
+
 }
 
 #if defined(__clang__)

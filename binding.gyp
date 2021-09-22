@@ -3,14 +3,27 @@
     {
       'target_name': 'kerberos',
       'type': 'loadable_module',
-      'include_dirs': [ '<!(node -e "require(\'nan\')")' ],
+      'include_dirs': [  "<!(node -p \"require('node-addon-api').include_dir\")" ],
       'sources': [
         'src/kerberos.cc'
       ],
       'xcode_settings': {
+        'GCC_ENABLE_CPP_EXCEPTIONS': 'YES',
+        'CLANG_CXX_LIBRARY': 'libc++',
         'MACOSX_DEPLOYMENT_TARGET': '10.12'
       },
+      'cflags!': [ '-fno-exceptions' ],
+      'cflags_cc!': [ '-fno-exceptions' ],
+      'msvs_settings': {
+        'VCCLCompilerTool': { 'ExceptionHandling': 1 },
+      },
       'conditions': [
+        ['OS=="mac"', {
+            'cflags+': ['-fvisibility=hidden'],
+            'xcode_settings': {
+              'GCC_SYMBOLS_PRIVATE_EXTERN': 'YES', # -fvisibility=hidden
+            }
+        }],
         ['OS=="mac" or OS=="linux"', {
           'sources': [
             'src/unix/base64.cc',

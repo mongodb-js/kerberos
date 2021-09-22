@@ -23,6 +23,8 @@
 #include <sspi.h>
 #include <string>
 
+namespace node_kerberos {
+
 #define AUTH_GSS_ERROR -1
 #define AUTH_GSS_COMPLETE 1
 #define AUTH_GSS_CONTINUE 0
@@ -58,7 +60,7 @@ struct sspi_server_state {
     WCHAR* username = nullptr;
     WCHAR* response = nullptr;
     BOOL context_complete = FALSE;
-    char* targetname;
+    char* targetname = nullptr;
 };
 
 sspi_client_state* sspi_client_state_new();
@@ -77,5 +79,7 @@ sspi_result auth_sspi_client_init(WCHAR* service,
 sspi_result auth_sspi_client_step(sspi_client_state* state, SEC_CHAR* challenge, SecPkgContext_Bindings* sec_pkg_context_bindings);
 sspi_result auth_sspi_client_unwrap(sspi_client_state* state, SEC_CHAR* challenge);
 sspi_result auth_sspi_client_wrap(sspi_client_state* state, SEC_CHAR* data, SEC_CHAR* user, ULONG ulen, INT protect);
+
+}
 
 #endif

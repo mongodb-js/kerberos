@@ -2,182 +2,191 @@
 #include "kerberos_worker.h"
 
 /// KerberosClient
-Nan::Persistent<v8::Function> KerberosClient::constructor;
-NAN_MODULE_INIT(KerberosClient::Init) {
-    v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>();
-    tpl->SetClassName(Nan::New("KerberosClient").ToLocalChecked());
-    Nan::SetPrototypeMethod(tpl, "step", Step);
-    Nan::SetPrototypeMethod(tpl, "wrap", WrapData);
-    Nan::SetPrototypeMethod(tpl, "unwrap", UnwrapData);
+namespace node_kerberos {
 
-    v8::Local<v8::ObjectTemplate> itpl = tpl->InstanceTemplate();
-    itpl->SetInternalFieldCount(1);
+using namespace Napi;
 
-    Nan::SetAccessor(itpl, Nan::New("username").ToLocalChecked(), KerberosClient::UserNameGetter);
-    Nan::SetAccessor(itpl, Nan::New("response").ToLocalChecked(), KerberosClient::ResponseGetter);
-    Nan::SetAccessor(
-        itpl, Nan::New("responseConf").ToLocalChecked(), KerberosClient::ResponseConfGetter);
-    Nan::SetAccessor(
-        itpl, Nan::New("contextComplete").ToLocalChecked(), KerberosClient::ContextCompleteGetter);
+namespace {
+struct InstanceData {
+    Reference<Function> KerberosClientCtor;
+    Reference<Function> KerberosServerCtor;
+};
 
-    constructor.Reset(Nan::GetFunction(tpl).ToLocalChecked());
-    Nan::Set(target,
-             Nan::New("KerberosClient").ToLocalChecked(),
-             Nan::GetFunction(tpl).ToLocalChecked());
+static constexpr napi_property_attributes writable_and_configurable =
+    static_cast<napi_property_attributes>(
+        static_cast<int>(napi_writable) | static_cast<int>(napi_configurable));
+
+inline String NewMaybeWideString(Env env, const char* str) {
+    return String::New(env, str);
+}
+#ifdef _WIN32
+inline String NewMaybeWideString(Env env, const WCHAR* str) {
+    static_assert(sizeof(std::wstring::value_type) == sizeof(std::u16string::value_type),
+        "wstring and u16string have the same value type on Windows");
+    std::wstring wstr(str);
+    std::u16string u16(wstr.begin(), wstr.end());
+    return String::New(env, u16);
+}
+#endif
 }
 
-v8::Local<v8::Object> KerberosClient::NewInstance(std::shared_ptr<krb_client_state> state) {
-    Nan::EscapableHandleScope scope;
-    v8::Local<v8::Function> ctor = Nan::New<v8::Function>(KerberosClient::constructor);
-    v8::Local<v8::Object> object = Nan::NewInstance(ctor).ToLocalChecked();
-    KerberosClient* class_instance = new KerberosClient(state);
-    class_instance->Wrap(object);
-    return scope.Escape(object);
+std::string ToStringWithNonStringAsEmpty(Napi::Value value) {
+    if (!value.IsString()) {
+        return std::string();
+    }
+    return value.As<String>();
 }
 
-KerberosClient::KerberosClient(std::shared_ptr<krb_client_state> state)
-    : _state(state) {}
+Function KerberosClient::Init(Napi::Env env) {
+    return
+        DefineClass(env,
+                    "KerberosClient",
+                    {
+                      InstanceMethod("step", &KerberosClient::Step, writable_and_configurable),
+                      InstanceMethod("wrap", &KerberosClient::WrapData, writable_and_configurable),
+                      InstanceMethod("unwrap", &KerberosClient::UnwrapData, writable_and_configurable),
+                      InstanceAccessor("username", &KerberosClient::UserNameGetter, nullptr),
+                      InstanceAccessor("response", &KerberosClient::ResponseGetter, nullptr),
+                      InstanceAccessor("responseConf", &KerberosClient::ResponseConfGetter, nullptr),
+                      InstanceAccessor("contextComplete", &KerberosClient::ContextCompleteGetter, nullptr)
+                    });
+}
+
+Object KerberosClient::NewInstance(Napi::Env env, std::shared_ptr<krb_client_state> state) {
+    InstanceData* instance_data = env.GetInstanceData<InstanceData>();
+    Object obj = instance_data->KerberosClientCtor.Value().New({});
+    KerberosClient* instance = KerberosClient::Unwrap(obj);
+    instance->_state = std::move(state);
+    return obj;
+}
+
+KerberosClient::KerberosClient(const CallbackInfo& info)
+    : ObjectWrap(info) {}
 
 std::shared_ptr<krb_client_state> KerberosClient::state() const {
     return _state;
 }
 
-NAN_GETTER(KerberosClient::UserNameGetter) {
-    KerberosClient* client = Nan::ObjectWrap::Unwrap<KerberosClient>(info.This());
-    (client->state()->username == NULL)
-        ? info.GetReturnValue().Set(Nan::Null())
-        : info.GetReturnValue().Set(Nan::New(client->state()->username).ToLocalChecked());
+Value KerberosClient::UserNameGetter(const CallbackInfo& info) {
+    const auto* username = state()->username;
+    if (username == nullptr)
+        return Env().Null();
+    return NewMaybeWideString(Env(), username);
 }
 
-NAN_GETTER(KerberosClient::ResponseGetter) {
-    KerberosClient* client = Nan::ObjectWrap::Unwrap<KerberosClient>(info.This());
-    (client->state()->response == NULL)
-        ? info.GetReturnValue().Set(Nan::Null())
-        : info.GetReturnValue().Set(Nan::New(client->state()->response).ToLocalChecked());
+Value KerberosClient::ResponseGetter(const CallbackInfo& info) {
+    const auto* response = state()->response;
+    if (response == nullptr)
+        return Env().Null();
+    return NewMaybeWideString(Env(), response);
 }
 
-NAN_GETTER(KerberosClient::ResponseConfGetter) {
-    KerberosClient* client = Nan::ObjectWrap::Unwrap<KerberosClient>(info.This());
-    info.GetReturnValue().Set(Nan::New(client->state()->responseConf));
+Value KerberosClient::ResponseConfGetter(const CallbackInfo& info) {
+    return Number::New(Env(), state()->responseConf);
 }
 
-NAN_GETTER(KerberosClient::ContextCompleteGetter) {
-    KerberosClient* client = Nan::ObjectWrap::Unwrap<KerberosClient>(info.This());
-    info.GetReturnValue().Set(Nan::New(client->state()->context_complete));
+Value KerberosClient::ContextCompleteGetter(const CallbackInfo& info) {
+    return Boolean::New(Env(), state()->context_complete);
 }
 
 /// KerberosServer
-Nan::Persistent<v8::Function> KerberosServer::constructor;
-NAN_MODULE_INIT(KerberosServer::Init) {
-    v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>();
-    tpl->SetClassName(Nan::New("KerberosServer").ToLocalChecked());
-    Nan::SetPrototypeMethod(tpl, "step", Step);
-
-    v8::Local<v8::ObjectTemplate> itpl = tpl->InstanceTemplate();
-    itpl->SetInternalFieldCount(1);
-
-    Nan::SetAccessor(itpl, Nan::New("username").ToLocalChecked(), KerberosServer::UserNameGetter);
-    Nan::SetAccessor(itpl, Nan::New("response").ToLocalChecked(), KerberosServer::ResponseGetter);
-    Nan::SetAccessor(
-        itpl, Nan::New("targetName").ToLocalChecked(), KerberosServer::TargetNameGetter);
-    Nan::SetAccessor(
-        itpl, Nan::New("contextComplete").ToLocalChecked(), KerberosServer::ContextCompleteGetter);
-
-    constructor.Reset(Nan::GetFunction(tpl).ToLocalChecked());
-    Nan::Set(target,
-             Nan::New("KerberosServer").ToLocalChecked(),
-             Nan::GetFunction(tpl).ToLocalChecked());
+Function KerberosServer::Init(Napi::Env env) {
+    return
+        DefineClass(env,
+                    "KerberosServer",
+                    {
+                      InstanceMethod("step", &KerberosServer::Step, writable_and_configurable),
+                      InstanceAccessor("username", &KerberosServer::UserNameGetter, nullptr),
+                      InstanceAccessor("response", &KerberosServer::ResponseGetter, nullptr),
+                      InstanceAccessor("targetName", &KerberosServer::TargetNameGetter, nullptr),
+                      InstanceAccessor("contextComplete", &KerberosServer::ContextCompleteGetter, nullptr)
+                    });
 }
 
-v8::Local<v8::Object> KerberosServer::NewInstance(std::shared_ptr<krb_server_state> state) {
-    Nan::EscapableHandleScope scope;
-    v8::Local<v8::Function> ctor = Nan::New<v8::Function>(KerberosServer::constructor);
-    v8::Local<v8::Object> object = Nan::NewInstance(ctor).ToLocalChecked();
-    KerberosServer* class_instance = new KerberosServer(state);
-    class_instance->Wrap(object);
-    return scope.Escape(object);
+Object KerberosServer::NewInstance(Napi::Env env, std::shared_ptr<krb_server_state> state) {
+    InstanceData* instance_data = env.GetInstanceData<InstanceData>();
+    Object obj = instance_data->KerberosServerCtor.Value().New({});
+    KerberosServer* instance = KerberosServer::Unwrap(obj);
+    instance->_state = std::move(state);
+    return obj;
 }
 
-KerberosServer::KerberosServer(std::shared_ptr<krb_server_state> state)
-    : _state(state) {}
+KerberosServer::KerberosServer(const CallbackInfo& info)
+    : ObjectWrap(info) {}
 
 std::shared_ptr<krb_server_state> KerberosServer::state() const {
     return _state;
 }
 
-NAN_GETTER(KerberosServer::UserNameGetter) {
-    KerberosServer* server = Nan::ObjectWrap::Unwrap<KerberosServer>(info.This());
-    (server->_state->username == NULL)
-        ? info.GetReturnValue().Set(Nan::Null())
-        : info.GetReturnValue().Set(Nan::New((char*)server->_state->username).ToLocalChecked());
+Value KerberosServer::UserNameGetter(const CallbackInfo& info) {
+    const auto* username = state()->username;
+    if (username == nullptr)
+        return Env().Null();
+    return NewMaybeWideString(Env(), username);
 }
 
-NAN_GETTER(KerberosServer::ResponseGetter) {
-    KerberosServer* server = Nan::ObjectWrap::Unwrap<KerberosServer>(info.This());
-    (server->_state->response == NULL)
-        ? info.GetReturnValue().Set(Nan::Null())
-        : info.GetReturnValue().Set(Nan::New((char*)server->_state->response).ToLocalChecked());
+Value KerberosServer::ResponseGetter(const CallbackInfo& info) {
+    const auto* response = state()->response;
+    if (response == nullptr)
+        return Env().Null();
+    return NewMaybeWideString(Env(), response);
 }
 
-NAN_GETTER(KerberosServer::TargetNameGetter) {
-    KerberosServer* server = Nan::ObjectWrap::Unwrap<KerberosServer>(info.This());
-    (server->_state->targetname == NULL)
-        ? info.GetReturnValue().Set(Nan::Null())
-        : info.GetReturnValue().Set(Nan::New((char*)server->_state->targetname).ToLocalChecked());
+Value KerberosServer::TargetNameGetter(const CallbackInfo& info) {
+    const auto* targetname = state()->targetname;
+    if (targetname == nullptr)
+        return Env().Null();
+    return NewMaybeWideString(Env(), targetname);
 }
 
-NAN_GETTER(KerberosServer::ContextCompleteGetter) {
-    KerberosServer* server = Nan::ObjectWrap::Unwrap<KerberosServer>(info.This());
-    info.GetReturnValue().Set(Nan::New(server->_state->context_complete));
+Value KerberosServer::ContextCompleteGetter(const CallbackInfo& info) {
+    return Boolean::New(Env(), state()->context_complete);
 }
 
-NAN_METHOD(TestMethod) {
-    std::string string(*Nan::Utf8String(info[0]));
-    bool shouldError = Nan::To<bool>(info[1]).FromJust();
+void TestMethod(const CallbackInfo& info) {
+    std::string string = info[0].ToString();
+    bool shouldError = info[1].ToBoolean();
 
     std::string optionalString;
-    Nan::Callback* callback;
-    if (info[2]->IsFunction()) {
-        callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
+    Function callback;
+    if (info[2].IsFunction()) {
+        callback = info[2].As<Function>();
     } else {
-        optionalString = *Nan::Utf8String(info[2]);
-        callback = new Nan::Callback(Nan::To<v8::Function>(info[3]).ToLocalChecked());
+        optionalString = info[2].ToString();
+        callback = info[3].As<Function>();
     }
 
     KerberosWorker::Run(callback, "kerberos:TestMethod", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
         return onFinished([=](KerberosWorker* worker) {
-            Nan::HandleScope scope;
+            Napi::Env env = worker->Env();
             if (shouldError) {
-                v8::Local<v8::Value> argv[] = {Nan::Error("an error occurred"), Nan::Null()};
-                worker->Call(2, argv);
+                worker->Call(std::initializer_list<napi_value>
+                    { Error::New(env).Value(), env.Null() });
             } else {
-                v8::Local<v8::Value> argv[] = {Nan::Null(), Nan::New(optionalString.c_str()).ToLocalChecked()};
-                worker->Call(2, argv);
+                worker->Call(std::initializer_list<napi_value>
+                    { env.Null(), String::New(env, optionalString) });
             }
         });
     });
 }
 
-static NAN_MODULE_INIT(Init) {
-    // Custom types
-    KerberosClient::Init(target);
-    KerberosServer::Init(target);
-
-    Nan::Set(target,
-             Nan::New("initializeClient").ToLocalChecked(),
-             Nan::GetFunction(Nan::New<v8::FunctionTemplate>(InitializeClient)).ToLocalChecked());
-    Nan::Set(target,
-             Nan::New("initializeServer").ToLocalChecked(),
-             Nan::GetFunction(Nan::New<v8::FunctionTemplate>(InitializeServer)).ToLocalChecked());
-    Nan::Set(target,
-             Nan::New("principalDetails").ToLocalChecked(),
-             Nan::GetFunction(Nan::New<v8::FunctionTemplate>(PrincipalDetails)).ToLocalChecked());
-    Nan::Set(target,
-             Nan::New("checkPassword").ToLocalChecked(),
-             Nan::GetFunction(Nan::New<v8::FunctionTemplate>(CheckPassword)).ToLocalChecked());
-    Nan::Set(target,
-             Nan::New("_testMethod").ToLocalChecked(),
-             Nan::GetFunction(Nan::New<v8::FunctionTemplate>(TestMethod)).ToLocalChecked());
+static Object Init(Env env, Object exports) {
+    Function KerberosClientCtor = KerberosClient::Init(env);
+    Function KerberosServerCtor = KerberosServer::Init(env);
+    exports["KerberosClient"] = KerberosClientCtor;
+    exports["KerberosServer"] = KerberosServerCtor;
+    env.SetInstanceData(new InstanceData {
+        Reference<Function>::New(KerberosClientCtor, 1),
+        Reference<Function>::New(KerberosServerCtor, 1)
+    });
+    exports["initializeClient"] = Function::New(env, InitializeClient);
+    exports["initializeServer"] = Function::New(env, InitializeServer);
+    exports["principalDetails"] = Function::New(env, PrincipalDetails);
+    exports["checkPassword"] = Function::New(env, CheckPassword);
+    exports["_testMethod"] = Function::New(env, TestMethod);
+    return exports;
 }
 
-NODE_MODULE(kerberos, Init)
+NODE_API_MODULE(kerberos, Init)
+
+}
