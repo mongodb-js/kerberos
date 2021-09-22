@@ -33,27 +33,33 @@ typedef struct {
     std::string data;
 } sspi_result;
 
-typedef struct {
+struct sspi_client_state {
     CredHandle cred;
     CtxtHandle ctx;
-    WCHAR* spn;
-    SEC_CHAR* response;
-    SEC_CHAR* username;
+    WCHAR* spn = nullptr;
+    SEC_CHAR* response = nullptr;
+    SEC_CHAR* username = nullptr;
     ULONG flags;
-    UCHAR haveCred;
-    UCHAR haveCtx;
+    UCHAR haveCred = 0;
+    UCHAR haveCtx = 0;
     ULONG qop;
 
-    INT responseConf;
-    BOOL context_complete;
-} sspi_client_state;
+    INT responseConf = 0;
+    BOOL context_complete = FALSE;
 
-typedef struct {
-    WCHAR* username;
-    WCHAR* response;
-    BOOL context_complete;
+    sspi_client_state() {}
+    sspi_client_state(const sspi_client_state&) = delete;
+    sspi_client_state& operator=(const sspi_client_state&) = delete;
+    ~sspi_client_state();
+};
+
+struct sspi_server_state {
+    // This is unused currently
+    WCHAR* username = nullptr;
+    WCHAR* response = nullptr;
+    BOOL context_complete = FALSE;
     char* targetname;
-} sspi_server_state;
+};
 
 sspi_client_state* sspi_client_state_new();
 VOID auth_sspi_client_clean(sspi_client_state* state);

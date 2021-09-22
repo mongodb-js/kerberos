@@ -9,37 +9,16 @@ static SEC_CHAR* base64_encode(const SEC_CHAR* value, DWORD vlen);
 static SEC_CHAR* base64_decode(const SEC_CHAR* value, DWORD* rlen);
 static CHAR* wide_to_utf8(WCHAR* value);
 
-sspi_client_state* sspi_client_state_new() {
-    sspi_client_state* state = (sspi_client_state*)malloc(sizeof(sspi_client_state));
-    state->username = NULL;
-    state->response = NULL;
-    state->responseConf = 0;
-    state->context_complete = FALSE;
-    return state;
-}
-
-VOID
-auth_sspi_client_clean(sspi_client_state* state) {
-    if (state->haveCtx) {
-        DeleteSecurityContext(&state->ctx);
-        state->haveCtx = 0;
+sspi_client_state::~sspi_client_state() {
+    if (haveCtx) {
+        DeleteSecurityContext(&ctx);
     }
-    if (state->haveCred) {
+    if (haveCred) {
         FreeCredentialsHandle(&state->cred);
-        state->haveCred = 0;
     }
-    if (state->spn != NULL) {
-        free(state->spn);
-        state->spn = NULL;
-    }
-    if (state->response != NULL) {
-        free(state->response);
-        state->response = NULL;
-    }
-    if (state->username != NULL) {
-        free(state->username);
-        state->username = NULL;
-    }
+    free(state->spn);
+    free(state->response);
+    free(state->username);
 }
 
 sspi_result

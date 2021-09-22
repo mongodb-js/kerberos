@@ -26,7 +26,7 @@ NAN_MODULE_INIT(KerberosClient::Init) {
              Nan::GetFunction(tpl).ToLocalChecked());
 }
 
-v8::Local<v8::Object> KerberosClient::NewInstance(krb_client_state* state) {
+v8::Local<v8::Object> KerberosClient::NewInstance(std::shared_ptr<krb_client_state> state) {
     Nan::EscapableHandleScope scope;
     v8::Local<v8::Function> ctor = Nan::New<v8::Function>(KerberosClient::constructor);
     v8::Local<v8::Object> object = Nan::NewInstance(ctor).ToLocalChecked();
@@ -35,9 +35,10 @@ v8::Local<v8::Object> KerberosClient::NewInstance(krb_client_state* state) {
     return scope.Escape(object);
 }
 
-KerberosClient::KerberosClient(krb_client_state* state) : _state(state) {}
+KerberosClient::KerberosClient(std::shared_ptr<krb_client_state> state)
+    : _state(state) {}
 
-krb_client_state* KerberosClient::state() const {
+std::shared_ptr<krb_client_state> KerberosClient::state() const {
     return _state;
 }
 
@@ -88,7 +89,7 @@ NAN_MODULE_INIT(KerberosServer::Init) {
              Nan::GetFunction(tpl).ToLocalChecked());
 }
 
-v8::Local<v8::Object> KerberosServer::NewInstance(krb_server_state* state) {
+v8::Local<v8::Object> KerberosServer::NewInstance(std::shared_ptr<krb_server_state> state) {
     Nan::EscapableHandleScope scope;
     v8::Local<v8::Function> ctor = Nan::New<v8::Function>(KerberosServer::constructor);
     v8::Local<v8::Object> object = Nan::NewInstance(ctor).ToLocalChecked();
@@ -97,9 +98,10 @@ v8::Local<v8::Object> KerberosServer::NewInstance(krb_server_state* state) {
     return scope.Escape(object);
 }
 
-KerberosServer::KerberosServer(krb_server_state* state) : _state(state) {}
+KerberosServer::KerberosServer(std::shared_ptr<krb_server_state> state)
+    : _state(state) {}
 
-krb_server_state* KerberosServer::state() const {
+std::shared_ptr<krb_server_state> KerberosServer::state() const {
     return _state;
 }
 

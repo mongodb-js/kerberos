@@ -38,22 +38,14 @@ NAN_INLINE std::wstring WStringOptionValue(v8::Local<v8::Object> options, const 
 }
 
 /// KerberosClient
-KerberosClient::~KerberosClient() {
-    if (_state != NULL) {
-        auth_sspi_client_clean(_state);
-        free(_state);
-        _state = NULL;
-    }
-}
-
 NAN_METHOD(KerberosClient::Step) {
-    KerberosClient* client = Nan::ObjectWrap::Unwrap<KerberosClient>(info.This());
+    auto state = Nan::ObjectWrap::Unwrap<KerberosClient>(info.This())->state();
     std::string challenge(*Nan::Utf8String(info[0]));
     Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[1]).ToLocalChecked());
 
     KerberosWorker::Run(callback, "kerberos:ClientStep", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
         sspi_result result =
-            auth_sspi_client_step(client->state(), (SEC_CHAR*)challenge.c_str(), NULL);
+            auth_sspi_client_step(state.get(), (SEC_CHAR*)challenge.c_str(), NULL);
 
         return onFinished([=](KerberosWorker* worker) {
             Nan::HandleScope scope;
@@ -64,8 +56,8 @@ NAN_METHOD(KerberosClient::Step) {
             }
 
             v8::Local<v8::Value> response = Nan::Null();
-            if (client->state()->response != NULL) {
-                response = Nan::New(client->state()->response).ToLocalChecked();
+            if (state->response != NULL) {
+                response = Nan::New(state->response).ToLocalChecked();
             }
 
             v8::Local<v8::Value> argv[] = {Nan::Null(), response};
@@ -75,13 +67,13 @@ NAN_METHOD(KerberosClient::Step) {
 }
 
 NAN_METHOD(KerberosClient::UnwrapData) {
-    KerberosClient* client = Nan::ObjectWrap::Unwrap<KerberosClient>(info.This());
+    auto state = Nan::ObjectWrap::Unwrap<KerberosClient>(info.This())->state();
     std::string challenge(*Nan::Utf8String(info[0]));
     Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[1]).ToLocalChecked());
 
     KerberosWorker::Run(callback, "kerberos:ClientUnwrap", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
         sspi_result result =
-            auth_sspi_client_unwrap(client->state(), (SEC_CHAR*)challenge.c_str());
+            auth_sspi_client_unwrap(state.get(), (SEC_CHAR*)challenge.c_str());
 
         return onFinished([=](KerberosWorker* worker) {
             Nan::HandleScope scope;
@@ -91,14 +83,14 @@ NAN_METHOD(KerberosClient::UnwrapData) {
                 return;
             }
 
-            v8::Local<v8::Value> argv[] = {Nan::Null(), Nan::New(client->state()->response).ToLocalChecked()};
+            v8::Local<v8::Value> argv[] = {Nan::Null(), Nan::New(state->response).ToLocalChecked()};
             worker->Call(2, argv);
         });
     });
 }
 
 NAN_METHOD(KerberosClient::WrapData) {
-    KerberosClient* client = Nan::ObjectWrap::Unwrap<KerberosClient>(info.This());
+    auto state = Nan::ObjectWrap::Unwrap<KerberosClient>(info.This())->state();
     std::string challenge(*Nan::Utf8String(info[0]));
     v8::Local<v8::Object> options = Nan::To<v8::Object>(info[1]).ToLocalChecked();
     Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
@@ -107,7 +99,7 @@ NAN_METHOD(KerberosClient::WrapData) {
 
     KerberosWorker::Run(callback, "kerberos:ClientWrap", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
         sspi_result result = auth_sspi_client_wrap(
-            client->state(), (SEC_CHAR*)challenge.c_str(), (SEC_CHAR*)user.c_str(), user.length(), protect);
+            state.get(), (SEC_CHAR*)challenge.c_str(), (SEC_CHAR*)user.c_str(), user.length(), protect);
 
         return onFinished([=](KerberosWorker* worker) {
             Nan::HandleScope scope;
@@ -118,21 +110,13 @@ NAN_METHOD(KerberosClient::WrapData) {
                 return;
             }
 
-            v8::Local<v8::Value> argv[] = {Nan::Null(), Nan::New(client->state()->response).ToLocalChecked()};
+            v8::Local<v8::Value> argv[] = {Nan::Null(), Nan::New(state->response).ToLocalChecked()};
             worker->Call(2, argv);
         });
     });
 }
 
 /// KerberosServer
-KerberosServer::~KerberosServer() {
-    // if (_state != NULL) {
-    //     authenticate_gss_server_clean(_state);
-    //     free(_state);
-    //     _state = NULL;
-    // }
-}
-
 NAN_METHOD(KerberosServer::Step) {
     Nan::ThrowError("`KerberosServer::Step` is not implemented yet for windows");
 }
@@ -154,17 +138,11 @@ NAN_METHOD(InitializeClient) {
     }
 
     KerberosWorker::Run(callback, "kerberos:InitializeClient", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
-        // TODO: Manage server_state as a proper C++ class with a destructor + through shared pointers
-        sspi_client_state* client_state = sspi_client_state_new();
+        auto client_state = std::make_shared<sspi_client_state>();
         sspi_result result = auth_sspi_client_init(
             (WCHAR*)service.c_str(), gss_flags, (WCHAR*)user.c_str(), user.length(),
             (WCHAR*)domain.c_str(), domain.length(), (WCHAR*)password.c_str(), password.length(),
-            (WCHAR*)mech_oid.c_str(), client_state);
-
-        if (result.code == AUTH_GSS_ERROR) {
-            auth_sspi_client_clean(client_state);
-            free(client_state);
-        }
+            (WCHAR*)mech_oid.c_str(), client_state.get());
 
         return onFinished([=](KerberosWorker* worker) {
             Nan::HandleScope scope;
