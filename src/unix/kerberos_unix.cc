@@ -156,7 +156,7 @@ void InitializeClient(const CallbackInfo& info) {
             }
 
             worker->Call(std::initializer_list<napi_value>
-                { env.Null(), KerberosClient::NewInstance(env, client_state) });
+                { env.Null(), KerberosClient::NewInstance(env, std::move(client_state)) });
         });
     });
 }
@@ -179,7 +179,7 @@ void InitializeServer(const CallbackInfo& info) {
             }
 
             worker->Call(std::initializer_list<napi_value>
-                { env.Null(), KerberosServer::NewInstance(env, server_state) });
+                { env.Null(), KerberosServer::NewInstance(env, std::move(server_state)) });
         });
     });
 }
