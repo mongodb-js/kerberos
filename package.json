@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "bindings": "^1.5.0",
-    "nan": "^2.14.1",
+    "node-addon-api": "^4.1.0",
     "prebuild-install": "6.1.2"
   },
   "devDependencies": {
@@ -41,7 +41,7 @@
     "standard-version": "^9.3.1"
   },
   "scripts": {
-    "install": "prebuild-install || node-gyp rebuild",
+    "install": "prebuild-install --runtime napi || node-gyp rebuild",
     "format-cxx": "git-clang-format",
     "format-js": "prettier --print-width 100 --tab-width 2 --single-quote --write index.js 'test/**/*.js' 'lib/**/*.js'",
     "lint": "eslint index.js lib test",
@@ -49,9 +49,16 @@
     "test": "mocha ./test",
     "docs": "jsdoc2md --template etc/README.hbs --plugin dmd-clear --files lib/kerberos.js > README.md",
     "rebuild": "prebuild --compile",
-    "prebuild": "prebuild  --strip --verbose --all",
-    "prebuild-legacy": "prebuild  --strip --verbose --runtime node --target 4.0.0",
+    "prebuild": "prebuild --runtime napi --strip --verbose --all",
     "release": "standard-version -i HISTORY.md"
+  },
+  "engines": {
+    "node": ">=12.9.0"
+  },
+  "binary": {
+    "napi_versions": [
+      4
+    ]
   },
   "license": "Apache-2.0",
   "readmeFilename": "README.md"

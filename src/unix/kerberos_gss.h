@@ -25,6 +25,8 @@ extern "C" {
 
 #include <string>
 
+namespace node_kerberos {
+
 inline const char* krb5_get_err_text(const krb5_context&, krb5_error_code code) {
     return error_message(code);
 }
@@ -43,32 +45,39 @@ typedef struct {
     std::string data;
 } gss_result;
 
-typedef struct {
+struct gss_client_state {
     gss_ctx_id_t context;
     gss_name_t server_name;
     gss_OID mech_oid;
     long int gss_flags;
     gss_cred_id_t client_creds;
-    char* username;
-    char* response;
-    int responseConf;
-    bool context_complete;
-} gss_client_state;
+    char* username = nullptr;
+    char* response = nullptr;
+    int responseConf = 0;
+    bool context_complete = false;
 
-typedef struct {
+    gss_client_state() {}
+    gss_client_state(const gss_client_state&) = delete;
+    gss_client_state& operator=(const gss_client_state&) = delete;
+    ~gss_client_state();
+};
+
+struct gss_server_state {
     gss_ctx_id_t context;
     gss_name_t server_name;
     gss_name_t client_name;
     gss_cred_id_t server_creds;
     gss_cred_id_t client_creds;
-    char* username;
-    char* targetname;
-    char* response;
-    bool context_complete;
-} gss_server_state;
+    char* username = nullptr;
+    char* targetname = nullptr;
+    char* response = nullptr;
+    bool context_complete = false;
 
-gss_client_state* gss_client_state_new();
-gss_server_state* gss_server_state_new();
+    gss_server_state() {}
+    gss_server_state(const gss_server_state&) = delete;
+    gss_server_state& operator=(const gss_server_state&) = delete;
+    ~gss_server_state();
+};
 
 gss_result server_principal_details(const char* service, const char* hostname);
 
@@ -79,7 +88,6 @@ gss_result authenticate_gss_client_init(const char* service,
                                         gss_OID mech_oid,
                                         gss_client_state* state);
 
-int authenticate_gss_client_clean(gss_client_state* state);
 gss_result authenticate_gss_client_step(gss_client_state* state,
                                         const char* challenge,
                                         struct gss_channel_bindings_struct* channel_bindings);
@@ -89,12 +97,13 @@ gss_result authenticate_gss_client_wrap(gss_client_state* state,
                                         const char* user,
                                         int protect);
 gss_result authenticate_gss_server_init(const char* service, gss_server_state* state);
-int authenticate_gss_server_clean(gss_server_state* state);
 gss_result authenticate_gss_server_step(gss_server_state* state, const char* challenge);
 
 gss_result authenticate_user_krb5pwd(const char* user,
                                      const char* pswd,
                                      const char* service,
                                      const char* default_realm);
+
+}
 
 #endif

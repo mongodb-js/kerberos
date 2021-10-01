@@ -28,30 +28,12 @@
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
+namespace node_kerberos {
+
 static gss_result gss_success_result(int ret);
 static gss_result gss_error_result(OM_uint32 err_maj, OM_uint32 err_min);
 static gss_result gss_error_result_with_message(const char* message);
 static gss_result gss_error_result_with_message_and_code(const char* mesage, int code);
-
-gss_client_state* gss_client_state_new() {
-    gss_client_state* state = (gss_client_state*)malloc(sizeof(gss_client_state));
-    state->username = NULL;
-    state->response = NULL;
-    state->responseConf = 0;
-    state->context_complete = false;
-
-    return state;
-}
-
-gss_server_state* gss_server_state_new() {
-    gss_server_state* state = (gss_server_state*)malloc(sizeof(gss_server_state));
-    state->username = NULL;
-    state->response = NULL;
-    state->targetname = NULL;
-    state->context_complete = false;
-
-    return state;
-}
 
 gss_result server_principal_details(const char* service, const char* hostname) {
     char match[1024];
@@ -195,26 +177,17 @@ end:
     return ret;
 }
 
-int authenticate_gss_client_clean(gss_client_state* state) {
+gss_client_state::~gss_client_state() {
     OM_uint32 min_stat;
-    int ret = AUTH_GSS_COMPLETE;
 
-    if (state->context != GSS_C_NO_CONTEXT)
-        gss_delete_sec_context(&min_stat, &state->context, GSS_C_NO_BUFFER);
-    if (state->server_name != GSS_C_NO_NAME)
-        gss_release_name(&min_stat, &state->server_name);
-    if (state->client_creds != GSS_C_NO_CREDENTIAL && !(state->gss_flags & GSS_C_DELEG_FLAG))
-        gss_release_cred(&min_stat, &state->client_creds);
-    if (state->username != NULL) {
-        free(state->username);
-        state->username = NULL;
-    }
-    if (state->response != NULL) {
-        free(state->response);
-        state->response = NULL;
-    }
-
-    return ret;
+    if (context != GSS_C_NO_CONTEXT)
+        gss_delete_sec_context(&min_stat, &context, GSS_C_NO_BUFFER);
+    if (server_name != GSS_C_NO_NAME)
+        gss_release_name(&min_stat, &server_name);
+    if (client_creds != GSS_C_NO_CREDENTIAL && !(gss_flags & GSS_C_DELEG_FLAG))
+        gss_release_cred(&min_stat, &client_creds);
+    free(username);
+    free(response);
 }
 
 gss_result authenticate_gss_client_step(gss_client_state* state,
@@ -507,34 +480,22 @@ end:
     return ret;
 }
 
-int authenticate_gss_server_clean(gss_server_state* state) {
+gss_server_state::~gss_server_state() {
     OM_uint32 min_stat;
-    int ret = AUTH_GSS_COMPLETE;
 
-    if (state->context != GSS_C_NO_CONTEXT)
-        gss_delete_sec_context(&min_stat, &state->context, GSS_C_NO_BUFFER);
-    if (state->server_name != GSS_C_NO_NAME)
-        gss_release_name(&min_stat, &state->server_name);
-    if (state->client_name != GSS_C_NO_NAME)
-        gss_release_name(&min_stat, &state->client_name);
-    if (state->server_creds != GSS_C_NO_CREDENTIAL)
-        gss_release_cred(&min_stat, &state->server_creds);
-    if (state->client_creds != GSS_C_NO_CREDENTIAL)
-        gss_release_cred(&min_stat, &state->client_creds);
-    if (state->username != NULL) {
-        free(state->username);
-        state->username = NULL;
-    }
-    if (state->targetname != NULL) {
-        free(state->targetname);
-        state->targetname = NULL;
-    }
-    if (state->response != NULL) {
-        free(state->response);
-        state->response = NULL;
-    }
-
-    return ret;
+    if (context != GSS_C_NO_CONTEXT)
+        gss_delete_sec_context(&min_stat, &context, GSS_C_NO_BUFFER);
+    if (server_name != GSS_C_NO_NAME)
+        gss_release_name(&min_stat, &server_name);
+    if (client_name != GSS_C_NO_NAME)
+        gss_release_name(&min_stat, &client_name);
+    if (server_creds != GSS_C_NO_CREDENTIAL)
+        gss_release_cred(&min_stat, &server_creds);
+    if (client_creds != GSS_C_NO_CREDENTIAL)
+        gss_release_cred(&min_stat, &client_creds);
+    free(username);
+    free(targetname);
+    free(response);
 }
 
 gss_result authenticate_gss_server_step(gss_server_state* state, const char* challenge) {
@@ -774,6 +735,8 @@ static gss_result gss_error_result_with_message_and_code(const char* message, in
         std::string(message) + " (" + std::to_string(code) + ")",
         ""
     };
+}
+
 }
 
 #if defined(__clang__)
