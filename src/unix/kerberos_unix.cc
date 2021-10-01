@@ -3,6 +3,10 @@
 #include "../kerberos.h"
 #include "../kerberos_worker.h"
 
+namespace node_kerberos {
+
+using namespace Napi;
+
 #define GSS_MECH_OID_KRB5 9
 #define GSS_MECH_OID_SPNEGO 6
 
@@ -13,138 +17,124 @@ static char spnego_mech_oid_bytes[] = "\x2b\x06\x01\x05\x05\x02";
 gss_OID_desc spnego_mech_oid = {6, &spnego_mech_oid_bytes};
 
 /// KerberosClient
-KerberosClient::~KerberosClient() {
-    if (_state != NULL) {
-        authenticate_gss_client_clean(_state);
-        free(_state);
-        _state = NULL;
-    }
-}
-
-NAN_METHOD(KerberosClient::Step) {
-    KerberosClient* client = Nan::ObjectWrap::Unwrap<KerberosClient>(info.This());
-    std::string challenge(*Nan::Utf8String(info[0]));
-    Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[1]).ToLocalChecked());
+void KerberosClient::Step(const CallbackInfo& info) {
+    auto state = this->state();
+    std::string challenge = info[0].ToString();
+    Function callback = info[1].As<Function>();
 
     KerberosWorker::Run(callback, "kerberos:ClientStep", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
         gss_result result =
-            authenticate_gss_client_step(client->state(), challenge.c_str(), NULL);
+            authenticate_gss_client_step(state.get(), challenge.c_str(), NULL);
 
         return onFinished([=](KerberosWorker* worker) {
-            Nan::HandleScope scope;
+            Napi::Env env = worker->Env();
             if (result.code == AUTH_GSS_ERROR) {
-                v8::Local<v8::Value> argv[] = {Nan::Error(result.message.c_str()), Nan::Null()};
-                worker->Call(2, argv);
+                worker->Call(std::initializer_list<napi_value>
+                    { Error::New(env, result.message).Value(), env.Null() });
                 return;
             }
 
-            v8::Local<v8::Value> response = Nan::Null();
-            if (client->state()->response != NULL) {
-                response = Nan::New(client->state()->response).ToLocalChecked();
+            Napi::Value response = env.Null();
+            if (state->response != nullptr) {
+                response = String::New(env, state->response);
             }
 
-            v8::Local<v8::Value> argv[] = {Nan::Null(), response};
-            worker->Call(2, argv);
+            worker->Call(std::initializer_list<napi_value>
+                { env.Null(), response });
         });
     });
 }
 
-NAN_METHOD(KerberosClient::UnwrapData) {
-    KerberosClient* client = Nan::ObjectWrap::Unwrap<KerberosClient>(info.This());
-    std::string challenge(*Nan::Utf8String(info[0]));
-    Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[1]).ToLocalChecked());
+void KerberosClient::UnwrapData(const CallbackInfo& info) {
+    auto state = this->state();
+    std::string challenge = info[0].ToString();
+    Function callback = info[1].As<Function>();
 
     KerberosWorker::Run(callback, "kerberos:ClientUnwrap", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
         gss_result result =
-            authenticate_gss_client_unwrap(client->state(), challenge.c_str());
+            authenticate_gss_client_unwrap(state.get(), challenge.c_str());
 
         return onFinished([=](KerberosWorker* worker) {
-            Nan::HandleScope scope;
+            Napi::Env env = worker->Env();
             if (result.code == AUTH_GSS_ERROR) {
-                v8::Local<v8::Value> argv[] = {Nan::Error(result.message.c_str()), Nan::Null()};
-                worker->Call(2, argv);
+                worker->Call(std::initializer_list<napi_value>
+                    { Error::New(env, result.message).Value(), env.Null() });
                 return;
             }
 
-            v8::Local<v8::Value> argv[] = {Nan::Null(), Nan::New(client->state()->response).ToLocalChecked()};
-            worker->Call(2, argv);
+            worker->Call(std::initializer_list<napi_value>
+                { env.Null(), String::New(env, state->response) });
         });
     });
 }
 
-NAN_METHOD(KerberosClient::WrapData) {
-    KerberosClient* client = Nan::ObjectWrap::Unwrap<KerberosClient>(info.This());
-    std::string challenge(*Nan::Utf8String(info[0]));
-    v8::Local<v8::Object> options = Nan::To<v8::Object>(info[1]).ToLocalChecked();
-    Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
-    std::string user = StringOptionValue(options, "user");
+void KerberosClient::WrapData(const CallbackInfo& info) {
+    auto state = this->state();
+    std::string challenge = info[0].ToString();
+    Object options = info[1].ToObject();
+    Function callback = info[2].As<Function>();
+    std::string user = ToStringWithNonStringAsEmpty(options["user"]);
 
     int protect = 0; // NOTE: this should be an option
 
     KerberosWorker::Run(callback, "kerberos:ClientWrap", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
         gss_result result = authenticate_gss_client_wrap(
-            client->state(), challenge.c_str(), user.c_str(), protect);
+            state.get(), challenge.c_str(), user.c_str(), protect);
 
         return onFinished([=](KerberosWorker* worker) {
-            Nan::HandleScope scope;
+            Napi::Env env = worker->Env();
             if (result.code == AUTH_GSS_ERROR) {
-                v8::Local<v8::Value> argv[] = {Nan::Error(result.message.c_str()), Nan::Null()};
-                worker->Call(2, argv);
+                worker->Call(std::initializer_list<napi_value>
+                    { Error::New(env, result.message).Value(), env.Null() });
                 return;
             }
 
-            v8::Local<v8::Value> argv[] = {Nan::Null(), Nan::New(client->state()->response).ToLocalChecked()};
-            worker->Call(2, argv);
+            worker->Call(std::initializer_list<napi_value>
+                { env.Null(), String::New(env, state->response) });
         });
     });
 }
 
 /// KerberosServer
-KerberosServer::~KerberosServer() {
-    if (_state != NULL) {
-        authenticate_gss_server_clean(_state);
-        _state = NULL;
-    }
-}
-
-NAN_METHOD(KerberosServer::Step) {
-    KerberosServer* server = Nan::ObjectWrap::Unwrap<KerberosServer>(info.This());
-    std::string challenge(*Nan::Utf8String(info[0]));
-    Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[1]).ToLocalChecked());
+void KerberosServer::Step(const CallbackInfo& info) {
+    auto state = this->state();
+    std::string challenge = info[0].ToString();
+    Function callback = info[1].As<Function>();
 
     KerberosWorker::Run(callback, "kerberos:ServerStep", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
         gss_result result =
-            authenticate_gss_server_step(server->state(), challenge.c_str());
+            authenticate_gss_server_step(state.get(), challenge.c_str());
 
         return onFinished([=](KerberosWorker* worker) {
-            Nan::HandleScope scope;
+            Napi::Env env = worker->Env();
             if (result.code == AUTH_GSS_ERROR) {
-                v8::Local<v8::Value> argv[] = {Nan::Error(result.message.c_str()), Nan::Null()};
-                worker->Call(2, argv);
+                worker->Call(std::initializer_list<napi_value>
+                    { Error::New(env, result.message).Value(), env.Null() });
                 return;
             }
 
-            v8::Local<v8::Value> response = Nan::Null();
-            if (server->state()->response != NULL) {
-                response = Nan::New(server->state()->response).ToLocalChecked();
+            Napi::Value response = env.Null();
+            if (state->response != nullptr) {
+                response = String::New(env, state->response);
             }
 
-            v8::Local<v8::Value> argv[] = {Nan::Null(), response};
-            worker->Call(2, argv);
+            worker->Call(std::initializer_list<napi_value>
+                { env.Null(), response });
         });
     });
 }
 
 /// Global Methods
-NAN_METHOD(InitializeClient) {
-    std::string service(*Nan::Utf8String(info[0]));
-    v8::Local<v8::Object> options = Nan::To<v8::Object>(info[1]).ToLocalChecked();
-    Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
+void InitializeClient(const CallbackInfo& info) {
+    std::string service = info[0].ToString();
+    Object options = info[1].ToObject();
+    Function callback = info[2].As<Function>();
 
-    std::string principal = StringOptionValue(options, "principal");
-    uint32_t gss_flags =
-        UInt32OptionValue(options, "gssFlags", GSS_C_MUTUAL_FLAG | GSS_C_SEQUENCE_FLAG);
-    uint32_t mech_oid_int = UInt32OptionValue(options, "mechOID", 0);
+    std::string principal = ToStringWithNonStringAsEmpty(options["principal"]);
+    Value flags_v = options["flags"];
+    uint32_t gss_flags = flags_v.IsNumber() ? flags_v.As<Number>().Uint32Value() : GSS_C_MUTUAL_FLAG|GSS_C_SEQUENCE_FLAG;
+    Value mech_oid_v = options["mechOID"];
+    uint32_t mech_oid_int = mech_oid_v.IsNumber() ? mech_oid_v.As<Number>().Uint32Value() : 0;
     gss_OID mech_oid = GSS_C_NO_OID;
     if (mech_oid_int == GSS_MECH_OID_KRB5) {
         mech_oid = &krb5_mech_oid;
@@ -153,94 +143,82 @@ NAN_METHOD(InitializeClient) {
     }
 
     KerberosWorker::Run(callback, "kerberos:InitializeClient", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
-        // TODO: Manage client_state as a proper C++ class with a destructor + through shared pointers
-        gss_client_state* client_state = gss_client_state_new();
+        auto client_state = std::make_shared<gss_client_state>();
         gss_result result = authenticate_gss_client_init(
-            service.c_str(), principal.c_str(), gss_flags, NULL, mech_oid, client_state);
-
-        if (result.code == AUTH_GSS_ERROR) {
-            authenticate_gss_client_clean(client_state);
-            free(client_state);
-        }
+            service.c_str(), principal.c_str(), gss_flags, NULL, mech_oid, client_state.get());
 
         return onFinished([=](KerberosWorker* worker) {
-            Nan::HandleScope scope;
+            Napi::Env env = worker->Env();
             if (result.code == AUTH_GSS_ERROR) {
-                v8::Local<v8::Value> argv[] = {Nan::Error(result.message.c_str()), Nan::Null()};
-                worker->Call(2, argv);
+                worker->Call(std::initializer_list<napi_value>
+                    { Error::New(env, result.message).Value(), env.Null() });
                 return;
             }
 
-            v8::Local<v8::Value> argv[] = {Nan::Null(), KerberosClient::NewInstance(client_state)};
-            worker->Call(2, argv);
+            worker->Call(std::initializer_list<napi_value>
+                { env.Null(), KerberosClient::NewInstance(env, std::move(client_state)) });
         });
     });
 }
 
-NAN_METHOD(InitializeServer) {
-    std::string service(*Nan::Utf8String(info[0]));
-    Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[1]).ToLocalChecked());
+void InitializeServer(const CallbackInfo& info) {
+    std::string service = info[0].ToString();
+    Function callback = info[1].As<Function>();
 
     KerberosWorker::Run(callback, "kerberos:InitializeServer", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
-        // TODO: Manage server_state as a proper C++ class with a destructor + through shared pointers
-        gss_server_state* server_state = gss_server_state_new();
+        auto server_state = std::make_shared<gss_server_state>();
         gss_result result =
-            authenticate_gss_server_init(service.c_str(), server_state);
-
-        if (result.code == AUTH_GSS_ERROR) {
-            authenticate_gss_server_clean(server_state);
-            free(server_state);
-        }
+            authenticate_gss_server_init(service.c_str(), server_state.get());
 
         return onFinished([=](KerberosWorker* worker) {
-            Nan::HandleScope scope;
+            Napi::Env env = worker->Env();
             if (result.code == AUTH_GSS_ERROR) {
-                v8::Local<v8::Value> argv[] = {Nan::Error(result.message.c_str()), Nan::Null()};
-                worker->Call(2, argv);
+                worker->Call(std::initializer_list<napi_value>
+                    { Error::New(env, result.message).Value(), env.Null() });
                 return;
             }
 
-            v8::Local<v8::Value> argv[] = {Nan::Null(), KerberosServer::NewInstance(server_state)};
-            worker->Call(2, argv);
+            worker->Call(std::initializer_list<napi_value>
+                { env.Null(), KerberosServer::NewInstance(env, std::move(server_state)) });
         });
     });
 }
 
-NAN_METHOD(PrincipalDetails) {
-    std::string service(*Nan::Utf8String(info[0]));
-    std::string hostname(*Nan::Utf8String(info[1]));
-    Nan::Callback* callback = new Nan::Callback(Nan::To<v8::Function>(info[2]).ToLocalChecked());
+void PrincipalDetails(const CallbackInfo& info) {
+    std::string service = info[0].ToString();
+    std::string hostname = info[1].ToString();
+    Function callback = info[2].As<Function>();
 
     KerberosWorker::Run(callback, "kerberos:PrincipalDetails", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
         gss_result result =
             server_principal_details(service.c_str(), hostname.c_str());
 
         return onFinished([=](KerberosWorker* worker) {
-            Nan::HandleScope scope;
+            Napi::Env env = worker->Env();
             if (result.code == AUTH_GSS_ERROR) {
-                v8::Local<v8::Value> argv[] = {Nan::Error(result.message.c_str()), Nan::Null()};
-                worker->Call(2, argv);
+                worker->Call(std::initializer_list<napi_value>
+                    { Error::New(env, result.message).Value(), env.Null() });
                 return;
             }
 
-            v8::Local<v8::Value> argv[] = {Nan::Null(), Nan::New(result.data.c_str()).ToLocalChecked()};
-            worker->Call(2, argv);
+            worker->Call(std::initializer_list<napi_value>
+                { env.Null(), String::New(env, result.data) });
         });
     });
 }
 
-NAN_METHOD(CheckPassword) {
-    std::string username(*Nan::Utf8String(info[0]));
-    std::string password(*Nan::Utf8String(info[1]));
-    std::string service(*Nan::Utf8String(info[2]));
+void CheckPassword(const CallbackInfo& info) {
+    std::string username = info[0].ToString();
+    std::string password = info[1].ToString();
+    std::string service = info[2].ToString();
 
     std::string defaultRealm;
-    Nan::Callback* callback;
-    if (info[3]->IsFunction()) {
-        callback = new Nan::Callback(Nan::To<v8::Function>(info[3]).ToLocalChecked());
+    Function callback;
+    if (info[3].IsFunction()) {
+        callback = info[3].As<Function>();
     } else {
-        defaultRealm = *Nan::Utf8String(info[3]);
-        callback = new Nan::Callback(Nan::To<v8::Function>(info[4]).ToLocalChecked());
+        defaultRealm = info[3].ToString();
+        callback = info[4].As<Function>();
     }
 
     KerberosWorker::Run(callback, "kerberos:CheckPassword", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
@@ -248,14 +226,16 @@ NAN_METHOD(CheckPassword) {
             username.c_str(), password.c_str(), service.c_str(), defaultRealm.c_str());
 
         return onFinished([=](KerberosWorker* worker) {
-            Nan::HandleScope scope;
+            Napi::Env env = worker->Env();
             if (result.code == AUTH_GSS_ERROR) {
-                v8::Local<v8::Value> argv[] = {Nan::Error(result.message.c_str()), Nan::Null()};
-                worker->Call(2, argv);
+                worker->Call(std::initializer_list<napi_value>
+                    { Error::New(env, result.message).Value(), env.Null() });
             } else {
-                v8::Local<v8::Value> argv[] = {Nan::Null(), Nan::Null()};
-                worker->Call(2, argv);
+                worker->Call(std::initializer_list<napi_value>
+                    { env.Null(), env.Null() });
             }
         });
     });
+}
+
 }
