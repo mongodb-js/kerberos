@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.0.0-beta.0](https://github.com/mongodb-js/kerberos/compare/v1.1.7...v2.0.0-beta.0) (2021-10-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* **NODE-3472:** convert to Node-API (#137)
+
+### Features
+
+* **NODE-3472:** convert to Node-API ([#137](https://github.com/mongodb-js/kerberos/issues/137)) ([f9481a4](https://github.com/mongodb-js/kerberos/commit/f9481a42877c604f8aac961536fc5674ce8baa6c))
+
 ### [1.1.7](https://github.com/mongodb-js/kerberos/compare/v1.1.6...v1.1.7) (2021-09-14)
 
 ### [1.1.6](https://github.com/mongodb-js/kerberos/compare/v1.1.5...v1.1.6) (2021-07-20)
