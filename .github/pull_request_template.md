@@ -18,7 +18,7 @@ You can do that here: https://jira.mongodb.org/projects/NODE
 
 ### Double check the following
 
-- [ ] Ran `npm run check:lint` script
+- [ ] Ran `npm run lint` script
 - [ ] Self-review completed using the relevant portions of the [steps outlined here](https://github.com/mongodb/node-mongodb-native/blob/HEAD/CONTRIBUTING.md#reviewer-guidelines)
 - [ ] PR title follows the correct format: `<type>(NODE-xxxx)<!>: <description>`
 - [ ] Changes are covered by tests
