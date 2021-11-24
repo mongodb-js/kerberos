@@ -58,4 +58,7 @@ registry=https://registry.npmjs.org
 EOT
 
 # install node dependencies
+if [ "$OS" == "Windows_NT" ]; then
+  npm install --global windows-build-tools
+fi
 npm install --unsafe-perm
