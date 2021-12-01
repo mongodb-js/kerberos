@@ -24,6 +24,10 @@ if [ "$OS" == "Windows_NT" ]; then
     export NVM_HOME=`cygpath -w "$NODE_ARTIFACTS_PATH/nvm"`
     export NVM_SYMLINK=`cygpath -w "$NODE_ARTIFACTS_PATH/bin"`
     export PATH=`cygpath $NVM_SYMLINK`:`cygpath $NVM_HOME`:$PATH
+    echo "Configuring msbuild via npm"
+    npm config set msvs_version 2017
+    npm config set msbuild_path "C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\MSBuild\Current\Bin\MSBuild.exe"
+
 else
     export PATH="/opt/mongodbtoolchain/v2/bin:$PATH"
     export NVM_DIR="${NODE_ARTIFACTS_PATH}/nvm"
