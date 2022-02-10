@@ -79,7 +79,7 @@ auth_sspi_client_init(WCHAR* service,
                                        /* LogonID (We don't use this) */
                                        NULL,
                                        /* AuthData */
-                                       *user ? &authIdentity : NULL,
+                                       authIdentity.Password ? &authIdentity : NULL,
                                        /* Always NULL */
                                        NULL,
                                        /* Always NULL */
