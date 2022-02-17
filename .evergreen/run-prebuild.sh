@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -o errexit  # Exit the script with error if any of the commands fail
+set -o xtrace
 
 get_version_at_git_rev () {
   local REV=$1
@@ -19,7 +20,7 @@ run_prebuild() {
     npm run prebuild -- -u "${NODE_GITHUB_TOKEN}"
     echo "Prebuild's successfully submitted"
   fi
-  set +o xtrace
+  set -o xtrace
 }
 
 source "${PROJECT_DIRECTORY}/.evergreen/init-nvm.sh"

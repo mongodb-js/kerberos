@@ -90,13 +90,13 @@ functions:
           ${PREPARE_SHELL}
           NODE_FORCE_PUBLISH=1 NODE_GITHUB_TOKEN=${github_token} ${PROJECT_DIRECTORY}/.evergreen/run-prebuild.sh
   install dependencies:
-    - command: shell.exec
+    - command: subprocess.exec
       type: setup
       params:
         working_dir: src
-        script: |
-          ${PREPARE_SHELL}
-          NODE_VERSION=${node_version} bash ${PROJECT_DIRECTORY}/.evergreen/install-dependencies.sh
+        binary: bash
+        args:
+          - ${PROJECT_DIRECTORY}/.evergreen/install-dependencies.sh
 
 pre:
   - func: fetch source

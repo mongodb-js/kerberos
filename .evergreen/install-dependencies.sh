@@ -67,7 +67,6 @@ else
 
   set -o xtrace
 fi
-nvm use ${NODE_VERSION}
 
 # setup npm cache in a local directory
 cat <<EOT > .npmrc
