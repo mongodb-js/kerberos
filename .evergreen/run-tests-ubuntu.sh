@@ -1,10 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-set -e
+set -o errexit
 
 IP_ADDRESS=$(hostname -I)
 HOSTNAME=$(cat /etc/hostname)
-NODE_LTS=${NODE_LTS:-argon}
 
 export KERBEROS_HOSTNAME=$HOSTNAME.$KERBEROS_REALM
 export DEBIAN_FRONTEND=noninteractive
@@ -116,32 +115,7 @@ else
     echo -e "SUCCESS: Apache site built and set for Kerberos auth\nActual Output:\n$CURL_OUTPUT"
 fi
 
-NODE_VERSION=${NODE_VERSION:-14}
-NODE_ARTIFACTS_PATH="${HOME}/node-artifacts"
-NPM_CACHE_DIR="${NODE_ARTIFACTS_PATH}/npm"
-NPM_TMP_DIR="${NODE_ARTIFACTS_PATH}/tmp"
+bash ${PROJECT_DIRECTORY}/.evergreen/install-dependencies.sh
+source "${PROJECT_DIRECTORY}/.evergreen/init-nvm.sh"
 
-export NVM_DIR="${NODE_ARTIFACTS_PATH}/nvm"
-
-# create node artifacts path if needed
-mkdir -p ${NVM_DIR}
-mkdir -p ${NPM_CACHE_DIR}
-mkdir -p "${NPM_TMP_DIR}"
-
-echo "Installing Node.js"
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
-
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-nvm install $NODE_VERSION
-
-cat <<EOT > .npmrc
-devdir=${NPM_CACHE_DIR}/.node-gyp
-init-module=${NPM_CACHE_DIR}/.npm-init.js
-cache=${NPM_CACHE_DIR}
-tmp=${NPM_TMP_DIR}
-registry=https://registry.npmjs.org
-EOT
-
-echo "Installing dependencies and running test"
-npm install --unsafe-perm
 npm test

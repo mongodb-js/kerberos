@@ -2,7 +2,6 @@
 const kerberos = require('../lib/index');
 const MongoClient = require('mongodb').MongoClient;
 const expect = require('chai').expect;
-const os = require('os');
 
 const password = process.env.KERBEROS_PASSWORD;
 const realm = process.env.KERBEROS_REALM;
@@ -71,8 +70,13 @@ function authenticate(options, callback) {
 const test = {};
 describe('Kerberos (win32)', function () {
   this.timeout(60000);
-  before(function () {
-    if (os.type() !== 'Windows_NT') this.skip();
+
+  beforeEach(function () {
+    this.currentTest.skipReason =
+      'This test only runs on windows, also TODO(NODE-XXXX): Kerberos testing on windows';
+    this.skip();
+    // if (process.platform !== 'win32') {
+    // }
   });
 
   beforeEach(function () {
@@ -80,17 +84,17 @@ describe('Kerberos (win32)', function () {
   });
 
   afterEach(function () {
-    test.client.close().then(() => delete test.client);
+    if (test.client) test.client.close().then(() => delete test.client);
   });
 
-  it.skip('should create a kerberos client', function () {
+  it('should create a kerberos client', function () {
     // this is a very basic test used to pass appveyor and provide prebuild binaries
     return kerberos.initializeClient(service, { user: username, password }).then(krbClient => {
       expect(krbClient).to.exist;
     });
   });
 
-  it.skip('should work from windows', function (done) {
+  it('should work from windows', function (done) {
     test.client.connect((err, client) => {
       expect(err).to.not.exist;
 
@@ -144,7 +148,7 @@ describe('Kerberos (win32)', function () {
     });
   });
 
-  it.skip('should work from windows using promises', function () {
+  it('should work from windows using promises', function () {
     return test.client.connect().then(client => {
       const db = client.db('$external');
 

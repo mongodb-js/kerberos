@@ -57,30 +57,35 @@ functions:
           ${PREPARE_SHELL}
           ${PROJECT_DIRECTORY}/.evergreen/run-tests.sh
   run tests ubuntu:
-    - command: shell.exec
+    - command: subprocess.exec
       type: test
-      params:
-        working_dir: src
-        script: >
-          ${PREPARE_SHELL}
-            docker run -i \
-            -v ${PROJECT_DIRECTORY}:/app \
-            -w /app \
-            -e NODE_VERSION=$NODE_VERSION \
-            -e KERBEROS_USERNAME=administrator \
-            -e KERBEROS_PASSWORD=Password01 \
-            -e KERBEROS_REALM=example.com \
-            -e KERBEROS_PORT=80 \
-            ubuntu:16.04 \
-            /bin/bash /app/.evergreen/run-tests-ubuntu.sh
+      binary: docker
+      working_dir: src
+      env:
+       PROJECT_DIRECTORY: ${PROJECT_DIRECTORY}
+       PROJECT: ${project}
+      args:
+          - run
+          - "--interactive"
+          - "--volume"
+          - ${PROJECT_DIRECTORY}:/app
+          - "--workdir"
+          - /app
+          - "--env"
+          - PROJECT_DIRECTORY=${PROJECT_DIRECTORY}
+          - "ubuntu:18.04"
+          - /bin/bash
+          - /app/.evergreen/run-tests-ubuntu.sh
   run prebuild:
-    - command: shell.exec
+    - command: subprocess.exec
       type: test
-      params:
-        working_dir: src
-        script: >
-          ${PREPARE_SHELL}
-          NODE_GITHUB_TOKEN=${github_token} ${PROJECT_DIRECTORY}/.evergreen/run-prebuild.sh
+      working_dir: ${PROJECT_DIRECTORY}
+      binary: bash
+      args:
+        - "./.evergreen/run-prebuild.sh"
+      env:
+        PROJECT_DIRECTORY: ${PROJECT_DIRECTORY}
+        NODE_GITHUB_TOKEN: ${github_token}
   run prebuild and force publish:
     - command: shell.exec
       type: test
@@ -96,7 +101,9 @@ functions:
         working_dir: src
         binary: bash
         args:
-          - ${PROJECT_DIRECTORY}/.evergreen/install-dependencies.sh
+          - .evergreen/install-dependencies.sh
+        env:
+          PROJECT_DIRECTORY: ${PROJECT_DIRECTORY}
 
 pre:
   - func: fetch source

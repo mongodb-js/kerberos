@@ -4,5 +4,8 @@
     "failZero": true,
     "reporter": "test/tools/mongodb_reporter.js",
     "sort": true,
-    "color": true
+    "color": true,
+    "require": [
+      "test/tools/hooks/environment_hook.js"
+    ]
   }

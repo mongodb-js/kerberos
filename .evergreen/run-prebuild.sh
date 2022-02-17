@@ -11,6 +11,7 @@ get_version_at_git_rev () {
 }
 
 run_prebuild() {
+  node -v
   set +o xtrace # Don't log the token
   if [[ -z $NODE_GITHUB_TOKEN ]];then
     echo "No github token set. Cannot run prebuild."
@@ -39,7 +40,8 @@ elif [[ $VERSION_AT_HEAD != "$VERSION_AT_HEAD_1" ]]; then
 else
   echo "No difference is package version ($VERSION_AT_HEAD_1 -> $VERSION_AT_HEAD)"
   echo "Will prebuild without submit"
+  node -v
   npm run prebuild
   echo "Local prebuild successful."
-  ls ./prebuilds
+  ls prebuilds
 fi

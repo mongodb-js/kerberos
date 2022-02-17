@@ -49,7 +49,7 @@
     "precommit": "check-clang-format",
     "test": "mocha test",
     "docs": "jsdoc2md --template etc/README.hbs --plugin dmd-clear --files lib/kerberos.js > README.md",
-    "rebuild": "prebuild --compile",
+    "rebuild": "prebuild --runtime napi --compile",
     "prebuild": "prebuild --runtime napi --strip --verbose --all",
     "release": "standard-version -i HISTORY.md"
   },
