@@ -1,11 +1,9 @@
 'use strict';
-const kerberos = require('..');
+const kerberos = require('../lib/index');
 const request = require('request');
 const chai = require('chai');
 const expect = chai.expect;
 const os = require('os');
-const SegfaultHandler = require('segfault-handler');
-SegfaultHandler.registerHandler();
 chai.use(require('chai-string'));
 
 // environment variables
@@ -15,12 +13,12 @@ const realm = process.env.KERBEROS_REALM || 'example.com';
 const hostname = process.env.KERBEROS_HOSTNAME || 'hostname.example.com';
 const port = process.env.KERBEROS_PORT || '80';
 
-describe('Kerberos', function() {
-  before(function() {
+describe('Kerberos', function () {
+  before(function () {
     if (os.type() === 'Windows_NT') this.skip();
   });
 
-  it('should lookup principal details on a server', function(done) {
+  it('should lookup principal details on a server', function (done) {
     const expected = `HTTP/${hostname}@${realm.toUpperCase()}`;
     kerberos.principalDetails('HTTP', hostname, (err, details) => {
       expect(err).to.not.exist;
@@ -29,7 +27,7 @@ describe('Kerberos', function() {
     });
   });
 
-  it('should check a given password against a kerberos server', function(done) {
+  it('should check a given password against a kerberos server', function (done) {
     const service = `HTTP/${hostname}`;
     kerberos.checkPassword(username, password, service, realm.toUpperCase(), err => {
       expect(err).to.not.exist;
@@ -41,7 +39,7 @@ describe('Kerberos', function() {
     });
   });
 
-  it('should authenticate against a kerberos server using GSSAPI', function(done) {
+  it('should authenticate against a kerberos server using GSSAPI', function (done) {
     const service = `HTTP@${hostname}`;
 
     kerberos.initializeClient(service, {}, (err, client) => {
@@ -76,13 +74,14 @@ describe('Kerberos', function() {
     });
   });
 
-  it('should authenticate against a kerberos HTTP endpoint', function(done) {
+  it('should authenticate against a kerberos HTTP endpoint', function (done) {
     const service = `HTTP@${hostname}`;
     const url = `http://${hostname}:${port}/`;
 
     // send the initial request un-authenticated
     request.get(url, (err, response) => {
-      expect(response.statusCode).to.equal(401);
+      expect(err).to.not.exist;
+      expect(response).to.have.property('statusCode', 401);
 
       // validate the response supports the Negotiate protocol
       const authenticateHeader = response.headers['www-authenticate'];

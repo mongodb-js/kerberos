@@ -2,7 +2,7 @@
   "name": "kerberos",
   "version": "2.0.0-beta.0",
   "description": "Kerberos library for Node.js",
-  "main": "index.js",
+  "main": "lib/index.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/mongodb-js/kerberos.git"
@@ -21,32 +21,33 @@
   },
   "dependencies": {
     "bindings": "^1.5.0",
-    "node-addon-api": "^4.1.0",
-    "prebuild-install": "6.1.2"
+    "node-addon-api": "^4.3.0",
+    "prebuild-install": "7.0.1"
   },
   "devDependencies": {
-    "chai": "^4.2.0",
+    "chai": "^4.3.6",
     "chai-string": "^1.5.0",
-    "clang-format": "^1.2.4",
+    "chalk": "^4.1.2",
+    "clang-format": "^1.6.0",
     "dmd-clear": "^0.1.2",
-    "eslint": "^5.16.0",
-    "eslint-plugin-prettier": "^2.6.2",
-    "jsdoc-to-markdown": "^4.0.1",
-    "mocha": "^5.2.0",
-    "mongodb": "^3.2.5",
-    "prebuild": "^9.0.1",
-    "prettier": "^1.17.1",
+    "eslint": "^8.9.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "jsdoc-to-markdown": "^7.1.1",
+    "mocha": "^9.2.0",
+    "mongodb": "^4.3.1",
+    "prebuild": "^11.0.3",
+    "prettier": "^2.5.1",
     "request": "^2.88.0",
-    "segfault-handler": "^1.2.0",
-    "standard-version": "^9.3.1"
+    "standard-version": "^9.3.2"
   },
   "scripts": {
     "install": "prebuild-install --runtime napi || node-gyp rebuild",
     "format-cxx": "git-clang-format",
-    "format-js": "prettier --print-width 100 --tab-width 2 --single-quote --write index.js 'test/**/*.js' 'lib/**/*.js'",
-    "lint": "eslint index.js lib test",
+    "format-js": "eslint lib test --fix",
+    "check:lint": "eslint lib test",
     "precommit": "check-clang-format",
-    "test": "mocha ./test",
+    "test": "mocha test",
     "docs": "jsdoc2md --template etc/README.hbs --plugin dmd-clear --files lib/kerberos.js > README.md",
     "rebuild": "prebuild --compile",
     "prebuild": "prebuild --runtime napi --strip --verbose --all",

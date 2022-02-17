@@ -1,0 +1,8 @@
+{
+    "$schema": "https://raw.githubusercontent.com/SchemaStore/schemastore/master/src/schemas/json/mocharc.json",
+    "recursive": true,
+    "failZero": true,
+    "reporter": "test/tools/mongodb_reporter.js",
+    "sort": true,
+    "color": true
+  }

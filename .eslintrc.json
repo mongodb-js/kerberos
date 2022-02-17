@@ -1,0 +1,71 @@
+{
+  "root": true,
+  "extends": [
+    "eslint:recommended",
+    "plugin:prettier/recommended"
+  ],
+  "env": {
+    "node": true,
+    "mocha": true,
+    "es6": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 2019
+  },
+  "plugins": [
+    "prettier"
+  ],
+  "rules": {
+    "no-restricted-properties": [
+      "error",
+      {
+        "object": "describe",
+        "property": "only"
+      },
+      {
+        "object": "it",
+        "property": "only"
+      },
+      {
+        "object": "context",
+        "property": "only"
+      }
+    ],
+    "prettier/prettier": "error",
+    "no-console": "error",
+    "valid-typeof": "error",
+    "eqeqeq": ["error", "always", {"null": "ignore"}],
+    "strict": ["error", "global"],
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "TSEnumDeclaration",
+        "message": "Do not declare enums"
+      },
+      {
+        "selector": "BinaryExpression[operator=/[=!]==/] Identifier[name='undefined']",
+        "message": "Do not strictly check undefined"
+      },
+      {
+        "selector": "BinaryExpression[operator=/[=!]==/] Literal[raw='null']",
+        "message": "Do not strictly check null"
+      },
+      {
+        "selector": "BinaryExpression[operator=/[=!]==?/] Literal[value='undefined']",
+        "message": "Do not strictly check typeof undefined (NOTE: currently this rule only detects the usage of 'undefined' string literal so this could be a misfire)"
+      }
+    ]
+  },
+  "overrides": [
+    {
+      // Settings for javascript test files
+      "files": [
+        "test/**/*.js"
+      ],
+      "rules": {
+        "no-console": "off",
+        "no-restricted-syntax": "off"
+      }
+    }
+  ]
+}

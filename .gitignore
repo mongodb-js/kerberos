@@ -17,3 +17,5 @@ node_modules
 build
 
 npm-debug.log
+
+xunit.xml
