@@ -5,7 +5,7 @@ stepback: true
 command_type: system
 
 # Limit maximum test running time.
-exec_timeout_secs: 900   # 15 minutes
+exec_timeout_secs: 900 # 15 minutes
 
 # What to do when evergreen hits the timeout
 timeout:
@@ -49,38 +49,47 @@ functions:
       params:
         file: src/expansion.yml
   run tests:
-    - command: shell.exec
+    - command: subprocess.exec
       type: test
       params:
         working_dir: src
-        script: >
-          ${PREPARE_SHELL}
-          ${PROJECT_DIRECTORY}/.evergreen/run-tests.sh
+        binary: bash
+        args:
+          - '.evergreen/run-tests.sh'
+        env:
+          PROJECT_DIRECTORY: ${PROJECT_DIRECTORY}
   run tests ubuntu:
-    - command: shell.exec
+    - command: subprocess.exec
       type: test
       params:
+        binary: docker
         working_dir: src
-        script: >
-          ${PREPARE_SHELL}
-            docker run -i \
-            -v ${PROJECT_DIRECTORY}:/app \
-            -w /app \
-            -e NODE_VERSION=$NODE_VERSION \
-            -e KERBEROS_USERNAME=administrator \
-            -e KERBEROS_PASSWORD=Password01 \
-            -e KERBEROS_REALM=example.com \
-            -e KERBEROS_PORT=80 \
-            ubuntu:16.04 \
-            /bin/bash /app/.evergreen/run-tests-ubuntu.sh
+        env:
+          PROJECT_DIRECTORY: ${PROJECT_DIRECTORY}
+          PROJECT: ${project}
+        args:
+          - run
+          - '--interactive'
+          - '--volume'
+          - ${PROJECT_DIRECTORY}:/app
+          - '--workdir'
+          - /app
+          - '--env'
+          - PROJECT_DIRECTORY=/app
+          - 'ubuntu:16.04'
+          - /bin/bash
+          - /app/.evergreen/run-tests-ubuntu.sh
   run prebuild:
-    - command: shell.exec
+    - command: subprocess.exec
       type: test
       params:
         working_dir: src
-        script: >
-          ${PREPARE_SHELL}
-          NODE_GITHUB_TOKEN=${github_token} ${PROJECT_DIRECTORY}/.evergreen/run-prebuild.sh
+        binary: bash
+        args:
+          - '.evergreen/run-prebuild.sh'
+        env:
+          PROJECT_DIRECTORY: ${PROJECT_DIRECTORY}
+          NODE_GITHUB_TOKEN: ${github_token}
   run prebuild and force publish:
     - command: shell.exec
       type: test
@@ -90,13 +99,15 @@ functions:
           ${PREPARE_SHELL}
           NODE_FORCE_PUBLISH=1 NODE_GITHUB_TOKEN=${github_token} ${PROJECT_DIRECTORY}/.evergreen/run-prebuild.sh
   install dependencies:
-    - command: shell.exec
+    - command: subprocess.exec
       type: setup
       params:
         working_dir: src
-        script: |
-          ${PREPARE_SHELL}
-          NODE_VERSION=${node_version} bash ${PROJECT_DIRECTORY}/.evergreen/install-dependencies.sh
+        binary: bash
+        args:
+          - .evergreen/install-dependencies.sh
+        env:
+          PROJECT_DIRECTORY: ${PROJECT_DIRECTORY}
 
 pre:
   - func: fetch source
@@ -120,32 +131,35 @@ tasks:
 
 buildvariants:
   - name: macos
-    display_name: "macOS 10.14"
+    display_name: 'macOS 10.14'
     run_on: macos-1014
     tasks:
-      # - run-tests
+      - run-prebuild
+      - run-prebuild-force-publish
+  - name: macos-m1
+    display_name: MacOS M1
+    run_on: macos-1100-arm64
+    tasks:
       - run-prebuild
       - run-prebuild-force-publish
   - name: windows-x64
-    display_name: "Windows 2016"
+    display_name: 'Windows 2016'
     run_on: windows-64-vs2017-test
     tasks:
-      # - run-tests
       - run-prebuild
       - run-prebuild-force-publish
   - name: suse12-s390x
-    display_name: "SLES 12 s390x"
+    display_name: 'SLES 12 s390x'
     run_on: suse12-zseries-test
     expansions:
       has_packages: true
       packager_distro: suse12
       packager_arch: s390x
     tasks:
-      # - run-tests
       - run-prebuild
       - run-prebuild-force-publish
   - name: ubuntu1804-64
-    display_name: "Ubuntu 18.04 64-bit"
+    display_name: 'Ubuntu 18.04 64-bit'
     run_on: ubuntu1804-test
     expansions:
       has_packages: true
@@ -156,13 +170,12 @@ buildvariants:
       - run-prebuild
       - run-prebuild-force-publish
   - name: ubuntu1804-arm64
-    display_name: "Ubuntu 18.04 arm64"
+    display_name: 'Ubuntu 18.04 arm64'
     run_on: ubuntu1804-arm64-build
     expansions:
       has_packages: true
       packager_distro: ubuntu1804
       packager_arch: arm64
     tasks:
-      # - run-tests
       - run-prebuild
       - run-prebuild-force-publish

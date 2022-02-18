@@ -11,17 +11,17 @@ const testMethod = defineOperation(kerberos._testMethod, [
 ]);
 
 describe('defineOperation', () => {
-  it('should validate parameters', function() {
+  it('should validate parameters', function () {
     expect(() => testMethod(42)).to.throw(/Invalid type for parameter/);
   });
 
-  it('should validate optional parameters, with valid parameters after', function() {
+  it('should validate optional parameters, with valid parameters after', function () {
     expect(() => testMethod('llamas', false, true, () => {})).to.throw(
       /Invalid type for parameter `optionalString`/
     );
   });
 
-  it('should support defaults', function(done) {
+  it('should support defaults', function (done) {
     expect(() => testMethod('testing')).to.not.throw();
     testMethod('testing', true, err => {
       expect(err).to.exist;
@@ -29,12 +29,12 @@ describe('defineOperation', () => {
     });
   });
 
-  it('should return a promise if no callback is provided', function() {
+  it('should return a promise if no callback is provided', function () {
     const promise = testMethod('llamas', false);
     expect(promise).to.be.instanceOf(Promise);
   });
 
-  it('should use a callback if provided', function(done) {
+  it('should use a callback if provided', function (done) {
     testMethod('testing', false, 'optional', (err, result) => {
       expect(err).to.not.exist;
       expect(result).to.equal('optional');

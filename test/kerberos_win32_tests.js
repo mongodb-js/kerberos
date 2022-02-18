@@ -1,10 +1,7 @@
 'use strict';
-const kerberos = require('..');
+const kerberos = require('../lib/index');
 const MongoClient = require('mongodb').MongoClient;
 const expect = require('chai').expect;
-const os = require('os');
-const SegfaultHandler = require('segfault-handler');
-SegfaultHandler.registerHandler();
 
 const password = process.env.KERBEROS_PASSWORD;
 const realm = process.env.KERBEROS_REALM;
@@ -24,7 +21,7 @@ function authenticate(options, callback) {
   let promise;
   if (callback == null || typeof callback !== 'function') {
     promise = new Promise((resolve, reject) => {
-      callback = function(err, res) {
+      callback = function (err, res) {
         if (err) return reject(err);
         resolve(res);
       };
@@ -71,28 +68,32 @@ function authenticate(options, callback) {
 }
 
 const test = {};
-describe('Kerberos (win32)', function() {
+describe('Kerberos (win32)', function () {
   this.timeout(60000);
-  before(function() {
-    if (os.type() !== 'Windows_NT') this.skip();
+
+  beforeEach(function () {
+    if (process.platform !== 'win32') {
+      this.currentTest.skipReason = 'TODO(NODE-4021): Kerberos testing on windows';
+      this.skip();
+    }
   });
 
-  beforeEach(function() {
+  beforeEach(function () {
     test.client = new MongoClient(`mongodb://${hostname}:${port}/`);
   });
 
-  afterEach(function() {
-    test.client.close().then(() => delete test.client);
+  afterEach(function () {
+    if (test.client) test.client.close().then(() => delete test.client);
   });
 
-  it.skip('should create a kerberos client', function() {
+  it('should create a kerberos client', function () {
     // this is a very basic test used to pass appveyor and provide prebuild binaries
     return kerberos.initializeClient(service, { user: username, password }).then(krbClient => {
       expect(krbClient).to.exist;
     });
   });
 
-  it.skip('should work from windows', function(done) {
+  it('should work from windows', function (done) {
     test.client.connect((err, client) => {
       expect(err).to.not.exist;
 
@@ -146,7 +147,7 @@ describe('Kerberos (win32)', function() {
     });
   });
 
-  it.skip('should work from windows using promises', function() {
+  it('should work from windows using promises', function () {
     return test.client.connect().then(client => {
       const db = client.db('$external');
 

@@ -1,10 +1,15 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-set -e
+set -o errexit
 
 IP_ADDRESS=$(hostname -I)
 HOSTNAME=$(cat /etc/hostname)
-NODE_LTS=${NODE_LTS:-argon}
+
+export KERBEROS_USERNAME="administrator"
+export KERBEROS_PASSWORD="Password01"
+export KERBEROS_REALM="example.com"
+export KERBEROS_HOSTNAME="hostname.example.com"
+export KERBEROS_PORT="80"
 
 export KERBEROS_HOSTNAME=$HOSTNAME.$KERBEROS_REALM
 export DEBIAN_FRONTEND=noninteractive
@@ -16,6 +21,8 @@ apt-get -y -qq install \
   build-essential libkrb5-dev \
   krb5-user krb5-kdc krb5-admin-server \
   apache2 libapache2-mod-auth-gssapi
+
+set -o xtrace # enable logging after apt install
 
 echo "Configure the hosts file for Kerberos to work in a container"
 cp /etc/hosts ~/hosts.new
@@ -116,32 +123,14 @@ else
     echo -e "SUCCESS: Apache site built and set for Kerberos auth\nActual Output:\n$CURL_OUTPUT"
 fi
 
-NODE_VERSION=${NODE_VERSION:-14}
-NODE_ARTIFACTS_PATH="${HOME}/node-artifacts"
-NPM_CACHE_DIR="${NODE_ARTIFACTS_PATH}/npm"
-NPM_TMP_DIR="${NODE_ARTIFACTS_PATH}/tmp"
+source "${PROJECT_DIRECTORY}/.evergreen/install-dependencies.sh"
 
-export NVM_DIR="${NODE_ARTIFACTS_PATH}/nvm"
+set -o xtrace
+echo "Run: nvm install 14"
+nvm install 14
+echo "Run: nvm use 14"
+nvm use 14
+set +o xtrace
 
-# create node artifacts path if needed
-mkdir -p ${NVM_DIR}
-mkdir -p ${NPM_CACHE_DIR}
-mkdir -p "${NPM_TMP_DIR}"
 
-echo "Installing Node.js"
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
-
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-nvm install $NODE_VERSION
-
-cat <<EOT > .npmrc
-devdir=${NPM_CACHE_DIR}/.node-gyp
-init-module=${NPM_CACHE_DIR}/.npm-init.js
-cache=${NPM_CACHE_DIR}
-tmp=${NPM_TMP_DIR}
-registry=https://registry.npmjs.org
-EOT
-
-echo "Installing dependencies and running test"
-npm install --unsafe-perm
 npm test
