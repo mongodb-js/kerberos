@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 set -o errexit
-set -o xtrace
 
 IP_ADDRESS=$(hostname -I)
 HOSTNAME=$(cat /etc/hostname)
@@ -22,6 +21,8 @@ apt-get -y -qq install \
   build-essential libkrb5-dev \
   krb5-user krb5-kdc krb5-admin-server \
   apache2 libapache2-mod-auth-gssapi
+
+set -o xtrace # enable logging after apt install
 
 echo "Configure the hosts file for Kerberos to work in a container"
 cp /etc/hosts ~/hosts.new
@@ -124,7 +125,12 @@ fi
 
 source "${PROJECT_DIRECTORY}/.evergreen/install-dependencies.sh"
 
+set -o xtrace
+echo "Run: nvm install 14"
 nvm install 14
+echo "Run: nvm use 14"
 nvm use 14
+set +o xtrace
+
 
 npm test
