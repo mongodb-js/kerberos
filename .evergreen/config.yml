@@ -51,42 +51,45 @@ functions:
   run tests:
     - command: subprocess.exec
       type: test
-      working_dir: src
-      binary: bash
-      args:
-        - '.evergreen/run-tests.sh'
-      env:
-        PROJECT_DIRECTORY: ${PROJECT_DIRECTORY}
+      params:
+        working_dir: src
+        binary: bash
+        args:
+          - '.evergreen/run-tests.sh'
+        env:
+          PROJECT_DIRECTORY: ${PROJECT_DIRECTORY}
   run tests ubuntu:
     - command: subprocess.exec
       type: test
-      binary: docker
-      working_dir: src
-      env:
-        PROJECT_DIRECTORY: ${PROJECT_DIRECTORY}
-        PROJECT: ${project}
-      args:
-        - run
-        - '--interactive'
-        - '--volume'
-        - ${PROJECT_DIRECTORY}:/app
-        - '--workdir'
-        - /app
-        - '--env'
-        - PROJECT_DIRECTORY=/app
-        - 'ubuntu:16.04'
-        - /bin/bash
-        - /app/.evergreen/run-tests-ubuntu.sh
+      params:
+        binary: docker
+        working_dir: src
+        env:
+          PROJECT_DIRECTORY: ${PROJECT_DIRECTORY}
+          PROJECT: ${project}
+        args:
+          - run
+          - '--interactive'
+          - '--volume'
+          - ${PROJECT_DIRECTORY}:/app
+          - '--workdir'
+          - /app
+          - '--env'
+          - PROJECT_DIRECTORY=/app
+          - 'ubuntu:16.04'
+          - /bin/bash
+          - /app/.evergreen/run-tests-ubuntu.sh
   run prebuild:
     - command: subprocess.exec
       type: test
-      working_dir: ${PROJECT_DIRECTORY}
-      binary: bash
-      args:
-        - './.evergreen/run-prebuild.sh'
-      env:
-        PROJECT_DIRECTORY: ${PROJECT_DIRECTORY}
-        NODE_GITHUB_TOKEN: ${github_token}
+      params:
+        working_dir: ${PROJECT_DIRECTORY}
+        binary: bash
+        args:
+          - './.evergreen/run-prebuild.sh'
+        env:
+          PROJECT_DIRECTORY: ${PROJECT_DIRECTORY}
+          NODE_GITHUB_TOKEN: ${github_token}
   run prebuild and force publish:
     - command: shell.exec
       type: test
