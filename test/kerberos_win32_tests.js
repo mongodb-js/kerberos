@@ -72,11 +72,10 @@ describe('Kerberos (win32)', function () {
   this.timeout(60000);
 
   beforeEach(function () {
-    this.currentTest.skipReason =
-      'This test only runs on windows, also TODO(NODE-XXXX): Kerberos testing on windows';
-    this.skip();
-    // if (process.platform !== 'win32') {
-    // }
+    if (process.platform !== 'win32') {
+      this.currentTest.skipReason = 'TODO(NODE-4021): Kerberos testing on windows';
+      this.skip();
+    }
   });
 
   beforeEach(function () {
