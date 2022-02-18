@@ -7,14 +7,11 @@ function beforeAllEnvironmentLog() {
     util.inspect(
       {
         node: process.version,
-        KERBEROS_USERNAME:
-          typeof process.env.KERBEROS_USERNAME === 'string' ? 'defined' : 'not defined',
-        KERBEROS_PASSWORD:
-          typeof process.env.KERBEROS_PASSWORD === 'string' ? 'defined' : 'not defined',
-        KERBEROS_HOSTNAME:
-          typeof process.env.KERBEROS_HOSTNAME === 'string' ? 'defined' : 'not defined',
-        KERBEROS_PORT: typeof process.env.KERBEROS_PORT === 'string' ? 'defined' : 'not defined',
-        KERBEROS_REALM: typeof process.env.KERBEROS_REALM === 'string' ? 'defined' : 'not defined'
+        KERBEROS_USERNAME: process.env.KERBEROS_USERNAME,
+        KERBEROS_PASSWORD: process.env.KERBEROS_PASSWORD,
+        KERBEROS_HOSTNAME: process.env.KERBEROS_HOSTNAME,
+        KERBEROS_PORT: process.env.KERBEROS_PORT,
+        KERBEROS_REALM: process.env.KERBEROS_REALM
       },
       { colors: true }
     ) + '\n'

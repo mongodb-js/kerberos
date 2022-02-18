@@ -14,7 +14,6 @@ NVM_URL="https://raw.githubusercontent.com/creationix/nvm/v0.38.0/install.sh"
 
 # this needs to be explicitly exported for the nvm install below
 export NVM_DIR="${NODE_ARTIFACTS_PATH}/nvm"
-export XDG_CONFIG_HOME=${NODE_ARTIFACTS_PATH}
 
 # create node artifacts path if needed
 mkdir -p "${NODE_ARTIFACTS_PATH}"

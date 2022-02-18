@@ -1,9 +1,16 @@
 #!/usr/bin/env bash
 
 set -o errexit
+set -o xtrace
 
 IP_ADDRESS=$(hostname -I)
 HOSTNAME=$(cat /etc/hostname)
+
+export KERBEROS_USERNAME="administrator"
+export KERBEROS_PASSWORD="Password01"
+export KERBEROS_REALM="example.com"
+export KERBEROS_HOSTNAME="hostname.example.com"
+export KERBEROS_PORT="80"
 
 export KERBEROS_HOSTNAME=$HOSTNAME.$KERBEROS_REALM
 export DEBIAN_FRONTEND=noninteractive
@@ -115,7 +122,5 @@ else
     echo -e "SUCCESS: Apache site built and set for Kerberos auth\nActual Output:\n$CURL_OUTPUT"
 fi
 
-bash ${PROJECT_DIRECTORY}/.evergreen/install-dependencies.sh
-source ".evergreen/init-nvm.sh"
-
+source "${PROJECT_DIRECTORY}/.evergreen/install-dependencies.sh"
 npm test
