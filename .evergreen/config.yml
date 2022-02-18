@@ -76,17 +76,17 @@ functions:
           - /app
           - '--env'
           - PROJECT_DIRECTORY=/app
-          - 'ubuntu:16.04'
+          - 'ubuntu:18.04'
           - /bin/bash
           - /app/.evergreen/run-tests-ubuntu.sh
   run prebuild:
     - command: subprocess.exec
       type: test
       params:
-        working_dir: ${PROJECT_DIRECTORY}
+        working_dir: src
         binary: bash
         args:
-          - './.evergreen/run-prebuild.sh'
+          - '.evergreen/run-prebuild.sh'
         env:
           PROJECT_DIRECTORY: ${PROJECT_DIRECTORY}
           NODE_GITHUB_TOKEN: ${github_token}
@@ -134,14 +134,18 @@ buildvariants:
     display_name: 'macOS 10.14'
     run_on: macos-1014
     tasks:
-      # - run-tests
+      - run-prebuild
+      - run-prebuild-force-publish
+  - name: macos-m1
+    display_name: MacOS M1
+    run_on: macos-1100-arm64
+    tasks:
       - run-prebuild
       - run-prebuild-force-publish
   - name: windows-x64
     display_name: 'Windows 2016'
     run_on: windows-64-vs2017-test
     tasks:
-      # - run-tests
       - run-prebuild
       - run-prebuild-force-publish
   - name: suse12-s390x
@@ -152,7 +156,6 @@ buildvariants:
       packager_distro: suse12
       packager_arch: s390x
     tasks:
-      # - run-tests
       - run-prebuild
       - run-prebuild-force-publish
   - name: ubuntu1804-64
@@ -174,6 +177,5 @@ buildvariants:
       packager_distro: ubuntu1804
       packager_arch: arm64
     tasks:
-      # - run-tests
       - run-prebuild
       - run-prebuild-force-publish
