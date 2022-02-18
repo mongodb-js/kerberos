@@ -24,7 +24,7 @@ run_prebuild() {
   set -o xtrace
 }
 
-source "${PROJECT_DIRECTORY}/.evergreen/init-nvm.sh"
+source ".evergreen/init-nvm.sh"
 
 VERSION_AT_HEAD=$(get_version_at_git_rev "HEAD")
 VERSION_AT_HEAD_1=$(get_version_at_git_rev "HEAD~1")

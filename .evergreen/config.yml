@@ -5,7 +5,7 @@ stepback: true
 command_type: system
 
 # Limit maximum test running time.
-exec_timeout_secs: 900   # 15 minutes
+exec_timeout_secs: 900 # 15 minutes
 
 # What to do when evergreen hits the timeout
 timeout:
@@ -49,40 +49,41 @@ functions:
       params:
         file: src/expansion.yml
   run tests:
-    - command: shell.exec
+    - command: subprocess.exec
       type: test
-      params:
-        working_dir: src
-        script: >
-          ${PREPARE_SHELL}
-          ${PROJECT_DIRECTORY}/.evergreen/run-tests.sh
+      working_dir: src
+      binary: bash
+      args:
+        - '.evergreen/run-tests.sh'
+      env:
+        PROJECT_DIRECTORY: ${PROJECT_DIRECTORY}
   run tests ubuntu:
     - command: subprocess.exec
       type: test
       binary: docker
       working_dir: src
       env:
-       PROJECT_DIRECTORY: ${PROJECT_DIRECTORY}
-       PROJECT: ${project}
+        PROJECT_DIRECTORY: ${PROJECT_DIRECTORY}
+        PROJECT: ${project}
       args:
-          - run
-          - "--interactive"
-          - "--volume"
-          - ${PROJECT_DIRECTORY}:/app
-          - "--workdir"
-          - /app
-          - "--env"
-          - PROJECT_DIRECTORY=${PROJECT_DIRECTORY}
-          - "ubuntu:18.04"
-          - /bin/bash
-          - /app/.evergreen/run-tests-ubuntu.sh
+        - run
+        - '--interactive'
+        - '--volume'
+        - ${PROJECT_DIRECTORY}:/app
+        - '--workdir'
+        - /app
+        - '--env'
+        - PROJECT_DIRECTORY=${PROJECT_DIRECTORY}
+        - 'ubuntu:16.04'
+        - /bin/bash
+        - /app/.evergreen/run-tests-ubuntu.sh
   run prebuild:
     - command: subprocess.exec
       type: test
       working_dir: ${PROJECT_DIRECTORY}
       binary: bash
       args:
-        - "./.evergreen/run-prebuild.sh"
+        - './.evergreen/run-prebuild.sh'
       env:
         PROJECT_DIRECTORY: ${PROJECT_DIRECTORY}
         NODE_GITHUB_TOKEN: ${github_token}
@@ -127,21 +128,21 @@ tasks:
 
 buildvariants:
   - name: macos
-    display_name: "macOS 10.14"
+    display_name: 'macOS 10.14'
     run_on: macos-1014
     tasks:
       # - run-tests
       - run-prebuild
       - run-prebuild-force-publish
   - name: windows-x64
-    display_name: "Windows 2016"
+    display_name: 'Windows 2016'
     run_on: windows-64-vs2017-test
     tasks:
       # - run-tests
       - run-prebuild
       - run-prebuild-force-publish
   - name: suse12-s390x
-    display_name: "SLES 12 s390x"
+    display_name: 'SLES 12 s390x'
     run_on: suse12-zseries-test
     expansions:
       has_packages: true
@@ -152,7 +153,7 @@ buildvariants:
       - run-prebuild
       - run-prebuild-force-publish
   - name: ubuntu1804-64
-    display_name: "Ubuntu 18.04 64-bit"
+    display_name: 'Ubuntu 18.04 64-bit'
     run_on: ubuntu1804-test
     expansions:
       has_packages: true
@@ -163,7 +164,7 @@ buildvariants:
       - run-prebuild
       - run-prebuild-force-publish
   - name: ubuntu1804-arm64
-    display_name: "Ubuntu 18.04 arm64"
+    display_name: 'Ubuntu 18.04 arm64'
     run_on: ubuntu1804-arm64-build
     expansions:
       has_packages: true

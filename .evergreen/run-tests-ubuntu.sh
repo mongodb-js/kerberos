@@ -116,6 +116,6 @@ else
 fi
 
 bash ${PROJECT_DIRECTORY}/.evergreen/install-dependencies.sh
-source "${PROJECT_DIRECTORY}/.evergreen/init-nvm.sh"
+source ".evergreen/init-nvm.sh"
 
 npm test
