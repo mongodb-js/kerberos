@@ -123,4 +123,7 @@ else
 fi
 
 source "${PROJECT_DIRECTORY}/.evergreen/install-dependencies.sh"
+
+nvm use 14
+
 npm test

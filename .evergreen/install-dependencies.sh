@@ -57,7 +57,7 @@ else
 
   echo "  Downloading nvm"
   curl -o- $NVM_URL | bash
-  [ -s "${NVM_DIR}/nvm.sh" ] && \. "${NVM_DIR}/nvm.sh"
+  [ -s "${NVM_DIR}/nvm.sh" ] && source "${NVM_DIR}/nvm.sh"
 
   echo "Running: nvm install --lts --latest-npm"
   nvm install --lts --latest-npm
