@@ -76,7 +76,7 @@ functions:
           - /app
           - '--env'
           - PROJECT_DIRECTORY=/app
-          - 'ubuntu:18.04'
+          - 'ubuntu:16.04'
           - /bin/bash
           - /app/.evergreen/run-tests-ubuntu.sh
   run prebuild:
