@@ -1,8 +1,15 @@
 {
   "name": "kerberos",
-  "version": "2.0.0-beta.0",
+  "version": "2.0.0",
   "description": "Kerberos library for Node.js",
   "main": "lib/index.js",
+  "files": [
+    "lib",
+    "src",
+    "binding.gyp",
+    "HISTORY.md",
+    "README.md"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/mongodb-js/kerberos.git"

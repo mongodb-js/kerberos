@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.0.0](https://github.com/mongodb-js/kerberos/compare/v2.0.0-beta.0...v2.0.0) (2022-02-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* **NODE-3848:** update dependencies (#142)
+
+### Bug Fixes
+
+* **NODE-3982:** only pass username to SSPI if password is set ([#141](https://github.com/mongodb-js/kerberos/issues/141)) ([2d307a3](https://github.com/mongodb-js/kerberos/commit/2d307a3131e546d046b865e6c1d0a256f7612e0d))
+
+
+* **NODE-3848:** update dependencies ([#142](https://github.com/mongodb-js/kerberos/issues/142)) ([8c06728](https://github.com/mongodb-js/kerberos/commit/8c067286add33a2b56aeaf10e41f0409c5fe1d5b))
+
 ## [2.0.0-beta.0](https://github.com/mongodb-js/kerberos/compare/v1.1.7...v2.0.0-beta.0) (2021-10-06)
 
 

@@ -22,3 +22,5 @@ xunit.xml
 
 bindings
 .npmrc
+
+*.tgz
