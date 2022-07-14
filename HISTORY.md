@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.0.1](https://github.com/mongodb-js/kerberos/compare/v2.0.0...v2.0.1) (2022-07-14)
+
+
+### Bug Fixes
+
+* **NODE-4297:** bump prebuild install to 7.1.1 ([#145](https://github.com/mongodb-js/kerberos/issues/145)) ([142842f](https://github.com/mongodb-js/kerberos/commit/142842fae048e873caac5c83fda43c6b5b45280e))
+
 ## [2.0.0](https://github.com/mongodb-js/kerberos/compare/v2.0.0-beta.0...v2.0.0) (2022-02-22)
 
 
