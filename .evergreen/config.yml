@@ -76,7 +76,7 @@ functions:
           - /app
           - '--env'
           - PROJECT_DIRECTORY=/app
-          - 'ubuntu:16.04'
+          - 'ubuntu:20.04'
           - /bin/bash
           - /app/.evergreen/run-tests-ubuntu.sh
   run prebuild:
@@ -158,23 +158,23 @@ buildvariants:
     tasks:
       - run-prebuild
       - run-prebuild-force-publish
-  - name: ubuntu1804-64
-    display_name: 'Ubuntu 18.04 64-bit'
-    run_on: ubuntu1804-test
+  - name: ubuntu2004-64
+    display_name: 'Ubuntu 20.04 64-bit'
+    run_on: ubuntu2004-small
     expansions:
       has_packages: true
-      packager_distro: ubuntu1804
+      packager_distro: ubuntu2004
       packager_arch: x86_64
     tasks:
       - run-tests-ubuntu
       - run-prebuild
       - run-prebuild-force-publish
   - name: ubuntu1804-arm64
-    display_name: 'Ubuntu 18.04 arm64'
-    run_on: ubuntu1804-arm64-build
+    display_name: 'Ubuntu 20.04 arm64'
+    run_on: ubuntu2004-arm64-small
     expansions:
       has_packages: true
-      packager_distro: ubuntu1804
+      packager_distro: ubuntu2004
       packager_arch: arm64
     tasks:
       - run-prebuild
