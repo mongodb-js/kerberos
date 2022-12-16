@@ -4,7 +4,7 @@ set -e
 
 IP_ADDRESS=$(hostname -I)
 HOSTNAME=$(cat /etc/hostname)
-NODE_LTS=${NODE_LTS:-argon}
+NODE_LTS=${NODE_LTS:-hydrogen}
 
 export KERBEROS_HOSTNAME=$HOSTNAME.$KERBEROS_REALM
 export DEBIAN_FRONTEND=noninteractive
@@ -116,7 +116,7 @@ else
     echo -e "SUCCESS: Apache site built and set for Kerberos auth\nActual Output:\n$CURL_OUTPUT"
 fi
 
-NODE_VERSION=${NODE_VERSION:-14}
+NODE_VERSION=${NODE_VERSION:-18}
 NODE_ARTIFACTS_PATH="${HOME}/node-artifacts"
 NPM_CACHE_DIR="${NODE_ARTIFACTS_PATH}/npm"
 NPM_TMP_DIR="${NODE_ARTIFACTS_PATH}/tmp"
