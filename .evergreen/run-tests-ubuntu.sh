@@ -126,10 +126,10 @@ fi
 source "${PROJECT_DIRECTORY}/.evergreen/install-dependencies.sh"
 
 set -o xtrace
-echo "Run: nvm install 14"
-nvm install 14
-echo "Run: nvm use 14"
-nvm use 14
+echo "Run: nvm install 18"
+nvm install 18
+echo "Run: nvm use 18"
+nvm use 18
 set +o xtrace
 
 

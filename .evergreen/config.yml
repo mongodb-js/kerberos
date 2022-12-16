@@ -177,5 +177,6 @@ buildvariants:
       packager_distro: ubuntu2004
       packager_arch: arm64
     tasks:
+      - run-tests-ubuntu
       - run-prebuild
       - run-prebuild-force-publish
