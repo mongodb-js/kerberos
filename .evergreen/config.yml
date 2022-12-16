@@ -134,18 +134,21 @@ buildvariants:
     display_name: 'macOS 10.14'
     run_on: macos-1014
     tasks:
+      - run-tests-ubuntu
       - run-prebuild
       - run-prebuild-force-publish
   - name: macos-m1
     display_name: MacOS M1
     run_on: macos-1100-arm64
     tasks:
+      - run-tests-ubuntu
       - run-prebuild
       - run-prebuild-force-publish
   - name: windows-x64
     display_name: 'Windows 2016'
     run_on: windows-64-vs2017-test
     tasks:
+      - run-tests-ubuntu
       - run-prebuild
       - run-prebuild-force-publish
   - name: suse12-s390x
@@ -156,6 +159,7 @@ buildvariants:
       packager_distro: suse12
       packager_arch: s390x
     tasks:
+      - run-tests-ubuntu
       - run-prebuild
       - run-prebuild-force-publish
   - name: ubuntu2004-64
@@ -177,5 +181,6 @@ buildvariants:
       packager_distro: ubuntu2004
       packager_arch: arm64
     tasks:
+      - run-tests-ubuntu
       - run-prebuild
       - run-prebuild-force-publish
