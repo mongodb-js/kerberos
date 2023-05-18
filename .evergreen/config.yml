@@ -137,6 +137,9 @@ buildvariants:
     tasks:
       - run-prebuild
       - run-prebuild-force-publish
+    expansions:
+      NODE_LTS_VERSION: 20
+      MACOSX_DEPLOYMENT_TARGET: '10.14'
   - name: macos-m1
     display_name: MacOS M1
     run_on: macos-1100-arm64
@@ -145,6 +148,7 @@ buildvariants:
       - run-prebuild-force-publish
     expansions:
       NODE_LTS_VERSION: 20
+      MACOSX_DEPLOYMENT_TARGET: '11.00'
   - name: windows-x64
     display_name: 'Windows 2016'
     run_on: windows-64-vs2017-test
