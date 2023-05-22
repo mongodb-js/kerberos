@@ -146,7 +146,7 @@ buildvariants:
       - run-prebuild
       - run-prebuild-force-publish
     expansions:
-      NODE_LTS_VERSION: 14
+      NODE_LTS_VERSION: 18
   - name: windows-x64
     display_name: 'Windows 2016'
     run_on: windows-64-vs2017-test
