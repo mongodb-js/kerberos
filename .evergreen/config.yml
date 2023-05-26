@@ -108,7 +108,7 @@ functions:
           - .evergreen/install-dependencies.sh
         env:
           PROJECT_DIRECTORY: ${PROJECT_DIRECTORY}
-          NODE_LTS_NAME: ${NODE_LTS_NAME}
+          NODE_LTS_VERSION: ${NODE_LTS_VERSION}
 
 pre:
   - func: fetch source
@@ -137,6 +137,8 @@ buildvariants:
     tasks:
       - run-prebuild
       - run-prebuild-force-publish
+    expansions:
+      NODE_LTS_VERSION: 14
   - name: macos-m1
     display_name: MacOS M1
     run_on: macos-1100-arm64
@@ -144,7 +146,7 @@ buildvariants:
       - run-prebuild
       - run-prebuild-force-publish
     expansions:
-      NODE_LTS_NAME: hydrogen
+      NODE_LTS_VERSION: 18
   - name: windows-x64
     display_name: 'Windows 2016'
     run_on: windows-64-vs2017-test

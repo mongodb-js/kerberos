@@ -123,8 +123,8 @@ else
     echo -e "SUCCESS: Apache site built and set for Kerberos auth\nActual Output:\n$CURL_OUTPUT"
 fi
 
-echo "Run: install Node.js 18"
-export NODE_LTS_NAME="hydrogen"
+echo "Run: install Node.js 20"
+export NODE_LTS_VERSION=20
 source "${PROJECT_DIRECTORY}/.evergreen/install-dependencies.sh"
 
 npm test
