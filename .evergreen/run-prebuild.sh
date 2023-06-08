@@ -5,6 +5,7 @@ set -o xtrace
 
 source "${PROJECT_DIRECTORY}/.evergreen/init-node-and-npm-env.sh"
 
+# mongodbtoolchain is necessary for building on Windows
 export PATH="/opt/mongodbtoolchain/v2/bin:$PATH"
 
 echo "Node Version $(node -v)"
