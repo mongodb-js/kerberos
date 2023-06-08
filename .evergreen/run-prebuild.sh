@@ -5,6 +5,8 @@ set -o xtrace
 
 source "${PROJECT_DIRECTORY}/.evergreen/init-node-and-npm-env.sh"
 
+export PATH="/opt/mongodbtoolchain/v2/bin:$PATH"
+
 echo "Node Version $(node -v)"
 
 get_version_at_git_rev () {
