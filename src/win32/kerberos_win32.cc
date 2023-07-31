@@ -88,7 +88,7 @@ void KerberosClient::WrapData(const CallbackInfo& info) {
 
     KerberosWorker::Run(callback, "kerberos:ClientWrap", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
         sspi_result result = auth_sspi_client_wrap(
-            state.get(), (SEC_CHAR*)challenge.c_str(), (SEC_CHAR*)user.c_str(), user.length(), protect);
+            state.get(), (SEC_CHAR*)challenge.c_str(), (SEC_CHAR*)user.c_str(), (ULONG)user.length(), protect);
 
         return onFinished([=](KerberosWorker* worker) {
             Napi::Env env = worker->Env();
@@ -131,8 +131,8 @@ void InitializeClient(const CallbackInfo& info) {
     KerberosWorker::Run(callback, "kerberos:InitializeClient", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
         auto client_state = std::make_shared<sspi_client_state>();
         sspi_result result = auth_sspi_client_init(
-            (WCHAR*)service.c_str(), gss_flags, (WCHAR*)user.c_str(), user.length(),
-            (WCHAR*)domain.c_str(), domain.length(), (WCHAR*)password.c_str(), password.length(),
+            (WCHAR*)service.c_str(), gss_flags, (WCHAR*)user.c_str(), (ULONG)user.length(),
+            (WCHAR*)domain.c_str(), (ULONG)domain.length(), (WCHAR*)password.c_str(), (ULONG)password.length(),
             (WCHAR*)mech_oid.c_str(), client_state.get());
 
         return onFinished([=](KerberosWorker* worker) {

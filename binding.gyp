@@ -15,7 +15,14 @@
       'cflags!': [ '-fno-exceptions' ],
       'cflags_cc!': [ '-fno-exceptions' ],
       'msvs_settings': {
-        'VCCLCompilerTool': { 'ExceptionHandling': 1 },
+        'VCCLCompilerTool': {
+          'ExceptionHandling': 1,
+          'AdditionalOptions': [
+            '/w34244',
+            '/w34267',
+            '/ZH:SHA_256'
+          ]
+        },
       },
       'conditions': [
         ['OS=="mac"', {
