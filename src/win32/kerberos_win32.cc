@@ -79,7 +79,7 @@ void KerberosClient::UnwrapData(const CallbackInfo& info) {
 }
 
 static bool isStringTooLong(const std::string& str) {
-    return str.length() >= ULONG_MAX;
+    return str.size() >= ULONG_MAX;
 }
 
 void KerberosClient::WrapData(const CallbackInfo& info) {
