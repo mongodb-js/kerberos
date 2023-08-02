@@ -78,6 +78,10 @@ void KerberosClient::UnwrapData(const CallbackInfo& info) {
     });
 }
 
+static bool isStringTooLong(const std::string& str) {
+    return str.length() >= ULONG_MAX;
+}
+
 void KerberosClient::WrapData(const CallbackInfo& info) {
     auto state = this->state();
     std::string challenge = info[0].ToString();
@@ -85,6 +89,11 @@ void KerberosClient::WrapData(const CallbackInfo& info) {
     Function callback = info[2].As<Function>();
     std::string user = ToStringWithNonStringAsEmpty(options["user"]);
     int protect = 0; // NOTE: this should be an option
+
+    if (isStringTooLong(user)) {
+        throw Error::New(info.Env(), "User name is too long");
+        return;
+    }
 
     KerberosWorker::Run(callback, "kerberos:ClientWrap", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
         sspi_result result = auth_sspi_client_wrap(
@@ -119,6 +128,20 @@ void InitializeClient(const CallbackInfo& info) {
     std::wstring user = ToWStringWithNonStringAsEmpty(options["user"]);
     std::wstring domain = ToWStringWithNonStringAsEmpty(options["domain"]);
     std::wstring password = ToWStringWithNonStringAsEmpty(options["password"]);
+
+    if (isStringTooLong(user)) {
+        throw Error::New(info.Env(), "User name is too long");
+        return;
+    }
+    if (isStringTooLong(domain)) {
+        throw Error::New(info.Env(), "Domain is too long");
+        return;
+    }
+    if (isStringTooLong(password)) {
+        throw Error::New(info.Env(), "Password is too long");
+        return;
+    }
+
     Value flags_v = options["flags"];
     ULONG gss_flags = flags_v.IsNumber() ? flags_v.As<Number>().Uint32Value() : GSS_C_MUTUAL_FLAG|GSS_C_SEQUENCE_FLAG;
     Value mech_oid_v = options["mechOID"];
