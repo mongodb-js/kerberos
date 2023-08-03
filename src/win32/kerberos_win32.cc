@@ -79,7 +79,7 @@ void KerberosClient::UnwrapData(const CallbackInfo& info) {
 }
 
 static bool isStringTooLong(const std::string& str) {
-    return str.size() >= ULONG_MAX;
+    return str.length() >= ULONG_MAX;
 }
 
 void KerberosClient::WrapData(const CallbackInfo& info) {
@@ -92,7 +92,6 @@ void KerberosClient::WrapData(const CallbackInfo& info) {
 
     if (isStringTooLong(user)) {
         throw Error::New(info.Env(), "User name is too long");
-        return;
     }
 
     KerberosWorker::Run(callback, "kerberos:ClientWrap", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
@@ -131,15 +130,12 @@ void InitializeClient(const CallbackInfo& info) {
 
     if (isStringTooLong(user)) {
         throw Error::New(info.Env(), "User name is too long");
-        return;
     }
     if (isStringTooLong(domain)) {
         throw Error::New(info.Env(), "Domain is too long");
-        return;
     }
     if (isStringTooLong(password)) {
         throw Error::New(info.Env(), "Password is too long");
-        return;
     }
 
     Value flags_v = options["flags"];
