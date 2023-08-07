@@ -82,6 +82,10 @@ static bool isStringTooLong(const std::string& str) {
     return str.length() >= ULONG_MAX;
 }
 
+static bool isWStringTooLong(const std::wstring& str) {
+    return str.length() >= ULONG_MAX;
+}
+
 void KerberosClient::WrapData(const CallbackInfo& info) {
     auto state = this->state();
     std::string challenge = info[0].ToString();
@@ -128,13 +132,13 @@ void InitializeClient(const CallbackInfo& info) {
     std::wstring domain = ToWStringWithNonStringAsEmpty(options["domain"]);
     std::wstring password = ToWStringWithNonStringAsEmpty(options["password"]);
 
-    if (isStringTooLong(user)) {
+    if (isWStringTooLong(user)) {
         throw Error::New(info.Env(), "User name is too long");
     }
-    if (isStringTooLong(domain)) {
+    if (isWStringTooLong(domain)) {
         throw Error::New(info.Env(), "Domain is too long");
     }
-    if (isStringTooLong(password)) {
+    if (isWStringTooLong(password)) {
         throw Error::New(info.Env(), "Password is too long");
     }
 
