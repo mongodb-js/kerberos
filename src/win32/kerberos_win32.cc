@@ -78,6 +78,14 @@ void KerberosClient::UnwrapData(const CallbackInfo& info) {
     });
 }
 
+static bool isStringTooLong(const std::string& str) {
+    return str.length() >= ULONG_MAX;
+}
+
+static bool isWStringTooLong(const std::wstring& str) {
+    return str.length() >= ULONG_MAX;
+}
+
 void KerberosClient::WrapData(const CallbackInfo& info) {
     auto state = this->state();
     std::string challenge = info[0].ToString();
@@ -86,9 +94,13 @@ void KerberosClient::WrapData(const CallbackInfo& info) {
     std::string user = ToStringWithNonStringAsEmpty(options["user"]);
     int protect = 0; // NOTE: this should be an option
 
+    if (isStringTooLong(user)) {
+        throw Error::New(info.Env(), "User name is too long");
+    }
+
     KerberosWorker::Run(callback, "kerberos:ClientWrap", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
         sspi_result result = auth_sspi_client_wrap(
-            state.get(), (SEC_CHAR*)challenge.c_str(), (SEC_CHAR*)user.c_str(), user.length(), protect);
+            state.get(), (SEC_CHAR*)challenge.c_str(), (SEC_CHAR*)user.c_str(), (ULONG)user.length(), protect);
 
         return onFinished([=](KerberosWorker* worker) {
             Napi::Env env = worker->Env();
@@ -119,6 +131,17 @@ void InitializeClient(const CallbackInfo& info) {
     std::wstring user = ToWStringWithNonStringAsEmpty(options["user"]);
     std::wstring domain = ToWStringWithNonStringAsEmpty(options["domain"]);
     std::wstring password = ToWStringWithNonStringAsEmpty(options["password"]);
+
+    if (isWStringTooLong(user)) {
+        throw Error::New(info.Env(), "User name is too long");
+    }
+    if (isWStringTooLong(domain)) {
+        throw Error::New(info.Env(), "Domain is too long");
+    }
+    if (isWStringTooLong(password)) {
+        throw Error::New(info.Env(), "Password is too long");
+    }
+
     Value flags_v = options["flags"];
     ULONG gss_flags = flags_v.IsNumber() ? flags_v.As<Number>().Uint32Value() : GSS_C_MUTUAL_FLAG|GSS_C_SEQUENCE_FLAG;
     Value mech_oid_v = options["mechOID"];
@@ -131,8 +154,8 @@ void InitializeClient(const CallbackInfo& info) {
     KerberosWorker::Run(callback, "kerberos:InitializeClient", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
         auto client_state = std::make_shared<sspi_client_state>();
         sspi_result result = auth_sspi_client_init(
-            (WCHAR*)service.c_str(), gss_flags, (WCHAR*)user.c_str(), user.length(),
-            (WCHAR*)domain.c_str(), domain.length(), (WCHAR*)password.c_str(), password.length(),
+            (WCHAR*)service.c_str(), gss_flags, (WCHAR*)user.c_str(), (ULONG)user.length(),
+            (WCHAR*)domain.c_str(), (ULONG)domain.length(), (WCHAR*)password.c_str(), (ULONG)password.length(),
             (WCHAR*)mech_oid.c_str(), client_state.get());
 
         return onFinished([=](KerberosWorker* worker) {
