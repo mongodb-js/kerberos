@@ -27,7 +27,7 @@ The `kerberos` package is a C++ extension for Node.js that provides cross-platfo
   3. Launch cmd, `npm config set msvs_version 2015`
 
 ### MongoDB Node.js Driver Version Compatibility
-Only the following version combinations are considered stable.
+Only the following version combinations with the [MongoDB Node.js Driver](https://github.com/mongodb/node-mongodb-native) are considered stable.
 
 |               | `kerberos@1.x` | `kerberos@2.x` |
 | ------------- | -------------- | -------------- |
