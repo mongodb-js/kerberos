@@ -1,7 +1,5 @@
 Kerberos
 ========
-[![Build Status](https://travis-ci.org/mongodb-js/kerberos.svg?branch=master)](https://travis-ci.org/mongodb-js/kerberos)
-
 The `kerberos` package is a C++ extension for Node.js that provides cross-platform support for kerberos authentication using GSSAPI on linux/osx, and SSPI on windows. Much of the code in this module is adapted from [ccs-kerberos](https://github.com/apple/ccs-pykerberos) and [winkerberos](https://github.com/mongodb-labs/winkerberos).
 
 ### Requirements
@@ -27,6 +25,17 @@ The `kerberos` package is a C++ extension for Node.js that provides cross-platfo
 
   2. Install [Python 2.7](https://www.python.org/downloads/) or [Miniconda 2.7](http://conda.pydata.org/miniconda.html) (`v3.x.x` is not supported), and run `npm config set python python2.7`
   3. Launch cmd, `npm config set msvs_version 2015`
+
+### MongoDB Node.js Driver Version Compatibility
+
+Only the following version combinations with the [MongoDB Node.js Driver](https://github.com/mongodb/node-mongodb-native) are considered stable.
+
+|               | `kerberos@1.x` | `kerberos@2.x` |
+| ------------- | -------------- | -------------- |
+| `mongodb@6.x` | N/A            | ✓              |
+| `mongodb@5.x` | ✓              | ✓              |
+| `mongodb@4.x` | ✓              | ✓              |
+| `mongodb@3.x` | ✓              | N/A            |
 
 ### Installation
 
