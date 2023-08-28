@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.0.2](https://github.com/mongodb-js/kerberos/compare/v2.0.1...v2.0.2) (2023-08-28)
+
+
+### Features
+
+* **NODE-5505:** add compiler warnings and cast lengths ([#158](https://github.com/mongodb-js/kerberos/issues/158)) ([1e73b98](https://github.com/mongodb-js/kerberos/commit/1e73b98340d244e7c409afa6d293be43ed89080b))
+
 ### [2.0.1](https://github.com/mongodb-js/kerberos/compare/v2.0.0...v2.0.1) (2022-07-14)
 
 
