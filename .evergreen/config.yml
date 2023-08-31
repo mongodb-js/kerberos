@@ -153,12 +153,12 @@ buildvariants:
     tasks:
       - run-prebuild
       - run-prebuild-force-publish
-  - name: suse12-s390x
-    display_name: 'SLES 12 s390x'
-    run_on: suse12-zseries-test
+  - name: rhel8-s390x
+    display_name: 'RHEL 8 s390x'
+    run_on: rhel83-zseries-small
     expansions:
       has_packages: true
-      packager_distro: suse12
+      packager_distro: rhel8
       packager_arch: s390x
     tasks:
       - run-prebuild
