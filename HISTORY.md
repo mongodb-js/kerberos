@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.0.3](https://github.com/mongodb-js/kerberos/compare/v2.0.2...v2.0.3) (2023-09-01)
+
+
+### Bug Fixes
+
+* **NODE-5600:** use ubuntu 18 to build and publish ([#162](https://github.com/mongodb-js/kerberos/issues/162)) ([c02db0e](https://github.com/mongodb-js/kerberos/commit/c02db0e1f1a9618bb705782771535feb162d1923))
+
 ### [2.0.2](https://github.com/mongodb-js/kerberos/compare/v2.0.1...v2.0.2) (2023-08-28)
 
 
