@@ -171,7 +171,6 @@ buildvariants:
       packager_distro: ubuntu1804
       packager_arch: x86_64
     tasks:
-      - run-tests-ubuntu
       - run-prebuild
       - run-prebuild-force-publish
   - name: ubuntu1804-arm64
@@ -182,6 +181,23 @@ buildvariants:
       packager_distro: ubuntu1804
       packager_arch: arm64
     tasks:
-      - run-tests-ubuntu
       - run-prebuild
       - run-prebuild-force-publish
+  - name: ubuntu2204-64
+    display_name: 'Ubuntu 22.04 64-bit'
+    run_on: ubuntu2204-small
+    expansions:
+      has_packages: true
+      packager_distro: ubuntu2204
+      packager_arch: x86_64
+    tasks:
+      - run-tests-ubuntu
+  - name: ubuntu2204-arm64
+    display_name: 'Ubuntu 22.04 arm64'
+    run_on: ubuntu2204-arm64-small
+    expansions:
+      has_packages: true
+      packager_distro: ubuntu2204
+      packager_arch: arm64
+    tasks:
+      - run-tests-ubuntu
