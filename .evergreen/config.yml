@@ -109,6 +109,7 @@ functions:
         env:
           PROJECT_DIRECTORY: ${PROJECT_DIRECTORY}
           NODE_LTS_VERSION: ${NODE_LTS_VERSION}
+          NPM_VERSION: "9"
 
 pre:
   - func: fetch source
@@ -139,6 +140,7 @@ buildvariants:
       - run-prebuild-force-publish
     expansions:
       NODE_LTS_VERSION: 14
+      NPM_VERSION: 9
   - name: macos-m1
     display_name: MacOS M1
     run_on: macos-1100-arm64
