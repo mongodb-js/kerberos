@@ -17,7 +17,7 @@ export DEBIAN_FRONTEND=noninteractive
 echo "Installing all the packages required in this test"
 apt-get update
 apt-get -y -qq install \
-  python curl \
+  python3 curl \
   build-essential libkrb5-dev \
   krb5-user krb5-kdc krb5-admin-server \
   apache2 libapache2-mod-auth-gssapi

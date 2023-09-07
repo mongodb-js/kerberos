@@ -76,7 +76,7 @@ functions:
           - /app
           - '--env'
           - PROJECT_DIRECTORY=/app
-          - 'ubuntu:20.04'
+          - 'ubuntu:22.04'
           - /bin/bash
           - /app/.evergreen/run-tests-ubuntu.sh
   run prebuild:
@@ -109,6 +109,7 @@ functions:
         env:
           PROJECT_DIRECTORY: ${PROJECT_DIRECTORY}
           NODE_LTS_VERSION: ${NODE_LTS_VERSION}
+          NPM_VERSION: "9"
 
 pre:
   - func: fetch source
@@ -139,6 +140,7 @@ buildvariants:
       - run-prebuild-force-publish
     expansions:
       NODE_LTS_VERSION: 14
+      NPM_VERSION: 9
   - name: macos-m1
     display_name: MacOS M1
     run_on: macos-1100-arm64
@@ -171,7 +173,6 @@ buildvariants:
       packager_distro: ubuntu1804
       packager_arch: x86_64
     tasks:
-      - run-tests-ubuntu
       - run-prebuild
       - run-prebuild-force-publish
   - name: ubuntu1804-arm64
@@ -182,6 +183,23 @@ buildvariants:
       packager_distro: ubuntu1804
       packager_arch: arm64
     tasks:
-      - run-tests-ubuntu
       - run-prebuild
       - run-prebuild-force-publish
+  - name: ubuntu2204-64
+    display_name: 'Ubuntu 22.04 64-bit'
+    run_on: ubuntu2204-small
+    expansions:
+      has_packages: true
+      packager_distro: ubuntu2204
+      packager_arch: x86_64
+    tasks:
+      - run-tests-ubuntu
+  - name: ubuntu2204-arm64
+    display_name: 'Ubuntu 22.04 arm64'
+    run_on: ubuntu2204-arm64-small
+    expansions:
+      has_packages: true
+      packager_distro: ubuntu2204
+      packager_arch: arm64
+    tasks:
+      - run-tests-ubuntu

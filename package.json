@@ -43,6 +43,7 @@
     "jsdoc-to-markdown": "^8.0.0",
     "mocha": "^10.2.0",
     "mongodb": "^5.7.0",
+    "node-gyp": "^9.4.0",
     "prebuild": "^11.0.4",
     "prettier": "^2.8.8",
     "request": "^2.88.2",
