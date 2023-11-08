@@ -28,6 +28,37 @@
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
+#if 0 // this would actually be the default build option
+#define GSSCALL(x) x
+#define GSSPTRVAL(x) x
+#define KRB5CALL(x) x
+#else
+#include <dlfcn.h>
+// obviously not very DRY'ed + leaks memory, but that's fine for a PoC:
+#define RTLD_FLAGS (RTLD_NOW | RTLD_DEEPBIND)
+#define GSSCALL(x) ([&]() { \
+    void* lib = dlopen("libgssapi_krb5.so.2", RTLD_FLAGS); \
+    if (!lib) { fprintf(stderr, "failed to open libgssapi_krb5.so.2: %s\n", dlerror()); } \
+    auto result = reinterpret_cast<decltype(x)*>(dlsym(lib, #x)); \
+    if (!result) { fprintf(stderr, "failed to look up %s in gssapi_krb5\n", #x); } \
+    return result; \
+})()
+#define GSSPTRVAL(x) ([&]() { \
+    void* lib = dlopen("libgssapi_krb5.so.2", RTLD_FLAGS); \
+    if (!lib) { fprintf(stderr, "failed to open libgssapi_krb5.so.2: %s\n", dlerror()); } \
+    auto result = *static_cast<decltype(x)*>(dlsym(lib, #x)); \
+    if (!result) { fprintf(stderr, "failed to look up %s in gssapi_krb5\n", #x); } \
+    return result; \
+})()
+#define KRB5CALL(x) ([&]() { \
+    void* lib = dlopen("libkrb5.so.3", RTLD_FLAGS); \
+    if (!lib) { fprintf(stderr, "failed to open libkrb5.so: %s\n", dlerror()); } \
+    auto result = reinterpret_cast<decltype(x)*>(dlsym(lib, #x)); \
+    if (!result) { fprintf(stderr, "failed to look up %s in krb5\n", #x); } \
+    return result; \
+})()
+#endif
+
 namespace node_kerberos {
 
 static gss_result gss_success_result(int ret);
@@ -52,26 +83,26 @@ gss_result server_principal_details(const char* service, const char* hostname) {
     snprintf(match, 1024, "%s/%s@", service, hostname);
     match_len = strlen(match);
 
-    code = krb5_init_context(&kcontext);
+    code = KRB5CALL(krb5_init_context)(&kcontext);
     if (code) {
         result =
             gss_error_result_with_message_and_code("Cannot initialize Kerberos5 context", code);
         return result;
     }
 
-    if ((code = krb5_kt_default(kcontext, &kt))) {
+    if ((code = KRB5CALL(krb5_kt_default)(kcontext, &kt))) {
         result = gss_error_result_with_message_and_code("Cannot get default keytab", code);
         goto end;
     }
 
-    if ((code = krb5_kt_start_seq_get(kcontext, kt, &cursor))) {
+    if ((code = KRB5CALL(krb5_kt_start_seq_get)(kcontext, kt, &cursor))) {
         result =
             gss_error_result_with_message_and_code("Cannot get sequence cursor from keytab", code);
         goto end;
     }
 
-    while ((code = krb5_kt_next_entry(kcontext, kt, &entry, &cursor)) == 0) {
-        if ((code = krb5_unparse_name(kcontext, entry.principal, &pname))) {
+    while ((code = KRB5CALL(krb5_kt_next_entry)(kcontext, kt, &entry, &cursor)) == 0) {
+        if ((code = KRB5CALL(krb5_unparse_name)(kcontext, entry.principal, &pname))) {
             result = gss_error_result_with_message_and_code(
                 "Cannot parse principal name from keytab", code);
             goto end;
@@ -79,13 +110,13 @@ gss_result server_principal_details(const char* service, const char* hostname) {
 
         if (strncmp(pname, match, match_len) == 0) {
             details = pname;
-            krb5_free_unparsed_name(kcontext, pname);
-            krb5_free_keytab_entry_contents(kcontext, &entry);
+            KRB5CALL(krb5_free_unparsed_name)(kcontext, pname);
+            KRB5CALL(krb5_free_keytab_entry_contents)(kcontext, &entry);
             break;
         }
 
-        krb5_free_unparsed_name(kcontext, pname);
-        krb5_free_keytab_entry_contents(kcontext, &entry);
+        KRB5CALL(krb5_free_unparsed_name)(kcontext, pname);
+        KRB5CALL(krb5_free_keytab_entry_contents)(kcontext, &entry);
     }
 
     if (details.empty()) {
@@ -96,10 +127,10 @@ gss_result server_principal_details(const char* service, const char* hostname) {
     }
 end:
     if (cursor)
-        krb5_kt_end_seq_get(kcontext, kt, &cursor);
+        KRB5CALL(krb5_kt_end_seq_get)(kcontext, kt, &cursor);
     if (kt)
-        krb5_kt_close(kcontext, kt);
-    krb5_free_context(kcontext);
+        KRB5CALL(krb5_kt_close)(kcontext, kt);
+    KRB5CALL(krb5_free_context)(kcontext);
 
     return result;
 }
@@ -129,7 +160,7 @@ gss_result authenticate_gss_client_init(const char* service,
     name_token.value = (char*)service;
 
     maj_stat =
-        gss_import_name(&min_stat, &name_token, gss_krb5_nt_service_name, &state->server_name);
+        GSSCALL(gss_import_name)(&min_stat, &name_token, GSSPTRVAL(gss_nt_service_name), &state->server_name);
 
     if (GSS_ERROR(maj_stat)) {
         ret = gss_error_result(maj_stat, min_stat);
@@ -146,13 +177,13 @@ gss_result authenticate_gss_client_init(const char* service,
         principal_token.length = strlen(principal);
         principal_token.value = (char*)principal;
 
-        maj_stat = gss_import_name(&min_stat, &principal_token, GSS_C_NT_USER_NAME, &name);
+        maj_stat = GSSCALL(gss_import_name)(&min_stat, &principal_token, GSSPTRVAL(GSS_C_NT_USER_NAME), &name);
         if (GSS_ERROR(maj_stat)) {
             ret = gss_error_result(maj_stat, min_stat);
             goto end;
         }
 
-        maj_stat = gss_acquire_cred(&min_stat,
+        maj_stat = GSSCALL(gss_acquire_cred)(&min_stat,
                                     name,
                                     GSS_C_INDEFINITE,
                                     GSS_C_NO_OID_SET,
@@ -165,7 +196,7 @@ gss_result authenticate_gss_client_init(const char* service,
             goto end;
         }
 
-        maj_stat = gss_release_name(&min_stat, &name);
+        maj_stat = GSSCALL(gss_release_name)(&min_stat, &name);
         if (GSS_ERROR(maj_stat)) {
             ret = gss_error_result(maj_stat, min_stat);
             goto end;
@@ -181,11 +212,11 @@ gss_client_state::~gss_client_state() {
     OM_uint32 min_stat;
 
     if (context != GSS_C_NO_CONTEXT)
-        gss_delete_sec_context(&min_stat, &context, GSS_C_NO_BUFFER);
+        GSSCALL(gss_delete_sec_context)(&min_stat, &context, GSS_C_NO_BUFFER);
     if (server_name != GSS_C_NO_NAME)
-        gss_release_name(&min_stat, &server_name);
+        GSSCALL(gss_release_name)(&min_stat, &server_name);
     if (client_creds != GSS_C_NO_CREDENTIAL && !(gss_flags & GSS_C_DELEG_FLAG))
-        gss_release_cred(&min_stat, &client_creds);
+        GSSCALL(gss_release_cred)(&min_stat, &client_creds);
     free(username);
     free(response);
 }
@@ -219,7 +250,7 @@ gss_result authenticate_gss_client_step(gss_client_state* state,
     }
 
     // Do GSSAPI step
-    maj_stat = gss_init_sec_context(&min_stat,
+    maj_stat = GSSCALL(gss_init_sec_context)(&min_stat,
                                     state->client_creds,
                                     &state->context,
                                     state->server_name,
@@ -248,7 +279,7 @@ gss_result authenticate_gss_client_step(gss_client_state* state,
             goto end;
         }
 
-        maj_stat = gss_release_buffer(&min_stat, &output_token);
+        maj_stat = GSSCALL(gss_release_buffer)(&min_stat, &output_token);
     }
 
     // Try to get the user name if we have completed all GSS operations
@@ -256,7 +287,7 @@ gss_result authenticate_gss_client_step(gss_client_state* state,
         state->context_complete = true;
 
         gss_name_t gssuser = GSS_C_NO_NAME;
-        maj_stat = gss_inquire_context(
+        maj_stat = GSSCALL(gss_inquire_context)(
             &min_stat, state->context, &gssuser, NULL, NULL, NULL, NULL, NULL, NULL);
         if (GSS_ERROR(maj_stat)) {
             ret = gss_error_result(maj_stat, min_stat);
@@ -265,12 +296,12 @@ gss_result authenticate_gss_client_step(gss_client_state* state,
 
         gss_buffer_desc name_token;
         name_token.length = 0;
-        maj_stat = gss_display_name(&min_stat, gssuser, &name_token, NULL);
+        maj_stat = GSSCALL(gss_display_name)(&min_stat, gssuser, &name_token, NULL);
         if (GSS_ERROR(maj_stat)) {
             if (name_token.value) {
-                gss_release_buffer(&min_stat, &name_token);
+                GSSCALL(gss_release_buffer)(&min_stat, &name_token);
             }
-            gss_release_name(&min_stat, &gssuser);
+            GSSCALL(gss_release_name)(&min_stat, &gssuser);
 
             ret = gss_error_result(maj_stat, min_stat);
             goto end;
@@ -286,15 +317,15 @@ gss_result authenticate_gss_client_step(gss_client_state* state,
             }
             strncpy(state->username, (char*)name_token.value, name_token.length);
             state->username[name_token.length] = 0;
-            gss_release_buffer(&min_stat, &name_token);
-            gss_release_name(&min_stat, &gssuser);
+            GSSCALL(gss_release_buffer)(&min_stat, &name_token);
+            GSSCALL(gss_release_name)(&min_stat, &gssuser);
         }
     }
 
     ret = gss_success_result(temp_ret);
 end:
     if (output_token.value) {
-        gss_release_buffer(&min_stat, &output_token);
+        GSSCALL(gss_release_buffer)(&min_stat, &output_token);
     }
     if (input_token.value) {
         free(input_token.value);
@@ -325,7 +356,7 @@ gss_result authenticate_gss_client_unwrap(gss_client_state* state, const char* c
     }
 
     // Do GSSAPI step
-    maj_stat = gss_unwrap(&min_stat, state->context, &input_token, &output_token, &conf, NULL);
+    maj_stat = GSSCALL(gss_unwrap)(&min_stat, state->context, &input_token, &output_token, &conf, NULL);
 
     if (maj_stat != GSS_S_COMPLETE) {
         ret = gss_error_result(maj_stat, min_stat);
@@ -337,13 +368,13 @@ gss_result authenticate_gss_client_unwrap(gss_client_state* state, const char* c
         state->response =
             base64_encode((const unsigned char*)output_token.value, output_token.length);
         state->responseConf = conf;
-        maj_stat = gss_release_buffer(&min_stat, &output_token);
+        maj_stat = GSSCALL(gss_release_buffer)(&min_stat, &output_token);
     }
 
     ret = gss_success_result(AUTH_GSS_COMPLETE);
 end:
     if (output_token.value)
-        gss_release_buffer(&min_stat, &output_token);
+        GSSCALL(gss_release_buffer)(&min_stat, &output_token);
     if (input_token.value)
         free(input_token.value);
 
@@ -401,7 +432,7 @@ gss_result authenticate_gss_client_wrap(gss_client_state* state,
     }
 
     // Do GSSAPI wrap
-    maj_stat = gss_wrap(
+    maj_stat = GSSCALL(gss_wrap)(
         &min_stat, state->context, protect, GSS_C_QOP_DEFAULT, &input_token, NULL, &output_token);
 
     if (maj_stat != GSS_S_COMPLETE) {
@@ -414,16 +445,16 @@ gss_result authenticate_gss_client_wrap(gss_client_state* state,
         state->response =
             base64_encode((const unsigned char*)output_token.value, output_token.length);
         ;
-        maj_stat = gss_release_buffer(&min_stat, &output_token);
+        maj_stat = GSSCALL(gss_release_buffer)(&min_stat, &output_token);
     }
 
     ret = gss_success_result(AUTH_GSS_COMPLETE);
 end:
     if (output_token.value)
-        gss_release_buffer(&min_stat, &output_token);
+        GSSCALL(gss_release_buffer)(&min_stat, &output_token);
 
     if (!user && input_token.value)
-        gss_release_buffer(&min_stat, &input_token);
+        GSSCALL(gss_release_buffer)(&min_stat, &input_token);
 
     return ret;
 }
@@ -451,8 +482,8 @@ gss_result authenticate_gss_server_init(const char* service, gss_server_state* s
         name_token.length = strlen(service);
         name_token.value = (char*)service;
 
-        maj_stat = gss_import_name(
-            &min_stat, &name_token, GSS_C_NT_HOSTBASED_SERVICE, &state->server_name);
+        maj_stat = GSSCALL(gss_import_name)(
+            &min_stat, &name_token, GSSPTRVAL(GSS_C_NT_HOSTBASED_SERVICE), &state->server_name);
 
         if (GSS_ERROR(maj_stat)) {
             ret = gss_error_result(maj_stat, min_stat);
@@ -460,7 +491,7 @@ gss_result authenticate_gss_server_init(const char* service, gss_server_state* s
         }
 
         // Get credentials
-        maj_stat = gss_acquire_cred(&min_stat,
+        maj_stat = GSSCALL(gss_acquire_cred)(&min_stat,
                                     state->server_name,
                                     GSS_C_INDEFINITE,
                                     GSS_C_NO_OID_SET,
@@ -484,15 +515,15 @@ gss_server_state::~gss_server_state() {
     OM_uint32 min_stat;
 
     if (context != GSS_C_NO_CONTEXT)
-        gss_delete_sec_context(&min_stat, &context, GSS_C_NO_BUFFER);
+        GSSCALL(gss_delete_sec_context)(&min_stat, &context, GSS_C_NO_BUFFER);
     if (server_name != GSS_C_NO_NAME)
-        gss_release_name(&min_stat, &server_name);
+        GSSCALL(gss_release_name)(&min_stat, &server_name);
     if (client_name != GSS_C_NO_NAME)
-        gss_release_name(&min_stat, &client_name);
+        GSSCALL(gss_release_name)(&min_stat, &client_name);
     if (server_creds != GSS_C_NO_CREDENTIAL)
-        gss_release_cred(&min_stat, &server_creds);
+        GSSCALL(gss_release_cred)(&min_stat, &server_creds);
     if (client_creds != GSS_C_NO_CREDENTIAL)
-        gss_release_cred(&min_stat, &client_creds);
+        GSSCALL(gss_release_cred)(&min_stat, &client_creds);
     free(username);
     free(targetname);
     free(response);
@@ -523,7 +554,7 @@ gss_result authenticate_gss_server_step(gss_server_state* state, const char* cha
         goto end;
     }
 
-    maj_stat = gss_accept_sec_context(&min_stat,
+    maj_stat = GSSCALL(gss_accept_sec_context)(&min_stat,
                                       &state->context,
                                       state->server_creds,
                                       &input_token,
@@ -545,11 +576,11 @@ gss_result authenticate_gss_server_step(gss_server_state* state, const char* cha
         state->response =
             base64_encode((const unsigned char*)output_token.value, output_token.length);
         ;
-        maj_stat = gss_release_buffer(&min_stat, &output_token);
+        maj_stat = GSSCALL(gss_release_buffer)(&min_stat, &output_token);
     }
 
     // Get the user name
-    maj_stat = gss_display_name(&min_stat, state->client_name, &output_token, NULL);
+    maj_stat = GSSCALL(gss_display_name)(&min_stat, state->client_name, &output_token, NULL);
     if (GSS_ERROR(maj_stat)) {
         ret = gss_error_result(maj_stat, min_stat);
         goto end;
@@ -560,7 +591,7 @@ gss_result authenticate_gss_server_step(gss_server_state* state, const char* cha
 
     // Get the target name if no server creds were supplied
     if (state->server_creds == GSS_C_NO_CREDENTIAL) {
-        maj_stat = gss_inquire_context(
+        maj_stat = GSSCALL(gss_inquire_context)(
             &min_stat, state->context, NULL, &target_name, NULL, NULL, NULL, NULL, NULL);
         if (GSS_ERROR(maj_stat)) {
             ret = gss_error_result(maj_stat, min_stat);
@@ -569,9 +600,9 @@ gss_result authenticate_gss_server_step(gss_server_state* state, const char* cha
 
         // Free output token if necessary before reusing
         if (output_token.length)
-            gss_release_buffer(&min_stat, &output_token);
+            GSSCALL(gss_release_buffer)(&min_stat, &output_token);
 
-        maj_stat = gss_display_name(&min_stat, target_name, &output_token, NULL);
+        maj_stat = GSSCALL(gss_display_name)(&min_stat, target_name, &output_token, NULL);
         if (GSS_ERROR(maj_stat)) {
             ret = gss_error_result(maj_stat, min_stat);
             goto end;
@@ -585,9 +616,9 @@ gss_result authenticate_gss_server_step(gss_server_state* state, const char* cha
     state->context_complete = true;
 end:
     if (target_name != GSS_C_NO_NAME)
-        gss_release_name(&min_stat, &target_name);
+        GSSCALL(gss_release_name)(&min_stat, &target_name);
     if (output_token.length)
-        gss_release_buffer(&min_stat, &output_token);
+        GSSCALL(gss_release_buffer)(&min_stat, &output_token);
     if (input_token.value)
         free(input_token.value);
     return ret;
@@ -612,20 +643,20 @@ gss_result authenticate_user_krb5pwd(const char* user,
     krb5_error_code verifyRet;
     char *vName = NULL;
 
-    code = krb5_init_context(&kcontext);
+    code = KRB5CALL(krb5_init_context)(&kcontext);
     if (code) {
         result =
             gss_error_result_with_message_and_code("Cannot initialize Kerberos5 context", code);
         return result;
     }
 
-    ret = krb5_parse_name(kcontext, service, &server);
+    ret = KRB5CALL(krb5_parse_name)(kcontext, service, &server);
     if (ret) {
         result = gss_error_result_with_message_and_code(krb5_get_err_text(kcontext, ret), ret);
         goto end;
     }
 
-    code = krb5_unparse_name(kcontext, server, &name);
+    code = KRB5CALL(krb5_unparse_name)(kcontext, server, &name);
     if (code) {
         result = gss_error_result_with_message_and_code(krb5_get_err_text(kcontext, code), code);
         goto end;
@@ -646,7 +677,7 @@ gss_result authenticate_user_krb5pwd(const char* user,
         snprintf(name, 256, "%s", user);
     }
 
-    code = krb5_parse_name(kcontext, name, &client);
+    code = KRB5CALL(krb5_parse_name)(kcontext, name, &client);
     if (code) {
         result = gss_error_result_with_message_and_code(krb5_get_err_text(kcontext, code), code);
         goto end;
@@ -655,22 +686,22 @@ gss_result authenticate_user_krb5pwd(const char* user,
     // verify krb5 user
     memset(&creds, 0, sizeof(creds));
 
-    verifyRet = krb5_unparse_name(kcontext, client, &vName);
+    verifyRet = KRB5CALL(krb5_unparse_name)(kcontext, client, &vName);
     if (verifyRet == 0) {
         free(vName);
     }
 
-    krb5_get_init_creds_opt_init(&gic_options);
-    verifyRet = krb5_get_init_creds_password(
+    KRB5CALL(krb5_get_init_creds_opt_init)(&gic_options);
+    verifyRet = KRB5CALL(krb5_get_init_creds_password)(
         kcontext, &creds, client, (char*)pswd, NULL, NULL, 0, NULL, &gic_options);
     if (verifyRet) {
         result = gss_error_result_with_message_and_code(krb5_get_err_text(kcontext, verifyRet),
                                                         verifyRet);
-        krb5_free_cred_contents(kcontext, &creds);
+        KRB5CALL(krb5_free_cred_contents)(kcontext, &creds);
         goto end;
     }
 
-    krb5_free_cred_contents(kcontext, &creds);
+    KRB5CALL(krb5_free_cred_contents)(kcontext, &creds);
     result = gss_success_result(1);
 
 end:
@@ -678,12 +709,12 @@ end:
         free(name);
     }
     if (client) {
-        krb5_free_principal(kcontext, client);
+        KRB5CALL(krb5_free_principal)(kcontext, client);
     }
     if (server) {
-        krb5_free_principal(kcontext, server);
+        KRB5CALL(krb5_free_principal)(kcontext, server);
     }
-    krb5_free_context(kcontext);
+    KRB5CALL(krb5_free_context)(kcontext);
 
     return result;
 }
@@ -700,14 +731,14 @@ static gss_result gss_error_result(OM_uint32 err_maj, OM_uint32 err_min) {
     std::string buf_min;
 
     do {
-        maj_stat = gss_display_status(
+        maj_stat = GSSCALL(gss_display_status)(
             &min_stat, err_maj, GSS_C_GSS_CODE, GSS_C_NO_OID, &msg_ctx, &status_string);
         if (GSS_ERROR(maj_stat))
             break;
         buf_maj = (char*)status_string.value;
-        gss_release_buffer(&min_stat, &status_string);
+        GSSCALL(gss_release_buffer)(&min_stat, &status_string);
 
-        maj_stat = gss_display_status(
+        maj_stat = GSSCALL(gss_display_status)(
             &min_stat, err_min, GSS_C_MECH_CODE, GSS_C_NULL_OID, &msg_ctx, &status_string);
         if (!GSS_ERROR(maj_stat)) {
             buf_min = (char*)status_string.value;

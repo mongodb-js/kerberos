@@ -39,8 +39,9 @@
           ],
           'link_settings': {
             'libraries': [
-              '-lkrb5',
-              '-lgssapi_krb5'
+              #'-lkrb5', # <-- not needed at compile time if loaded with dlopen()
+              #'-lgssapi_krb5' # <-- ditto
+              '-lcom_err' # <-- was too lazy to also dynamically load error_message() for kerberos_gss.h
             ]
           },
           'conditions': [
