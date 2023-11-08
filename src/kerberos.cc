@@ -171,6 +171,10 @@ void TestMethod(const CallbackInfo& info) {
 }
 
 static Object Init(Env env, Object exports) {
+    std::string libraries_unavailable_error;
+    if (!kerberos_libraries_available(&libraries_unavailable_error)) {
+        throw Error::New(env, libraries_unavailable_error);
+    }
     Function KerberosClientCtor = KerberosClient::Init(env);
     Function KerberosServerCtor = KerberosServer::Init(env);
     exports["KerberosClient"] = KerberosClientCtor;

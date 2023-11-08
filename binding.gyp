@@ -7,6 +7,9 @@
       'sources': [
         'src/kerberos.cc'
       ],
+      'variables': {
+        'kerberos_use_rtld%': 'false'
+      },
       'xcode_settings': {
         'GCC_ENABLE_CPP_EXCEPTIONS': 'YES',
         'CLANG_CXX_LIBRARY': 'libc++',
@@ -36,11 +39,14 @@
             'src/unix/base64.cc',
             'src/unix/kerberos_gss.cc',
             'src/unix/kerberos_unix.cc'
-          ],
+          ]
+        }],
+        ['(OS=="mac" or OS=="linux") and (kerberos_use_rtld!="true")', {
           'link_settings': {
             'libraries': [
               '-lkrb5',
-              '-lgssapi_krb5'
+              '-lgssapi_krb5',
+              '-lcom_err'
             ]
           },
           'conditions': [
@@ -52,6 +58,14 @@
               }
             }]
           ]
+        }],
+        ['(OS=="mac" or OS=="linux") and (kerberos_use_rtld=="true")', {
+          'defines': ['KERBEROS_USE_RTLD=1'],
+          'link_settings': {
+            'libraries': [
+              '-ldl',
+            ]
+          },
         }],
         ['OS=="win"',  {
           'sources': [
