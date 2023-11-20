@@ -1,0 +1,13 @@
+version: "3"
+services:
+  kerberos_jumphost:
+    build:
+      context: $PROJECT_DIRECTORY/.evergreen/mongodb-tests
+    depends_on:
+      - kdc-kadmin
+      - kdc-kadmin2
+      - mongodb1
+      - mongodb2
+      - mongodb3
+    volumes:
+      - $PROJECT_DIRECTORY:/app
