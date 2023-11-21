@@ -13,6 +13,8 @@
 
 namespace node_kerberos {
 
+bool kerberos_libraries_available(std::string* error_out);
+
 class KerberosServer : public Napi::ObjectWrap<KerberosServer> {
    public:
     static Napi::Function Init(Napi::Env env);

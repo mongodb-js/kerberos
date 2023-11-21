@@ -4,6 +4,10 @@
 
 namespace node_kerberos {
 
+bool kerberos_libraries_available(std::string*) {
+    return true;
+}
+
 static sspi_result sspi_success_result(INT ret);
 static sspi_result sspi_error_result(DWORD errCode, const SEC_CHAR* msg);
 static sspi_result sspi_error_result_with_message(const char* message);

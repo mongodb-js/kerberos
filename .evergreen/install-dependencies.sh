@@ -105,3 +105,4 @@ echo "npm location: $(which npm)"
 echo "npm version: $(npm -v)"
 
 npm install "${NPM_OPTIONS}"
+ldd build/*/kerberos.node || true

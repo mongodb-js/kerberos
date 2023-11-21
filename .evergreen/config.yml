@@ -67,6 +67,8 @@ functions:
         env:
           PROJECT_DIRECTORY: ${PROJECT_DIRECTORY}
           PROJECT: ${project}
+          GYP_DEFINES: ${GYP_DEFINES|}
+          NPM_OPTIONS: ${NPM_OPTIONS|}
         args:
           - run
           - '--interactive'
@@ -76,6 +78,10 @@ functions:
           - /app
           - '--env'
           - PROJECT_DIRECTORY=/app
+          - '--env'
+          - GYP_DEFINES
+          - '--env'
+          - NPM_OPTIONS
           - 'ubuntu:22.04'
           - /bin/bash
           - /app/.evergreen/run-tests-ubuntu.sh
@@ -122,6 +128,12 @@ tasks:
   - name: run-tests-ubuntu
     commands:
       - func: run tests ubuntu
+  - name: run-tests-ubuntu-rtld
+    commands:
+      - func: run tests ubuntu
+        vars:
+          GYP_DEFINES: kerberos_use_rtld=true
+          NPM_OPTIONS: --build-from-source
   - name: run-prebuild
     commands:
       - func: install dependencies
@@ -194,6 +206,7 @@ buildvariants:
       packager_arch: x86_64
     tasks:
       - run-tests-ubuntu
+      - run-tests-ubuntu-rtld
   - name: ubuntu2204-arm64
     display_name: 'Ubuntu 22.04 arm64'
     run_on: ubuntu2204-arm64-small
@@ -203,3 +216,4 @@ buildvariants:
       packager_arch: arm64
     tasks:
       - run-tests-ubuntu
+      - run-tests-ubuntu-rtld
