@@ -45,8 +45,7 @@
           'link_settings': {
             'libraries': [
               '-lkrb5',
-              '-lgssapi_krb5',
-              '-lcom_err'
+              '-lgssapi_krb5'
             ]
           },
           'conditions': [
