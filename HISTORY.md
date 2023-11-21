@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.1.0](https://github.com/mongodb-js/kerberos/compare/v2.0.3...v2.1.0) (2023-11-21)
+
+
+### Features
+
+* **NODE-5746:** allow runtime linking against system kerberos library ([#165](https://github.com/mongodb-js/kerberos/issues/165)) ([ce2feb3](https://github.com/mongodb-js/kerberos/commit/ce2feb3fa100b8bb3fdff502f6444ab331619108))
+
 ### [2.0.3](https://github.com/mongodb-js/kerberos/compare/v2.0.2...v2.0.3) (2023-09-01)
 
 
