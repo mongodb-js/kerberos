@@ -19,8 +19,13 @@
 
 extern "C" {
     #include <gssapi/gssapi.h>
+#ifdef __sun__
+    #include <kerberosv5/krb5.h>
+    #include <kerberosv5/com_err.h>
+#else
     #include <gssapi/gssapi_generic.h>
     #include <gssapi/gssapi_krb5.h>
+#endif
 }
 
 #include <string>
@@ -36,6 +41,10 @@ const char* krb5_get_err_text(const krb5_context&, krb5_error_code code);
 #define GSS_AUTH_P_NONE 1
 #define GSS_AUTH_P_INTEGRITY 2
 #define GSS_AUTH_P_PRIVACY 4
+
+#ifdef __sun__
+#define gss_nt_service_name GSS_C_NT_HOSTBASED_SERVICE
+#endif
 
 typedef struct {
     int code;

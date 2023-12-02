@@ -66,6 +66,19 @@
             ]
           },
         }],
+        ['OS=="solaris"', {
+          'sources': [
+            'src/unix/base64.cc',
+            'src/unix/kerberos_gss.cc',
+            'src/unix/kerberos_unix.cc'
+          ],
+          'link_settings': {
+            'libraries': [
+              '-lkrb5',
+              '-lgss'
+            ]
+          }
+        }],
         ['OS=="win"',  {
           'sources': [
             'src/win32/kerberos_sspi.cc',
