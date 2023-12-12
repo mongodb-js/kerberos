@@ -42,7 +42,7 @@
     "eslint-plugin-prettier": "^4.2.1",
     "jsdoc-to-markdown": "^8.0.0",
     "mocha": "^10.2.0",
-    "mongodb": "^5.9.2",
+    "mongodb": "^6.3.0",
     "node-gyp": "^9.4.1",
     "prebuild": "^11.0.4",
     "prettier": "^2.8.8",
