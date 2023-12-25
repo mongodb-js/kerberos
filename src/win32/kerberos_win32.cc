@@ -142,7 +142,7 @@ void InitializeClient(const CallbackInfo& info) {
         throw Error::New(info.Env(), "Password is too long");
     }
 
-    Value flags_v = options["flags"];
+    Value flags_v = options["gssFlags"];
     ULONG gss_flags = flags_v.IsNumber() ? flags_v.As<Number>().Uint32Value() : GSS_C_MUTUAL_FLAG|GSS_C_SEQUENCE_FLAG;
     Value mech_oid_v = options["mechOID"];
     uint32_t mech_oid_int = mech_oid_v.IsNumber() ? mech_oid_v.As<Number>().Uint32Value() : 0;

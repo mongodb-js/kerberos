@@ -131,7 +131,7 @@ void InitializeClient(const CallbackInfo& info) {
     Function callback = info[2].As<Function>();
 
     std::string principal = ToStringWithNonStringAsEmpty(options["principal"]);
-    Value flags_v = options["flags"];
+    Value flags_v = options["gssFlags"];
     uint32_t gss_flags = flags_v.IsNumber() ? flags_v.As<Number>().Uint32Value() : GSS_C_MUTUAL_FLAG|GSS_C_SEQUENCE_FLAG;
     Value mech_oid_v = options["mechOID"];
     uint32_t mech_oid_int = mech_oid_v.IsNumber() ? mech_oid_v.As<Number>().Uint32Value() : 0;
