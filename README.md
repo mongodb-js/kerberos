@@ -233,8 +233,8 @@ Details are looked up via the `/etc/keytab` file.
 | service | <code>string</code> | A string containing the service principal in the form 'type@fqdn' (e.g. 'imap@mail.apple.com'). |
 | [options] | <code>object</code> | Optional settings |
 | [options.principal] | <code>string</code> | Optional string containing the client principal in the form 'user@realm' (e.g. 'jdoe@example.com'). |
-| [options.gssFlags] | <code>number</code> | Optional integer used to set GSS flags. (e.g.  GSS_C_DELEG_FLAG|GSS_C_MUTUAL_FLAG|GSS_C_SEQUENCE_FLAG will allow for forwarding credentials to the remote host) |
-| [options.mechOID] | <code>number</code> | Optional GSS mech OID. Defaults to None (GSS_C_NO_OID). Other possible values are `GSS_MECH_OID_KRB5`, `GSS_MECH_OID_SPNEGO`. |
+| [options.flags] | <code>number</code> | Optional integer used to set GSS flags. (e.g.  `GSS_C_DELEG_FLAG\|GSS_C_MUTUAL_FLAG\|GSS_C_SEQUENCE_FLAG` will allow for forwarding credentials to the remote host) |
+| [options.mechOID] | <code>number</code> | Optional GSS mech OID. Defaults to None (`GSS_C_NO_OID`). Other possible values are `GSS_MECH_OID_KRB5`, `GSS_MECH_OID_SPNEGO`. |
 | [callback] | <code>function</code> |  |
 
 Initializes a context for client-side authentication with the given service principal.
