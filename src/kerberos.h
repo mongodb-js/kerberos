@@ -7,6 +7,7 @@
 #define NAPI_VERSION 6
 // as an experimental feature (that has not been changed since then).
 #define NAPI_EXPERIMENTAL
+#define NODE_API_EXPERIMENTAL_NOGC_ENV_OPT_OUT
 
 #include <napi.h>
 #include "kerberos_common.h"
