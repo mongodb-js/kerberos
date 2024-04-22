@@ -29,7 +29,7 @@
   "dependencies": {
     "bindings": "^1.5.0",
     "node-addon-api": "^6.1.0",
-    "prebuild-install": "7.1.1"
+    "prebuild-install": "^7.1.2"
   },
   "devDependencies": {
     "chai": "^4.4.1",
@@ -43,7 +43,7 @@
     "jsdoc-to-markdown": "^8.0.1",
     "mocha": "^10.4.0",
     "mongodb": "^6.5.0",
-    "node-gyp": "^10.0.1",
+    "node-gyp": "^10.1.0",
     "prebuild": "^11.0.4",
     "prettier": "^3.2.5",
     "request": "^2.88.2",
