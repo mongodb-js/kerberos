@@ -1,0 +1,29 @@
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+name: release
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - id: release
+        uses: google-github-actions/release-please-action@v4
+
+      # If release-please created a release, publish to npm
+      - if: ${{ steps.release.outputs.release_created }}
+        uses: actions/checkout@v4
+      - if: ${{ steps.release.outputs.release_created }}
+        name: actions/setup
+        uses: ./.github/actions/setup
+      - if: ${{ steps.release.outputs.release_created }}
+        run: npm publish --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
