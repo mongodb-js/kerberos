@@ -45,6 +45,23 @@ Now you can install `kerberos` with the following:
 npm install kerberos
 ```
 
+### Release Integrity
+
+The GitHub release contains a detached signature file for the NPM package (named
+`kerberos-X.Y.Z.tgz.sig`).
+
+The following command returns the link npm package. 
+```shell
+npm view kerberos@vX.Y.Z dist.tarball 
+```
+
+Using the result of the above command, a `curl` command can return the official npm package for the release.
+
+To verify the integrity of the downloaded package, run the following command:
+```shell
+gpg --verify kerberos-X.Y.Z.tgz.sig kerberos-X.Y.Z.tgz
+```
+
 ### Testing
 
 Run the test suite using:
