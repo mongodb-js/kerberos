@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build ${{ matrix.os }} Prebuild
-        run: node .github/scripts/libmongocrypt.mjs ${{ runner.os == 'Windows' && '--build' || '' }}
+        run: node .evergreen/scripts/github/run-prebuild.sh ${{ runner.os == 'Windows' && '--build' || '' }}
         shell: bash
 
       - id: upload
