@@ -68,4 +68,4 @@ jobs:
           product_name: node-kerberos
           file: sarif-report.json
           # dry_run:  ${{ needs.release_please.outputs.release_created == '' }}
-          dry_run:  true
+          dry_run:  false
