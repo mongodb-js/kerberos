@@ -23,7 +23,6 @@ jobs:
 
       - name: Build ${{ matrix.os }} Prebuild
         run: node run prebuild
-        shell: bash
 
       - id: upload
         name: Upload prebuild
