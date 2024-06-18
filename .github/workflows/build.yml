@@ -22,7 +22,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build ${{ matrix.os }} Prebuild
-        run: npm run prebuild
+        run: npm run prebuild 
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - id: upload
         name: Upload prebuild
