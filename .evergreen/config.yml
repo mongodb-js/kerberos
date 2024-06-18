@@ -157,7 +157,7 @@ buildvariants:
     display_name: MacOS M1
     run_on: macos-1100-arm64
     tasks:
-      - run-prebuild
+      - run-prebuild - #TODO REPLACE GHA
       - run-prebuild-force-publish
     expansions:
       NODE_LTS_VERSION: 18
