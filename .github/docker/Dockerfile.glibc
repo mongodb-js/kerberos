@@ -9,4 +9,4 @@ RUN npm run test
 
 FROM scratch
 
-COPY --from=build /kerberos/prebuilds/ /
+COPY --from=build /kerberos/prebuilds/
