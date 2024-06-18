@@ -4,7 +4,7 @@ FROM $NODE_BUILD_IMAGE AS build
 WORKDIR /kerberos
 COPY . .
 
-RUN npm run install:kerberos
+RUN npm run install kerberos
 RUN npm run test
 
 FROM scratch
