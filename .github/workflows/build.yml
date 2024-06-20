@@ -21,11 +21,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: actions/setup
-        uses: ./.github/actions/setup
-
       - name: Build ${{ matrix.os }} Prebuild
-        run: npm run prebuild
+        run: |
+          npm clean-install --ignore-scripts
+          npm run prebuild
 
       - name: Test ${{ matrix.os }}
         shell: bash
