@@ -25,12 +25,7 @@ jobs:
         uses: ./.github/actions/setup
 
       - name: Build ${{ matrix.os }} Prebuild
-        run: |
-              setup node
-              sudo apt-get install libkrb5-dev
-              npm install
-              npm run prebuild
-        shell: bash
+        run: npm run prebuild
 
       - name: Test ${{ matrix.os }}
         shell: bash
