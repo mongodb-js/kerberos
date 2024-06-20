@@ -16,13 +16,20 @@ jobs:
   host_builds:
     strategy:
       matrix:
-        os: [macos-11, macos-latest, windows-2019]
+        os: [macos-latest, windows-2019]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
+      - name: actions/setup
+        uses: ./.github/actions/setup
+
       - name: Build ${{ matrix.os }} Prebuild
-        run: npm run prebuild
+        run: |
+              setup node
+              sudo apt-get install libkrb5-dev
+              npm install
+              npm run prebuild
         shell: bash
 
       - name: Test ${{ matrix.os }}
