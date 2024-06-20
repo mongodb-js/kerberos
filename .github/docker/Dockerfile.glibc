@@ -6,7 +6,7 @@ COPY . .
 
 RUN npm install -g npm@latest
 RUN npm clean-install --ignore-scripts
-RUN sudo apt install krb5-user
+RUN aptitude install krb5-user
 RUN npm run test
 
 FROM scratch
