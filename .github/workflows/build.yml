@@ -28,7 +28,7 @@ jobs:
 
       - name: Test ${{ matrix.os }}
         shell: bash
-        run: npm run test
+        run: bash ./.evergreen/run-tests.sh
 
       - id: upload
         name: Upload prebuild

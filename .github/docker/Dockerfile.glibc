@@ -5,8 +5,7 @@ WORKDIR /kerberos
 COPY . .
 
 RUN npm clean-install --ignore-scripts && \
-    apt install krb5-user && \
-    npm run test
+    bash ./.evergreen/run-tests-ubuntu.sh
 
 FROM scratch
 
