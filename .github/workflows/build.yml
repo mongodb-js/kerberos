@@ -5,12 +5,12 @@ on:
     branches: [main]
   workflow_dispatch: {}
 
+name: Build and Test
+
 permissions:
   contents: write
   pull-requests: write
   id-token: write
-
-name: build
 
 jobs:
   host_builds:
@@ -23,6 +23,11 @@ jobs:
 
       - name: Build ${{ matrix.os }} Prebuild
         run: npm run prebuild
+        shell: bash
+
+      - name: Test ${{ matrix.os }}
+        shell: bash
+        run: npm run test
 
       - id: upload
         name: Upload prebuild
@@ -65,41 +70,31 @@ jobs:
           retention-days: 1
           compression-level: 0
 
-  sign_and_upload_build_files:
+  release_please:
     needs: [host_builds, container_builds]
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+    steps:
+      - id: release
+        uses: googleapis/release-please-action@v4
+
+  sign_and_upload:
+    needs: [release_please]
+    if: ${{ needs.release_please.outputs.release_created }}
     runs-on: ubuntu-latest
     environment: release
     steps:
-    - name: Make signatures directory
-      run: mkdir artifacts
-
-    - name: Make signatures directory
-      run: mkdir artifacts
-
-    - name: Set up drivers-github-tools
-      uses: mongodb-labs/drivers-github-tools/setup@v2
-      with: 
-        aws_role_arn: ${{ secrets.AWS_ROLE_ARN }}
-        aws_region_name: 'us-east-1'
-        aws_secret_id: ${{ secrets.AWS_SECRET_ID }}
-
-    - name: Create detached signature
-      uses: mongodb-labs/drivers-github-tools/gpg-sign@v2
-      with: 
-        filenames: 'build-*/*.tar.gz'
-      env: 
-        RELEASE_ASSETS: artifacts/
-
-    - name: Display structure of downloaded files
-      run: ls -la artifacts/
-
-    - name: Get release version and release package file name
-      id: get_vars
-      run: |
-        package_version=$(jq --raw-output '.version' package.json)
-        echo "package_version=${package_version}" >> "$GITHUB_OUTPUT"
-
-    - name: "Upload release artifacts"
-      run: gh release upload v${{ steps.get_vars.outputs.package_version }} artifacts/*.sig --clobber
-      env:
-        GH_TOKEN: ${{ github.token }}
+      - uses: actions/checkout@v4
+      - name: actions/setup
+        uses: ./.github/actions/setup
+      - name: actions/sign_and_upload_package
+        uses: ./.github/actions/sign_and_upload_package
+        with: 
+          aws_role_arn: ${{ secrets.AWS_ROLE_ARN }}
+          aws_region_name: 'us-east-1'
+          aws_secret_id: ${{ secrets.AWS_SECRET_ID }}
+          npm_package_name: 'mongodb-client-encryption'
+      - run: npm publish --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
