@@ -77,7 +77,7 @@ jobs:
         uses: googleapis/release-please-action@v4
 
   sign_and_upload:
-    needs: [release_please]
+    # needs: [release_please]
     # if: ${{ needs.release_please.outputs.release_created }}
     runs-on: ubuntu-latest
     environment: release
