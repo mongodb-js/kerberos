@@ -78,7 +78,7 @@ jobs:
 
   sign_and_upload:
     needs: [release_please]
-    if: ${{ needs.release_please.outputs.release_created }}
+    # if: ${{ needs.release_please.outputs.release_created }}
     runs-on: ubuntu-latest
     environment: release
     steps:
@@ -92,6 +92,6 @@ jobs:
           aws_region_name: 'us-east-1'
           aws_secret_id: ${{ secrets.AWS_SECRET_ID }}
           npm_package_name: 'kerberos'
-      - run: npm publish --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # - run: npm publish --provenance
+      #   env:
+      #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
