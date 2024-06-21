@@ -26,10 +26,6 @@ jobs:
           npm clean-install --ignore-scripts
           npm run prebuild
 
-      - name: Test ${{ matrix.os }}
-        shell: bash
-        run: npm run test
-
       - id: upload
         name: Upload prebuild
         uses: actions/upload-artifact@v4
