@@ -34,13 +34,13 @@ runs:
     - name: Create detached signature
       uses: mongodb-labs/drivers-github-tools/gpg-sign@v2
       with: 
-        filenames: 'build/*.tar.gz'
+        filenames: 'build-*'
       env: 
         RELEASE_ASSETS: artifacts/
 
     - name: Copy the tarballs to the artifacts directory
       shell: bash
-      run: for filename in build/*.tar.gz; do cp ${filename} artifacts/; done
+      run: for filename in build-*; do cp ${filename} artifacts/; done
 
     - run: npm pack
       shell: bash
