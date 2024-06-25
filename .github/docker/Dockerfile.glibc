@@ -9,7 +9,7 @@ ENV PATH=$PATH:/nodejs/bin
 WORKDIR /kerberos
 COPY . .
 
-RUN apt-get -qq update && apt-get -qq install -y python3 build-essential && ldd --version
+RUN apt-get -qq update && apt-get -qq install -y python3 build-essential libkrb5-dev && ldd --version
 
 RUN npm clean-install --ignore-scripts
 RUN npm run prebuild
