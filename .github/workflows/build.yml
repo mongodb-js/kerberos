@@ -53,7 +53,7 @@ jobs:
       - name: Run Buildx
         run: |
           docker buildx create --name builder --bootstrap --use
-          docker buildx build --platform linux/${{ matrix.linux_arch }} --output type=local,dest=./prebuilds,platform-split=false -f ./.github/docker/Dockerfile.glibc .
+          docker buildx build --platform linux/${{ matrix.linux_arch }} --build-arg NODE_ARCH=${{ matrix.linux_arch == 'amd64' && 'x64' || matrix.linux_arch }} --output type=local,dest=./prebuilds,platform-split=false -f ./.github/docker/Dockerfile.glibc .
 
       - id: upload
         name: Upload prebuild
