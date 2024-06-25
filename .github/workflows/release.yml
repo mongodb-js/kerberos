@@ -79,7 +79,7 @@ jobs:
           dry_run: false
 
   publish:
-    needs: [release_please, build]
+    needs: [release_please, ssdlc, build]
     environment: release
     runs-on: ubuntu-latest
     steps:
