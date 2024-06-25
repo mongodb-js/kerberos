@@ -1,0 +1,19 @@
+FROM ubuntu:bionic AS build
+
+# Possible values: s390x, arm64, x64
+ARG NODE_ARCH
+ADD https://nodejs.org/dist/v16.20.1/node-v16.20.1-linux-${NODE_ARCH}.tar.gz /
+RUN mkdir -p /nodejs && tar -xzf /node-v16.20.1-linux-${NODE_ARCH}.tar.gz --strip-components=1 -C /nodejs
+ENV PATH=$PATH:/nodejs/bin
+
+WORKDIR /kerberos
+COPY . .
+
+RUN apt-get -qq update && apt-get -qq install -y python3 build-essential && ldd --version
+
+RUN npm clean-install --ignore-scripts
+RUN npm run prebuild
+
+FROM scratch
+
+COPY --from=build /kerberos/prebuilds/ /

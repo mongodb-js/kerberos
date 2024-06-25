@@ -1,29 +1,42 @@
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch: {}
+
+name: Release
 
 permissions:
   contents: write
   pull-requests: write
   id-token: write
 
-name: release
-
 jobs:
-  release-please:
+  release_please:
     runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
     steps:
       - id: release
         uses: googleapis/release-please-action@v4
 
-      # If release-please created a release, publish to npm
-      - if: ${{ steps.release.outputs.release_created }}
-        uses: actions/checkout@v4
-      - if: ${{ steps.release.outputs.release_created }}
-        name: actions/setup
-        uses: ./.github/actions/setup
-      - if: ${{ steps.release.outputs.release_created }}
-        run: npm publish --provenance
+  build:
+    needs: [release_please]
+    name: "Build native code"
+    uses: ./.github/workflows/build.yml
+
+  publish:
+    needs: [release_please, build]
+    environment: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node and dependencies
+        uses: baileympearson/drivers-github-tools/node/setup@add-signing-env-action-for-node
+
+      - run: npm publish --provenance --tag=latest
+        if: ${{ needs.release_please.outputs.release_created }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -11,5 +11,5 @@ runs:
         registry-url: 'https://registry.npmjs.org'
     - run: npm install -g npm@latest
       shell: bash
-    - run: npm clean-install
+    - run: npm clean-install --ignore-scripts
       shell: bash

@@ -44,7 +44,7 @@
     "mocha": "^10.4.0",
     "mongodb": "^6.5.0",
     "node-gyp": "^10.1.0",
-    "prebuild": "^11.0.4",
+    "prebuild": "^13.0.0",
     "prettier": "^3.2.5",
     "request": "^2.88.2",
     "standard-version": "^9.5.0"

@@ -45,6 +45,49 @@ Now you can install `kerberos` with the following:
 npm install kerberos
 ```
 
+#### Prebuild Platforms
+
+Below are the platforms that are available as prebuilds on each github release.
+`prebuild-install` downloads these automatically depending on the platform you are running npm install on.
+
+- Linux GLIBC 2.23 or later
+    - s390x
+    - arm64
+    - x64
+- MacOS universal binary
+    - x64
+    - arm64
+- Windows
+    - x64
+
+### Release Integrity
+
+Releases are created automatically and signed using the [Node team's GPG key](https://pgp.mongodb.com/node-driver.asc). This applies to the git tag as well as all release packages provided as part of a GitHub release. To verify the provided packages, download the key and import it using gpg:
+
+```
+gpg --import node-driver.asc
+```
+
+The GitHub release contains a detached signature file for the NPM package (named
+`kerberos-X.Y.Z.tgz.sig`).
+
+The following command returns the link npm package. 
+```shell
+npm view kerberos@vX.Y.Z dist.tarball 
+```
+
+Using the result of the above command, a `curl` command can return the official npm package for the release.
+
+To verify the integrity of the downloaded package, run the following command:
+```shell
+gpg --verify kerberos-X.Y.Z.tgz.sig kerberos-X.Y.Z.tgz
+```
+
+>[!Note]
+No verification is done when using npm to install the package. To ensure release integrity when using npm, download the tarball manually from the GitHub release, verify the signature, then install the package from the downloaded tarball using npm install mongodb-X.Y.Z.tgz.
+
+To verify the native `.node` packages, follow the same steps as above. 
+
 ### Testing
 
 Run the test suite using:
