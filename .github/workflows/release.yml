@@ -20,7 +20,7 @@ jobs:
         uses: googleapis/release-please-action@v4
         with:
           target-branch: main
-  
+
   build:
     needs: [release_please]
     name: "Perform any build or bundling steps, as necessary."
@@ -67,7 +67,7 @@ jobs:
         if: ${{ '' != '' }}
         uses: mongodb-labs/drivers-github-tools/sbom@v2
         with:
-          silk_asset_group: ${{ '' }}
+          silk_asset_group: ''
           sbom_file_name: sbom.json
 
       - name: Generate authorized pub report
@@ -78,7 +78,7 @@ jobs:
           sarif_report_target_ref: main
           third_party_dependency_tool: n/a
           dist_filenames: artifacts/*
-          token:  ${{ github.token }}
+          token: ${{ github.token }}
           sbom_file_name: sbom.json
 
       - uses: mongodb-labs/drivers-github-tools/upload-s3-assets@v2
