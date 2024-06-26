@@ -59,7 +59,16 @@ jobs:
 
       - name: Copy sbom file to release assets
         shell: bash
+        if: ${{ '' == '' }}
         run: cp sbom.json ${{ env.S3_ASSETS }}/sbom.json
+
+      # only used for mongodb-client-encryption
+      - name: Augment SBOM and copy to release assets
+        if: ${{ '' != '' }}
+        uses: mongodb-labs/drivers-github-tools/sbom@v2
+        with:
+          silk_asset_group: ${{ '' }}
+          sbom_file_name: sbom.json
 
       - name: Generate authorized pub report
         uses: mongodb-labs/drivers-github-tools/full-report@v2
