@@ -49,6 +49,11 @@
     "request": "^2.88.2",
     "standard-version": "^9.5.0"
   },
+  "overrides": {
+    "prebuild": {
+      "node-gyp": "$node-gyp"
+    }
+  },
   "scripts": {
     "install": "prebuild-install --runtime napi || node-gyp rebuild",
     "format-cxx": "clang-format -i 'src/**/*'",
