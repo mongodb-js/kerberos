@@ -1,0 +1,67 @@
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+  workflow_call: {}
+
+name: Build and Test
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  host_builds:
+    strategy:
+      matrix:
+        os: [macos-latest, windows-2019]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build ${{ matrix.os }} Prebuild
+        run: |
+          npm clean-install --ignore-scripts
+          npm run prebuild
+
+      - id: upload
+        name: Upload prebuild
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.os }}
+          path: prebuilds/
+          if-no-files-found: 'error'
+          retention-days: 1
+          compression-level: 0
+
+  container_builds:
+    outputs:
+      artifact_id: ${{ steps.upload.outputs.artifact-id }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        linux_arch: [s390x, arm64, amd64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Run Buildx
+        run: |
+          docker buildx create --name builder --bootstrap --use
+          docker buildx build --platform linux/${{ matrix.linux_arch }} --build-arg NODE_ARCH=${{ matrix.linux_arch == 'amd64' && 'x64' || matrix.linux_arch }} --output type=local,dest=./prebuilds,platform-split=false -f ./.github/docker/Dockerfile.glibc .
+
+      - id: upload
+        name: Upload prebuild
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-linux-${{ matrix.linux_arch }}
+          path: prebuilds/
+          if-no-files-found: 'error'
+          retention-days: 1
+          compression-level: 0
