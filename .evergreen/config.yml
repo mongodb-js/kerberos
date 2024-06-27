@@ -96,14 +96,6 @@ functions:
         env:
           PROJECT_DIRECTORY: ${PROJECT_DIRECTORY}
           NODE_GITHUB_TOKEN: ${github_token}
-  run prebuild and force publish:
-    - command: shell.exec
-      type: test
-      params:
-        working_dir: src
-        script: >
-          ${PREPARE_SHELL}
-          NODE_FORCE_PUBLISH=1 NODE_GITHUB_TOKEN=${github_token} ${PROJECT_DIRECTORY}/.evergreen/run-prebuild.sh
   install dependencies:
     - command: subprocess.exec
       type: setup
@@ -138,65 +130,8 @@ tasks:
     commands:
       - func: install dependencies
       - func: run prebuild
-  - name: run-prebuild-force-publish
-    commands:
-      - func: install dependencies
-      - func: run prebuild and force publish
 
 buildvariants:
-  - name: macos
-    display_name: 'macOS 10.14'
-    run_on: macos-1014
-    tasks:
-      - run-prebuild
-      - run-prebuild-force-publish
-    expansions:
-      NODE_LTS_VERSION: 14
-      NPM_VERSION: 9
-  - name: macos-m1
-    display_name: MacOS M1
-    run_on: macos-1100-arm64
-    tasks:
-      - run-prebuild
-      - run-prebuild-force-publish
-    expansions:
-      NODE_LTS_VERSION: 18
-  - name: windows-x64
-    display_name: 'Windows 2016'
-    run_on: windows-64-vs2017-test
-    tasks:
-      - run-prebuild
-      - run-prebuild-force-publish
-  - name: rhel8-s390x
-    display_name: 'RHEL 8 s390x'
-    run_on: rhel83-zseries-small
-    expansions:
-      has_packages: true
-      packager_distro: rhel8
-      packager_arch: s390x
-    tasks:
-      - run-prebuild
-      - run-prebuild-force-publish
-  - name: ubuntu1804-64
-    display_name: 'Ubuntu 18.04 64-bit'
-    run_on: ubuntu1804-test
-    expansions:
-      has_packages: true
-      packager_distro: ubuntu1804
-      packager_arch: x86_64
-    tasks:
-      - run-prebuild
-      - run-prebuild-force-publish
-  - name: ubuntu1804-arm64
-    display_name: 'Ubuntu 18.04 arm64'
-    run_on: ubuntu1804-arm64-build
-    expansions:
-      has_packages: true
-      packager_distro: ubuntu1804
-      packager_arch: arm64
-    tasks:
-      - run-prebuild
-      - run-prebuild-force-publish
   - name: ubuntu2204-64
     display_name: 'Ubuntu 22.04 64-bit'
     run_on: ubuntu2204-small

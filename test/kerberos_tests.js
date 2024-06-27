@@ -15,7 +15,7 @@ const port = process.env.KERBEROS_PORT || '80';
 
 describe('Kerberos', function () {
   before(function () {
-    if (os.type() === 'Windows_NT' || os.type() === 'Darwin') this.skip();
+    if (os.type() === 'Windows_NT') this.skip();
   });
 
   it('should lookup principal details on a server', function (done) {
