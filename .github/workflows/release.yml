@@ -97,6 +97,8 @@ jobs:
 
       - name: Install Node and dependencies
         uses: mongodb-labs/drivers-github-tools/node/setup@v2
+        with:
+          ignore_install_scripts: true
 
       - run: npm publish --provenance --tag=alpha
         if: ${{ needs.release_please.outputs.release_created }}

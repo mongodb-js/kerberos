@@ -44,9 +44,10 @@ jobs:
           ref: refs/pull/${{ github.event_name == 'issue_comment' && github.event.issue.number || inputs.releasePr }}/head
 
 
-      # Setup Node.js and npm install
-      - name: actions/setup
-        uses: ./.github/actions/setup
+      - name: Install Node and dependencies
+        uses: mongodb-labs/drivers-github-tools/node/setup@v2
+        with:
+          ignore_install_scripts: true
 
       # See: https://github.com/googleapis/release-please/issues/1274
 
