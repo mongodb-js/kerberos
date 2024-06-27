@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.1.1](https://github.com/mongodb-js/kerberos/compare/v2.1.0...v2.1.1-alpha) (2024-06-27)
+
+
+### Bug Fixes
+
+* **NODE-6108:** allow building from source on latest Node.js 20.x ([#172](https://github.com/mongodb-js/kerberos/issues/172)) ([c1f7aca](https://github.com/mongodb-js/kerberos/commit/c1f7acafb211d1b449086433578495d4ae0b869f))
+
 ## [2.1.0](https://github.com/mongodb-js/kerberos/compare/v2.0.3...v2.1.0) (2023-11-21)
 
 
