@@ -3,25 +3,21 @@
     {
       'target_name': 'kerberos',
       'type': 'loadable_module',
-      'include_dirs': [  "<!(node -p \"require('node-addon-api').include_dir\")" ],
+      'include_dirs': [
+        "<!(node -p \"require('node-addon-api').include_dir\")"
+      ],
       'sources': [
         'src/kerberos.cc'
       ],
       'variables': {
+        'ARCH': '<(host_arch)',
         'kerberos_use_rtld%': 'false'
       },
       'xcode_settings': {
         'GCC_ENABLE_CPP_EXCEPTIONS': 'YES',
         'CLANG_CXX_LIBRARY': 'libc++',
         'MACOSX_DEPLOYMENT_TARGET': '10.12',
-        "OTHER_CFLAGS": [
-          "-arch x86_64",
-          "-arch arm64"
-        ],
-        "OTHER_LDFLAGS": [
-          "-arch x86_64",
-          "-arch arm64"
-        ]
+        'GCC_SYMBOLS_PRIVATE_EXTERN': 'YES', # -fvisibility=hidden
       },
       'cflags!': [ '-fno-exceptions' ],
       'cflags_cc!': [ '-fno-exceptions' ],
@@ -36,11 +32,18 @@
         },
       },
       'conditions': [
-        ['OS=="mac"', {
-            'cflags+': ['-fvisibility=hidden'],
-            'xcode_settings': {
-              'GCC_SYMBOLS_PRIVATE_EXTERN': 'YES', # -fvisibility=hidden
-            }
+        ['OS=="mac"', { 'cflags+': ['-fvisibility=hidden'] }],
+        ['_type!="static_library" and ARCH=="arm64"', {
+          'xcode_settings': {
+            "OTHER_CFLAGS": [
+              "-arch x86_64",
+              "-arch arm64"
+            ],
+            "OTHER_LDFLAGS": [
+              "-arch x86_64",
+              "-arch arm64"
+            ]
+          }
         }],
         ['OS=="mac" or OS=="linux"', {
           'sources': [

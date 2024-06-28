@@ -21,9 +21,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build ${{ matrix.os }} Prebuild
-        run: |
-          npm clean-install --ignore-scripts
-          npm run prebuild
+        run: node .github/scripts/build.mjs
 
       - id: upload
         name: Upload prebuild
