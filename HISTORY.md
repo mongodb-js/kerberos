@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.1.2-alpha.0](https://github.com/mongodb-js/kerberos/compare/v2.1.1-alpha.0...v2.1.2-alpha.0) (2024-07-01)
+
+
+### Bug Fixes
+
+* **MONGOSH-1808:** only build universal macos binaries when creating loadable_library ([#186](https://github.com/mongodb-js/kerberos/issues/186)) ([ec3ab7a](https://github.com/mongodb-js/kerberos/commit/ec3ab7a34ea2de587c4a19cb8aad760e793564fc))
+
 ## [2.1.1-alpha.0](https://github.com/mongodb-js/kerberos/compare/v2.1.1-alpha...v2.1.1-alpha.0) (2024-06-28)
 
 
