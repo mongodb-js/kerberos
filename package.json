@@ -32,6 +32,7 @@
     "prebuild-install": "^7.1.2"
   },
   "devDependencies": {
+    "@types/node": "^20.14.9",
     "chai": "^4.4.1",
     "chai-string": "^1.5.0",
     "chalk": "^4.1.2",
@@ -46,8 +47,7 @@
     "node-gyp": "^10.1.0",
     "prebuild": "^13.0.0",
     "prettier": "^3.2.5",
-    "request": "^2.88.2",
-    "standard-version": "^9.5.0"
+    "request": "^2.88.2"
   },
   "overrides": {
     "prebuild": {
@@ -60,11 +60,9 @@
     "format-js": "eslint lib test --fix",
     "check:lint": "eslint lib test",
     "precommit": "check-clang-format",
-    "test": "mocha test",
     "docs": "jsdoc2md --template etc/README.hbs --plugin dmd-clear --files lib/kerberos.js > README.md",
-    "rebuild": "prebuild --runtime napi --compile",
-    "prebuild": "prebuild --runtime napi --strip --verbose --all",
-    "release": "standard-version -i HISTORY.md"
+    "test": "mocha test",
+    "prebuild": "prebuild --runtime napi --strip --verbose --all"
   },
   "engines": {
     "node": ">=12.9.0"

@@ -11,8 +11,7 @@ COPY . .
 
 RUN apt-get -qq update && apt-get -qq install -y python3 build-essential libkrb5-dev && ldd --version
 
-RUN npm clean-install --ignore-scripts
-RUN npm run prebuild
+RUN node .github/scripts/build.mjs
 
 FROM scratch
 
