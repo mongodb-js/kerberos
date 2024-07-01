@@ -62,7 +62,6 @@
     "precommit": "check-clang-format",
     "docs": "jsdoc2md --template etc/README.hbs --plugin dmd-clear --files lib/kerberos.js > README.md",
     "test": "mocha test",
-    "prepare": "",
     "prebuild": "prebuild --runtime napi --strip --verbose --all"
   },
   "engines": {

@@ -78,7 +78,8 @@ async function buildBindings(args, pkg) {
 
   await run('npm', ['run', 'prebuild'], prebuildOptions);
 
-  await run('npm', ['run', 'prepare']);
+  // TODO(NODE-5140): When we have a TS build step
+  // await run('npm', ['run', 'prepare']);
 
   if (process.platform === 'darwin' && process.arch === 'arm64') {
     // The "arm64" build is actually a universal binary
