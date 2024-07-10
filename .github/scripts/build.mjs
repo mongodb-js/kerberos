@@ -19,7 +19,7 @@ async function parseArguments() {
   const pkg = JSON.parse(await fs.readFile(resolveRoot('package.json'), 'utf8'));
 
   const options = {
-    'kerberos_use_rtld': { type: 'boolean', default: false },
+    'kerberos_use_rtld': { type: 'boolean', default: true },
     help: { short: 'h', type: 'boolean', default: false }
   };
 
@@ -66,8 +66,8 @@ async function buildBindings(args, pkg) {
   // it will also produce `./prebuilds/kerberos-vVERSION-napi-vNAPI_VERSION-OS-ARCH.tar.gz`.
 
   let gypDefines = process.env.GYP_DEFINES ?? '';
-  if (args.kerberos_use_rtld) {
-    gypDefines += ' kerberos_use_rtld=true';
+  if (!args.kerberos_use_rtld) {
+    gypDefines += ' kerberos_use_rtld=false';
   }
 
   gypDefines = gypDefines.trim();

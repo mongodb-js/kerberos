@@ -11,7 +11,7 @@
       ],
       'variables': {
         'ARCH': '<(host_arch)',
-        'kerberos_use_rtld%': 'false'
+        'kerberos_use_rtld%': 'true'
       },
       'xcode_settings': {
         'GCC_ENABLE_CPP_EXCEPTIONS': 'YES',

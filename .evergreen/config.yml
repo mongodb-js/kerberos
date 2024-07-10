@@ -124,7 +124,7 @@ tasks:
     commands:
       - func: run tests ubuntu
         vars:
-          GYP_DEFINES: kerberos_use_rtld=true
+          GYP_DEFINES: kerberos_use_rtld=false
           NPM_OPTIONS: --build-from-source
   - name: run-prebuild
     commands:
