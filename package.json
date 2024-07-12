@@ -56,7 +56,6 @@
   },
   "scripts": {
     "install": "prebuild-install --runtime napi || node-gyp rebuild",
-    "rebuild": "node-gyp rebuild",
     "format-cxx": "clang-format -i 'src/**/*'",
     "format-js": "eslint lib test --fix",
     "check:lint": "eslint lib test",
