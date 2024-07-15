@@ -21,15 +21,24 @@
       },
       'cflags!': [ '-fno-exceptions' ],
       'cflags_cc!': [ '-fno-exceptions' ],
+      'msvs_configuration_attributes': {
+        'SpectreMitigation': 'Spectre'
+      },
       'msvs_settings': {
         'VCCLCompilerTool': {
           'ExceptionHandling': 1,
           'AdditionalOptions': [
+            '/guard:cf',
             '/w34244',
             '/w34267',
             '/ZH:SHA_256'
           ]
         },
+        'VCLinkerTool': {
+          'AdditionalOptions': [
+            '/guard:cf'
+          ]
+        }
       },
       'conditions': [
         ['OS=="mac"', { 'cflags+': ['-fvisibility=hidden'] }],
