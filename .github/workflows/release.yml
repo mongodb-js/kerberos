@@ -100,7 +100,7 @@ jobs:
         with:
           ignore_install_scripts: true
 
-      - run: npm publish --provenance --tag=alpha
+      - run: npm publish --provenance
         if: ${{ needs.release_please.outputs.release_created }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
