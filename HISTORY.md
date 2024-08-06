@@ -2,19 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-## [2.1.1-alpha.0](https://github.com/mongodb-js/kerberos/compare/v2.1.1-alpha...v2.1.1-alpha.0) (2024-06-28)
+## [2.1.1](https://github.com/mongodb-js/kerberos/compare/v2.1.1...v2.1.0) (2024-08-06)
+
+
+### Bug Fixes
+
+* **MONGOSH-1808:** only build universal macos binaries when creating loadable_library ([#186](https://github.com/mongodb-js/kerberos/issues/186)) ([ec3ab7a](https://github.com/mongodb-js/kerberos/commit/ec3ab7a34ea2de587c4a19cb8aad760e793564fc))
+* **NODE-6253:** use runtime linking against system kerberos libraries by default ([#188](https://github.com/mongodb-js/kerberos/issues/188)) ([04044d2](https://github.com/mongodb-js/kerberos/commit/04044d2814ad1d01e77f1ce87f26b03d86692cf2))
+* **NODE-6265:** add Spectre Mitigation and CFG ([#190](https://github.com/mongodb-js/kerberos/issues/190)) ([54b9799](https://github.com/mongodb-js/kerberos/commit/54b97991deaaa04e87e4f3704b0dfcdcdd098a4b))
+* **NODE-6108:** allow building from source on latest Node.js 20.x ([#172](https://github.com/mongodb-js/kerberos/issues/172)) ([c1f7aca](https://github.com/mongodb-js/kerberos/commit/c1f7acafb211d1b449086433578495d4ae0b869f))
+
+## [2.1.1-alpha.0](https://github.com/mongodb-js/kerberos/compare/v2.1.1-alpha.0...v2.1.0) (2024-06-28)
 
 
 ### Bug Fixes
 
 * release versioning ([#184](https://github.com/mongodb-js/kerberos/issues/184)) ([a39dfcb](https://github.com/mongodb-js/kerberos/commit/a39dfcb35819ea83642505788e75d91e7f527ca3))
 
-## [2.1.1](https://github.com/mongodb-js/kerberos/compare/v2.1.0...v2.1.1-alpha) (2024-06-27)
-
-
-### Bug Fixes
-
-* **NODE-6108:** allow building from source on latest Node.js 20.x ([#172](https://github.com/mongodb-js/kerberos/issues/172)) ([c1f7aca](https://github.com/mongodb-js/kerberos/commit/c1f7acafb211d1b449086433578495d4ae0b869f))
 
 ## [2.1.0](https://github.com/mongodb-js/kerberos/compare/v2.0.3...v2.1.0) (2023-11-21)
 
