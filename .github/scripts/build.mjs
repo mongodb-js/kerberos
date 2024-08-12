@@ -87,6 +87,8 @@ async function buildBindings(args, pkg) {
     const x64Tar = `kerberos-v${pkg.version}-napi-v4-darwin-x64.tar.gz`;
     await fs.copyFile(resolveRoot('prebuilds', armTar), resolveRoot('prebuilds', x64Tar));
   }
+
+  await run('node', ['--print', `require('.')`], { cwd: resolveRoot() })
 }
 
 async function main() {
