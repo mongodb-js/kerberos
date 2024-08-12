@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.1.2](https://github.com/mongodb-js/kerberos/compare/v2.1.1...v2.1.2) (2024-08-12)
+
+
+### Bug Fixes
+
+* **NODE-6320:** macos runtime linking name conflict with SSL ([#193](https://github.com/mongodb-js/kerberos/issues/193)) ([d382b56](https://github.com/mongodb-js/kerberos/commit/d382b56f2e55dab25a003c416925ba2967761a72))
+
 ## [2.1.1](https://github.com/mongodb-js/kerberos/compare/v2.1.1...v2.1.0) (2024-08-06)
 
 
