@@ -47,6 +47,7 @@ jobs:
     - if: matrix.build-mode == 'manual'
       shell: bash
       run: |
+        sudo apt-get update
         sudo apt-get install libkrb5-dev
         npm install
         npm run prebuild
