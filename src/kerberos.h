@@ -72,6 +72,8 @@ void TestMethod(const Napi::CallbackInfo& info);
 
 std::string ToStringWithNonStringAsEmpty(Napi::Value value);
 
+int BooleanToIntWithNonIntAsFalse(Napi::Value value);
+
 }
 
 #endif  // KERBEROS_NATIVE_EXTENSION_H

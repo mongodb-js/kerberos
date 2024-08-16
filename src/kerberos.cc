@@ -37,6 +37,13 @@ std::string ToStringWithNonStringAsEmpty(Napi::Value value) {
     return value.As<String>();
 }
 
+int BooleanToIntWithNonIntAsFalse(Napi::Value value) {
+    if (!value.IsBoolean()) {
+        return 0;
+    }
+    return value.As<Boolean>().Value() ? 1 : 0;
+}
+
 Function KerberosClient::Init(Napi::Env env) {
     return
         DefineClass(env,

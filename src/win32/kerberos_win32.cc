@@ -92,7 +92,7 @@ void KerberosClient::WrapData(const CallbackInfo& info) {
     Object options = info[1].ToObject();
     Function callback = info[2].As<Function>();
     std::string user = ToStringWithNonStringAsEmpty(options["user"]);
-    int protect = 0; // NOTE: this should be an option
+    int protect = BooleanToIntWithNonIntAsFalse(options["protect"]);
 
     if (isStringTooLong(user)) {
         throw Error::New(info.Env(), "User name is too long");
