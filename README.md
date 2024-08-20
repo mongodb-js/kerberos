@@ -93,7 +93,7 @@ To verify the native `.node` packages, follow the same steps as above.
 Run the test suite using:
 
 ```bash
-docker run -i -v WORKING_DIRECTORY:/app -w /app -e PROJECT_DIRECTORY=/app ubuntu:20.04 /bin/bash /app/.evergreen/run-tests-ubuntu.sh
+docker run -i -v PATH_TO_KERBEROS_REPO:/app -w /app -e PROJECT_DIRECTORY=/app ubuntu:20.04 /bin/bash /app/.evergreen/run-tests-ubuntu.sh
 ```
 
 NOTE: The test suite requires an active kerberos deployment.
