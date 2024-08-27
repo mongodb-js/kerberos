@@ -39,7 +39,7 @@ std::string ToStringWithNonStringAsEmpty(Napi::Value value) {
 
 int BooleanToIntWithNonIntAsFalse(Napi::Value value) {
     if (!value.IsBoolean()) {
-        return 0;
+        throw Error::New(value.Env(), "Expected a boolean value");
     }
     return value.As<Boolean>().Value() ? 1 : 0;
 }
