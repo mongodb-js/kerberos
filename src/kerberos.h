@@ -72,7 +72,7 @@ void TestMethod(const Napi::CallbackInfo& info);
 
 std::string ToStringWithNonStringAsEmpty(Napi::Value value);
 
-int BooleanToIntWithNonIntAsFalse(Napi::Value value);
+int BooleanToIntWithNonIntAsError(Napi::Value value);
 
 }
 

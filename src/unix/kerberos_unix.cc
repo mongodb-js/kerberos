@@ -74,7 +74,7 @@ void KerberosClient::WrapData(const CallbackInfo& info) {
     Object options = info[1].ToObject();
     Function callback = info[2].As<Function>();
     std::string user = ToStringWithNonStringAsEmpty(options["user"]);
-    int protect = BooleanToIntWithNonIntAsFalse(options["protect"]);
+    int protect = BooleanToIntWithNonIntAsError(options["protect"]);
 
     KerberosWorker::Run(callback, "kerberos:ClientWrap", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
         gss_result result = authenticate_gss_client_wrap(
