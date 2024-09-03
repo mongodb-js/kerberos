@@ -16,12 +16,12 @@
 
 #include "kerberos_gss.h"
 
-#include "base64.h"
-
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "base64.h"
 
 #if defined(__clang__)
 #pragma clang diagnostic push
@@ -30,15 +30,15 @@
 
 // Conditionally either use linking at compile time or dlopen() to access kerberos functionality
 #ifndef KERBEROS_USE_RTLD
-# define GSS_CALL(x) x
-# define GSS_VALUE(x) x
-# define KRB5_CALL(x) x
-# define COMERR_CALL(x) x
+#define GSS_CALL(x) x
+#define GSS_VALUE(x) x
+#define KRB5_CALL(x) x
+#define COMERR_CALL(x) x
 namespace node_kerberos {
 bool kerberos_libraries_available(std::string*) {
     return true;
 }
-}
+}  // namespace node_kerberos
 #else
 #include <dlfcn.h>
 // RTLD_DEEPBIND ensures that the kerberos system libraries are loaded in a more
@@ -46,76 +46,82 @@ bool kerberos_libraries_available(std::string*) {
 // addon and OpenSSL 3.x can be statically linked into the binary, this will make
 // the kerberos system library still use symbols from the OpenSSL 1.1 system library
 // if it was built to link against that (e.g., on Linux distros based on RHEL 8 or 9).
-# ifdef RTLD_DEEPBIND
+#ifdef RTLD_DEEPBIND
 constexpr auto KERBEROS_RTLD_FLAGS = (RTLD_NOW | RTLD_DEEPBIND);
-# else
+#else
 constexpr auto KERBEROS_RTLD_FLAGS = RTLD_NOW;
-# endif
+#endif
 namespace {
 struct DLOpenHandle {
-  void* const handle_;
-  std::string error_;
-  DLOpenHandle(void* handle, const char* lib): handle_(handle) {
-    if (!handle_) error_ = std::string("Opening library ") + lib + " failed: " + dlerror();
-  }
-  ~DLOpenHandle() {
-    if (handle_) dlclose(handle_);
-  }
-  DLOpenHandle(const DLOpenHandle&) = delete;
-  DLOpenHandle& operator=(DLOpenHandle&) = delete;
+    void* const handle_;
+    std::string error_;
+    DLOpenHandle(void* handle, const char* lib) : handle_(handle) {
+        if (!handle_)
+            error_ = std::string("Opening library ") + lib + " failed: " + dlerror();
+    }
+    ~DLOpenHandle() {
+        if (handle_)
+            dlclose(handle_);
+    }
+    DLOpenHandle(const DLOpenHandle&) = delete;
+    DLOpenHandle& operator=(DLOpenHandle&) = delete;
 };
 
-#define DYLIBS(V) \
+#define DYLIBS(V)                    \
     V(gssapi, "libgssapi_krb5.so.2") \
-    V(krb5, "libkrb5.so.3") \
+    V(krb5, "libkrb5.so.3")          \
     V(comerr, "libcom_err.so.2")
 
-#define LIBRARY_HANDLE_GETTER(name, lib) \
-    static const DLOpenHandle& name ## _handle() { \
-        static const DLOpenHandle h{dlopen(lib, KERBEROS_RTLD_FLAGS), lib}; \
-        return h; \
-    } \
-    static void* name ## _symbol(const char* symbol) { \
-        void* value = dlsym(name ## _handle().handle_, symbol); \
-        if (!value) \
+#define LIBRARY_HANDLE_GETTER(name, lib)                                                        \
+    static const DLOpenHandle& name##_handle() {                                                \
+        static const DLOpenHandle h{dlopen(lib, KERBEROS_RTLD_FLAGS), lib};                     \
+        return h;                                                                               \
+    }                                                                                           \
+    static void* name##_symbol(const char* symbol) {                                            \
+        void* value = dlsym(name##_handle().handle_, symbol);                                   \
+        if (!value)                                                                             \
             fprintf(stderr, "Unable to look up symbol %s in %s: %s\n", symbol, lib, dlerror()); \
-        return value; \
+        return value;                                                                           \
     }
 
 DYLIBS(LIBRARY_HANDLE_GETTER)
 
-#define GSS_CALL(x) ([&]() { \
-    static void* const sym = gssapi_symbol(#x); \
-    return reinterpret_cast<decltype(x)*>(sym); \
-})()
-#define GSS_VALUE(x) ([&]() { \
-    static void* const sym = gssapi_symbol(#x); \
-    return *static_cast<decltype(x)*>(sym); \
-})()
-#define KRB5_CALL(x) ([&]() { \
-    static void* const sym = krb5_symbol(#x); \
-    return reinterpret_cast<decltype(x)*>(sym); \
-})()
-#define COMERR_CALL(x) ([&]() { \
-    static void* const sym = comerr_symbol(#x); \
-    return reinterpret_cast<decltype(x)*>(sym); \
-})()
-} // anonymous namespace
+#define GSS_CALL(x)                                 \
+    ([&]() {                                        \
+        static void* const sym = gssapi_symbol(#x); \
+        return reinterpret_cast<decltype(x)*>(sym); \
+    })()
+#define GSS_VALUE(x)                                \
+    ([&]() {                                        \
+        static void* const sym = gssapi_symbol(#x); \
+        return *static_cast<decltype(x)*>(sym);     \
+    })()
+#define KRB5_CALL(x)                                \
+    ([&]() {                                        \
+        static void* const sym = krb5_symbol(#x);   \
+        return reinterpret_cast<decltype(x)*>(sym); \
+    })()
+#define COMERR_CALL(x)                              \
+    ([&]() {                                        \
+        static void* const sym = comerr_symbol(#x); \
+        return reinterpret_cast<decltype(x)*>(sym); \
+    })()
+}  // anonymous namespace
 
 namespace node_kerberos {
 bool kerberos_libraries_available(std::string* error) {
-#define CHECK_HANDLE(name, lib) \
-    { \
-        const DLOpenHandle& handle = name ## _handle(); \
-        if (!handle.handle_) { \
-            *error = handle.error_; \
-            return false; \
-        } \
+#define CHECK_HANDLE(name, lib)                       \
+    {                                                 \
+        const DLOpenHandle& handle = name##_handle(); \
+        if (!handle.handle_) {                        \
+            *error = handle.error_;                   \
+            return false;                             \
+        }                                             \
     }
     DYLIBS(CHECK_HANDLE)
     return true;
 }
-}
+}  // namespace node_kerberos
 #endif
 
 namespace node_kerberos {
@@ -133,7 +139,7 @@ gss_result server_principal_details(const char* service, const char* hostname) {
     char match[1024];
     size_t match_len = 0;
     std::string details;
-    gss_result result {};
+    gss_result result{};
 
     int code;
     krb5_context kcontext;
@@ -199,16 +205,16 @@ end:
 }
 
 gss_result authenticate_gss_client_init(const char* service,
-                                         const char* principal,
-                                         long int gss_flags,
-                                         gss_server_state* delegatestate,
-                                         gss_OID mech_oid,
-                                         gss_client_state* state) {
+                                        const char* principal,
+                                        long int gss_flags,
+                                        gss_server_state* delegatestate,
+                                        gss_OID mech_oid,
+                                        gss_client_state* state) {
     OM_uint32 maj_stat;
     OM_uint32 min_stat;
     gss_buffer_desc name_token = GSS_C_EMPTY_BUFFER;
     gss_buffer_desc principal_token = GSS_C_EMPTY_BUFFER;
-    gss_result ret {};
+    gss_result ret{};
 
     state->server_name = GSS_C_NO_NAME;
     state->mech_oid = mech_oid;
@@ -222,8 +228,8 @@ gss_result authenticate_gss_client_init(const char* service,
     name_token.length = strlen(service);
     name_token.value = (char*)service;
 
-    maj_stat =
-        GSS_CALL(gss_import_name)(&min_stat, &name_token, GSS_VALUE(gss_nt_service_name), &state->server_name);
+    maj_stat = GSS_CALL(gss_import_name)(
+        &min_stat, &name_token, GSS_VALUE(gss_nt_service_name), &state->server_name);
 
     if (GSS_ERROR(maj_stat)) {
         ret = gss_error_result(maj_stat, min_stat);
@@ -240,20 +246,21 @@ gss_result authenticate_gss_client_init(const char* service,
         principal_token.length = strlen(principal);
         principal_token.value = (char*)principal;
 
-        maj_stat = GSS_CALL(gss_import_name)(&min_stat, &principal_token, GSS_VALUE(GSS_C_NT_USER_NAME), &name);
+        maj_stat = GSS_CALL(gss_import_name)(
+            &min_stat, &principal_token, GSS_VALUE(GSS_C_NT_USER_NAME), &name);
         if (GSS_ERROR(maj_stat)) {
             ret = gss_error_result(maj_stat, min_stat);
             goto end;
         }
 
         maj_stat = GSS_CALL(gss_acquire_cred)(&min_stat,
-                                    name,
-                                    GSS_C_INDEFINITE,
-                                    GSS_C_NO_OID_SET,
-                                    GSS_C_INITIATE,
-                                    &state->client_creds,
-                                    NULL,
-                                    NULL);
+                                              name,
+                                              GSS_C_INDEFINITE,
+                                              GSS_C_NO_OID_SET,
+                                              GSS_C_INITIATE,
+                                              &state->client_creds,
+                                              NULL,
+                                              NULL);
         if (GSS_ERROR(maj_stat)) {
             ret = gss_error_result(maj_stat, min_stat);
             goto end;
@@ -285,13 +292,13 @@ gss_client_state::~gss_client_state() {
 }
 
 gss_result authenticate_gss_client_step(gss_client_state* state,
-                                         const char* challenge,
-                                         struct gss_channel_bindings_struct* channel_bindings) {
+                                        const char* challenge,
+                                        struct gss_channel_bindings_struct* channel_bindings) {
     OM_uint32 maj_stat;
     OM_uint32 min_stat;
     gss_buffer_desc input_token = GSS_C_EMPTY_BUFFER;
     gss_buffer_desc output_token = GSS_C_EMPTY_BUFFER;
-    gss_result ret {};
+    gss_result ret{};
     int temp_ret = AUTH_GSS_CONTINUE;
 
     // Always clear out the old response
@@ -314,18 +321,18 @@ gss_result authenticate_gss_client_step(gss_client_state* state,
 
     // Do GSSAPI step
     maj_stat = GSS_CALL(gss_init_sec_context)(&min_stat,
-                                    state->client_creds,
-                                    &state->context,
-                                    state->server_name,
-                                    state->mech_oid,
-                                    (OM_uint32)state->gss_flags,
-                                    0,
-                                    channel_bindings,
-                                    &input_token,
-                                    NULL,
-                                    &output_token,
-                                    NULL,
-                                    NULL);
+                                              state->client_creds,
+                                              &state->context,
+                                              state->server_name,
+                                              state->mech_oid,
+                                              (OM_uint32)state->gss_flags,
+                                              0,
+                                              channel_bindings,
+                                              &input_token,
+                                              NULL,
+                                              &output_token,
+                                              NULL,
+                                              NULL);
 
     if ((maj_stat != GSS_S_COMPLETE) && (maj_stat != GSS_S_CONTINUE_NEEDED)) {
         ret = gss_error_result(maj_stat, min_stat);
@@ -402,7 +409,7 @@ gss_result authenticate_gss_client_unwrap(gss_client_state* state, const char* c
     gss_buffer_desc input_token = GSS_C_EMPTY_BUFFER;
     gss_buffer_desc output_token = GSS_C_EMPTY_BUFFER;
     int conf = 0;
-    gss_result ret {};
+    gss_result ret{};
 
     // Always clear out the old response
     if (state->response != NULL) {
@@ -419,7 +426,8 @@ gss_result authenticate_gss_client_unwrap(gss_client_state* state, const char* c
     }
 
     // Do GSSAPI step
-    maj_stat = GSS_CALL(gss_unwrap)(&min_stat, state->context, &input_token, &output_token, &conf, NULL);
+    maj_stat =
+        GSS_CALL(gss_unwrap)(&min_stat, state->context, &input_token, &output_token, &conf, NULL);
 
     if (maj_stat != GSS_S_COMPLETE) {
         ret = gss_error_result(maj_stat, min_stat);
@@ -445,16 +453,16 @@ end:
 }
 
 gss_result authenticate_gss_client_wrap(gss_client_state* state,
-                                         const char* challenge,
-                                         const char* user,
-                                         int protect) {
+                                        const char* challenge,
+                                        const char* user,
+                                        int protect) {
     OM_uint32 maj_stat;
     OM_uint32 min_stat;
     gss_buffer_desc input_token = GSS_C_EMPTY_BUFFER;
     gss_buffer_desc output_token = GSS_C_EMPTY_BUFFER;
     char buf[4096];
     unsigned long buf_size;
-    gss_result ret {};
+    gss_result ret{};
 
     // Always clear out the old response
     if (state->response != NULL) {
@@ -527,7 +535,7 @@ gss_result authenticate_gss_server_init(const char* service, gss_server_state* s
     OM_uint32 min_stat;
     size_t service_len;
     gss_buffer_desc name_token = GSS_C_EMPTY_BUFFER;
-    gss_result ret {};
+    gss_result ret{};
 
     state->context = GSS_C_NO_CONTEXT;
     state->server_name = GSS_C_NO_NAME;
@@ -555,13 +563,13 @@ gss_result authenticate_gss_server_init(const char* service, gss_server_state* s
 
         // Get credentials
         maj_stat = GSS_CALL(gss_acquire_cred)(&min_stat,
-                                    state->server_name,
-                                    GSS_C_INDEFINITE,
-                                    GSS_C_NO_OID_SET,
-                                    GSS_C_ACCEPT,
-                                    &state->server_creds,
-                                    NULL,
-                                    NULL);
+                                              state->server_name,
+                                              GSS_C_INDEFINITE,
+                                              GSS_C_NO_OID_SET,
+                                              GSS_C_ACCEPT,
+                                              &state->server_creds,
+                                              NULL,
+                                              NULL);
 
         if (GSS_ERROR(maj_stat)) {
             ret = gss_error_result(maj_stat, min_stat);
@@ -599,7 +607,7 @@ gss_result authenticate_gss_server_step(gss_server_state* state, const char* cha
     gss_buffer_desc output_token = GSS_C_EMPTY_BUFFER;
     gss_name_t target_name = GSS_C_NO_NAME;
     // int ret = AUTH_GSS_CONTINUE;
-    gss_result ret {};
+    gss_result ret{};
 
     // Always clear out the old response
     if (state->response != NULL) {
@@ -618,16 +626,16 @@ gss_result authenticate_gss_server_step(gss_server_state* state, const char* cha
     }
 
     maj_stat = GSS_CALL(gss_accept_sec_context)(&min_stat,
-                                      &state->context,
-                                      state->server_creds,
-                                      &input_token,
-                                      GSS_C_NO_CHANNEL_BINDINGS,
-                                      &state->client_name,
-                                      NULL,
-                                      &output_token,
-                                      NULL,
-                                      NULL,
-                                      &state->client_creds);
+                                                &state->context,
+                                                state->server_creds,
+                                                &input_token,
+                                                GSS_C_NO_CHANNEL_BINDINGS,
+                                                &state->client_name,
+                                                NULL,
+                                                &output_token,
+                                                NULL,
+                                                NULL,
+                                                &state->client_creds);
 
     if (GSS_ERROR(maj_stat)) {
         ret = gss_error_result(maj_stat, min_stat);
@@ -688,14 +696,14 @@ end:
 }
 
 gss_result authenticate_user_krb5pwd(const char* user,
-                                      const char* pswd,
-                                      const char* service,
-                                      const char* default_realm) {
+                                     const char* pswd,
+                                     const char* service,
+                                     const char* default_realm) {
     krb5_context kcontext = NULL;
     krb5_error_code code;
     krb5_principal client = NULL;
     krb5_principal server = NULL;
-    gss_result result {};
+    gss_result result{};
     int ret = 0;
     char* name = NULL;
     char* p = NULL;
@@ -704,7 +712,7 @@ gss_result authenticate_user_krb5pwd(const char* user,
     krb5_creds creds;
     krb5_get_init_creds_opt gic_options;
     krb5_error_code verifyRet;
-    char *vName = NULL;
+    char* vName = NULL;
 
     code = KRB5_CALL(krb5_init_context)(&kcontext);
     if (code) {
@@ -783,7 +791,7 @@ end:
 }
 
 static gss_result gss_success_result(int ret) {
-    return { ret, "", "" };
+    return {ret, "", ""};
 }
 
 static gss_result gss_error_result(OM_uint32 err_maj, OM_uint32 err_min) {
@@ -808,30 +816,18 @@ static gss_result gss_error_result(OM_uint32 err_maj, OM_uint32 err_min) {
         }
     } while (!GSS_ERROR(maj_stat) && msg_ctx != 0);
 
-    return {
-        AUTH_GSS_ERROR,
-        buf_maj + ": " + buf_min,
-        ""
-    };
+    return {AUTH_GSS_ERROR, buf_maj + ": " + buf_min, ""};
 }
 
 static gss_result gss_error_result_with_message(const char* message) {
-    return {
-        AUTH_GSS_ERROR,
-        message,
-        ""
-    };
+    return {AUTH_GSS_ERROR, message, ""};
 }
 
 static gss_result gss_error_result_with_message_and_code(const char* message, int code) {
-    return {
-        AUTH_GSS_ERROR,
-        std::string(message) + " (" + std::to_string(code) + ")",
-        ""
-    };
+    return {AUTH_GSS_ERROR, std::string(message) + " (" + std::to_string(code) + ")", ""};
 }
 
-}
+}  // namespace node_kerberos
 
 #if defined(__clang__)
 #pragma clang diagnostic pop

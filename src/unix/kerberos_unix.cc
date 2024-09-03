@@ -1,3 +1,4 @@
+#include <iostream>
 #include <memory>
 
 #include "../kerberos.h"
@@ -22,27 +23,26 @@ void KerberosClient::Step(const CallbackInfo& info) {
     std::string challenge = info[0].ToString();
     Function callback = info[1].As<Function>();
 
-    KerberosWorker::Run(callback, "kerberos:ClientStep", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
-        gss_result result =
-            authenticate_gss_client_step(state.get(), challenge.c_str(), NULL);
+    KerberosWorker::Run(
+        callback, "kerberos:ClientStep", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
+            gss_result result = authenticate_gss_client_step(state.get(), challenge.c_str(), NULL);
 
-        return onFinished([=](KerberosWorker* worker) {
-            Napi::Env env = worker->Env();
-            if (result.code == AUTH_GSS_ERROR) {
-                worker->Call(std::initializer_list<napi_value>
-                    { Error::New(env, result.message).Value(), env.Null() });
-                return;
-            }
+            return onFinished([=](KerberosWorker* worker) {
+                Napi::Env env = worker->Env();
+                if (result.code == AUTH_GSS_ERROR) {
+                    worker->Call(std::initializer_list<napi_value>{
+                        Error::New(env, result.message).Value(), env.Null()});
+                    return;
+                }
 
-            Napi::Value response = env.Null();
-            if (state->response != nullptr) {
-                response = String::New(env, state->response);
-            }
+                Napi::Value response = env.Null();
+                if (state->response != nullptr) {
+                    response = String::New(env, state->response);
+                }
 
-            worker->Call(std::initializer_list<napi_value>
-                { env.Null(), response });
+                worker->Call(std::initializer_list<napi_value>{env.Null(), response});
+            });
         });
-    });
 }
 
 void KerberosClient::UnwrapData(const CallbackInfo& info) {
@@ -50,22 +50,22 @@ void KerberosClient::UnwrapData(const CallbackInfo& info) {
     std::string challenge = info[0].ToString();
     Function callback = info[1].As<Function>();
 
-    KerberosWorker::Run(callback, "kerberos:ClientUnwrap", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
-        gss_result result =
-            authenticate_gss_client_unwrap(state.get(), challenge.c_str());
+    KerberosWorker::Run(
+        callback, "kerberos:ClientUnwrap", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
+            gss_result result = authenticate_gss_client_unwrap(state.get(), challenge.c_str());
 
-        return onFinished([=](KerberosWorker* worker) {
-            Napi::Env env = worker->Env();
-            if (result.code == AUTH_GSS_ERROR) {
-                worker->Call(std::initializer_list<napi_value>
-                    { Error::New(env, result.message).Value(), env.Null() });
-                return;
-            }
+            return onFinished([=](KerberosWorker* worker) {
+                Napi::Env env = worker->Env();
+                if (result.code == AUTH_GSS_ERROR) {
+                    worker->Call(std::initializer_list<napi_value>{
+                        Error::New(env, result.message).Value(), env.Null()});
+                    return;
+                }
 
-            worker->Call(std::initializer_list<napi_value>
-                { env.Null(), String::New(env, state->response) });
+                worker->Call(std::initializer_list<napi_value>{env.Null(),
+                                                               String::New(env, state->response)});
+            });
         });
-    });
 }
 
 void KerberosClient::WrapData(const CallbackInfo& info) {
@@ -75,24 +75,25 @@ void KerberosClient::WrapData(const CallbackInfo& info) {
     Function callback = info[2].As<Function>();
     std::string user = ToStringWithNonStringAsEmpty(options["user"]);
 
-    int protect = 0; // NOTE: this should be an option
+    int protect = ParseWrapOptionsProtect(options);
 
-    KerberosWorker::Run(callback, "kerberos:ClientWrap", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
-        gss_result result = authenticate_gss_client_wrap(
-            state.get(), challenge.c_str(), user.c_str(), protect);
+    KerberosWorker::Run(
+        callback, "kerberos:ClientWrap", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
+            gss_result result =
+                authenticate_gss_client_wrap(state.get(), challenge.c_str(), user.c_str(), protect);
 
-        return onFinished([=](KerberosWorker* worker) {
-            Napi::Env env = worker->Env();
-            if (result.code == AUTH_GSS_ERROR) {
-                worker->Call(std::initializer_list<napi_value>
-                    { Error::New(env, result.message).Value(), env.Null() });
-                return;
-            }
+            return onFinished([=](KerberosWorker* worker) {
+                Napi::Env env = worker->Env();
+                if (result.code == AUTH_GSS_ERROR) {
+                    worker->Call(std::initializer_list<napi_value>{
+                        Error::New(env, result.message).Value(), env.Null()});
+                    return;
+                }
 
-            worker->Call(std::initializer_list<napi_value>
-                { env.Null(), String::New(env, state->response) });
+                worker->Call(std::initializer_list<napi_value>{env.Null(),
+                                                               String::New(env, state->response)});
+            });
         });
-    });
 }
 
 /// KerberosServer
@@ -101,27 +102,26 @@ void KerberosServer::Step(const CallbackInfo& info) {
     std::string challenge = info[0].ToString();
     Function callback = info[1].As<Function>();
 
-    KerberosWorker::Run(callback, "kerberos:ServerStep", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
-        gss_result result =
-            authenticate_gss_server_step(state.get(), challenge.c_str());
+    KerberosWorker::Run(
+        callback, "kerberos:ServerStep", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
+            gss_result result = authenticate_gss_server_step(state.get(), challenge.c_str());
 
-        return onFinished([=](KerberosWorker* worker) {
-            Napi::Env env = worker->Env();
-            if (result.code == AUTH_GSS_ERROR) {
-                worker->Call(std::initializer_list<napi_value>
-                    { Error::New(env, result.message).Value(), env.Null() });
-                return;
-            }
+            return onFinished([=](KerberosWorker* worker) {
+                Napi::Env env = worker->Env();
+                if (result.code == AUTH_GSS_ERROR) {
+                    worker->Call(std::initializer_list<napi_value>{
+                        Error::New(env, result.message).Value(), env.Null()});
+                    return;
+                }
 
-            Napi::Value response = env.Null();
-            if (state->response != nullptr) {
-                response = String::New(env, state->response);
-            }
+                Napi::Value response = env.Null();
+                if (state->response != nullptr) {
+                    response = String::New(env, state->response);
+                }
 
-            worker->Call(std::initializer_list<napi_value>
-                { env.Null(), response });
+                worker->Call(std::initializer_list<napi_value>{env.Null(), response});
+            });
         });
-    });
 }
 
 /// Global Methods
@@ -132,7 +132,8 @@ void InitializeClient(const CallbackInfo& info) {
 
     std::string principal = ToStringWithNonStringAsEmpty(options["principal"]);
     Value flags_v = options["flags"];
-    uint32_t gss_flags = flags_v.IsNumber() ? flags_v.As<Number>().Uint32Value() : GSS_C_MUTUAL_FLAG|GSS_C_SEQUENCE_FLAG;
+    uint32_t gss_flags = flags_v.IsNumber() ? flags_v.As<Number>().Uint32Value()
+                                            : GSS_C_MUTUAL_FLAG | GSS_C_SEQUENCE_FLAG;
     Value mech_oid_v = options["mechOID"];
     uint32_t mech_oid_int = mech_oid_v.IsNumber() ? mech_oid_v.As<Number>().Uint32Value() : 0;
     gss_OID mech_oid = GSS_C_NO_OID;
@@ -142,46 +143,51 @@ void InitializeClient(const CallbackInfo& info) {
         mech_oid = &spnego_mech_oid;
     }
 
-    KerberosWorker::Run(callback, "kerberos:InitializeClient", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
-        auto client_state = std::make_shared<gss_client_state>();
-        gss_result result = authenticate_gss_client_init(
-            service.c_str(), principal.c_str(), gss_flags, NULL, mech_oid, client_state.get());
+    KerberosWorker::Run(
+        callback,
+        "kerberos:InitializeClient",
+        [=](KerberosWorker::SetOnFinishedHandler onFinished) {
+            auto client_state = std::make_shared<gss_client_state>();
+            gss_result result = authenticate_gss_client_init(
+                service.c_str(), principal.c_str(), gss_flags, NULL, mech_oid, client_state.get());
 
-        return onFinished([=](KerberosWorker* worker) {
-            Napi::Env env = worker->Env();
-            if (result.code == AUTH_GSS_ERROR) {
-                worker->Call(std::initializer_list<napi_value>
-                    { Error::New(env, result.message).Value(), env.Null() });
-                return;
-            }
+            return onFinished([=](KerberosWorker* worker) {
+                Napi::Env env = worker->Env();
+                if (result.code == AUTH_GSS_ERROR) {
+                    worker->Call(std::initializer_list<napi_value>{
+                        Error::New(env, result.message).Value(), env.Null()});
+                    return;
+                }
 
-            worker->Call(std::initializer_list<napi_value>
-                { env.Null(), KerberosClient::NewInstance(env, std::move(client_state)) });
+                worker->Call(std::initializer_list<napi_value>{
+                    env.Null(), KerberosClient::NewInstance(env, std::move(client_state))});
+            });
         });
-    });
 }
 
 void InitializeServer(const CallbackInfo& info) {
     std::string service = info[0].ToString();
     Function callback = info[1].As<Function>();
 
-    KerberosWorker::Run(callback, "kerberos:InitializeServer", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
-        auto server_state = std::make_shared<gss_server_state>();
-        gss_result result =
-            authenticate_gss_server_init(service.c_str(), server_state.get());
+    KerberosWorker::Run(
+        callback,
+        "kerberos:InitializeServer",
+        [=](KerberosWorker::SetOnFinishedHandler onFinished) {
+            auto server_state = std::make_shared<gss_server_state>();
+            gss_result result = authenticate_gss_server_init(service.c_str(), server_state.get());
 
-        return onFinished([=](KerberosWorker* worker) {
-            Napi::Env env = worker->Env();
-            if (result.code == AUTH_GSS_ERROR) {
-                worker->Call(std::initializer_list<napi_value>
-                    { Error::New(env, result.message).Value(), env.Null() });
-                return;
-            }
+            return onFinished([=](KerberosWorker* worker) {
+                Napi::Env env = worker->Env();
+                if (result.code == AUTH_GSS_ERROR) {
+                    worker->Call(std::initializer_list<napi_value>{
+                        Error::New(env, result.message).Value(), env.Null()});
+                    return;
+                }
 
-            worker->Call(std::initializer_list<napi_value>
-                { env.Null(), KerberosServer::NewInstance(env, std::move(server_state)) });
+                worker->Call(std::initializer_list<napi_value>{
+                    env.Null(), KerberosServer::NewInstance(env, std::move(server_state))});
+            });
         });
-    });
 }
 
 void PrincipalDetails(const CallbackInfo& info) {
@@ -189,22 +195,24 @@ void PrincipalDetails(const CallbackInfo& info) {
     std::string hostname = info[1].ToString();
     Function callback = info[2].As<Function>();
 
-    KerberosWorker::Run(callback, "kerberos:PrincipalDetails", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
-        gss_result result =
-            server_principal_details(service.c_str(), hostname.c_str());
+    KerberosWorker::Run(callback,
+                        "kerberos:PrincipalDetails",
+                        [=](KerberosWorker::SetOnFinishedHandler onFinished) {
+                            gss_result result =
+                                server_principal_details(service.c_str(), hostname.c_str());
 
-        return onFinished([=](KerberosWorker* worker) {
-            Napi::Env env = worker->Env();
-            if (result.code == AUTH_GSS_ERROR) {
-                worker->Call(std::initializer_list<napi_value>
-                    { Error::New(env, result.message).Value(), env.Null() });
-                return;
-            }
+                            return onFinished([=](KerberosWorker* worker) {
+                                Napi::Env env = worker->Env();
+                                if (result.code == AUTH_GSS_ERROR) {
+                                    worker->Call(std::initializer_list<napi_value>{
+                                        Error::New(env, result.message).Value(), env.Null()});
+                                    return;
+                                }
 
-            worker->Call(std::initializer_list<napi_value>
-                { env.Null(), String::New(env, result.data) });
-        });
-    });
+                                worker->Call(std::initializer_list<napi_value>{
+                                    env.Null(), String::New(env, result.data)});
+                            });
+                        });
 }
 
 void CheckPassword(const CallbackInfo& info) {
@@ -221,21 +229,21 @@ void CheckPassword(const CallbackInfo& info) {
         callback = info[4].As<Function>();
     }
 
-    KerberosWorker::Run(callback, "kerberos:CheckPassword", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
-        gss_result result = authenticate_user_krb5pwd(
-            username.c_str(), password.c_str(), service.c_str(), defaultRealm.c_str());
+    KerberosWorker::Run(
+        callback, "kerberos:CheckPassword", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
+            gss_result result = authenticate_user_krb5pwd(
+                username.c_str(), password.c_str(), service.c_str(), defaultRealm.c_str());
 
-        return onFinished([=](KerberosWorker* worker) {
-            Napi::Env env = worker->Env();
-            if (result.code == AUTH_GSS_ERROR) {
-                worker->Call(std::initializer_list<napi_value>
-                    { Error::New(env, result.message).Value(), env.Null() });
-            } else {
-                worker->Call(std::initializer_list<napi_value>
-                    { env.Null(), env.Null() });
-            }
+            return onFinished([=](KerberosWorker* worker) {
+                Napi::Env env = worker->Env();
+                if (result.code == AUTH_GSS_ERROR) {
+                    worker->Call(std::initializer_list<napi_value>{
+                        Error::New(env, result.message).Value(), env.Null()});
+                } else {
+                    worker->Call(std::initializer_list<napi_value>{env.Null(), env.Null()});
+                }
+            });
         });
-    });
 }
 
-}
+}  // namespace node_kerberos

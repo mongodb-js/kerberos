@@ -13,8 +13,8 @@ struct InstanceData {
 };
 
 static constexpr napi_property_attributes writable_and_configurable =
-    static_cast<napi_property_attributes>(
-        static_cast<int>(napi_writable) | static_cast<int>(napi_configurable));
+    static_cast<napi_property_attributes>(static_cast<int>(napi_writable) |
+                                          static_cast<int>(napi_configurable));
 
 inline String NewMaybeWideString(Env env, const char* str) {
     return String::New(env, str);
@@ -22,13 +22,13 @@ inline String NewMaybeWideString(Env env, const char* str) {
 #ifdef _WIN32
 inline String NewMaybeWideString(Env env, const WCHAR* str) {
     static_assert(sizeof(std::wstring::value_type) == sizeof(std::u16string::value_type),
-        "wstring and u16string have the same value type on Windows");
+                  "wstring and u16string have the same value type on Windows");
     std::wstring wstr(str);
     std::u16string u16(wstr.begin(), wstr.end());
     return String::New(env, u16);
 }
 #endif
-}
+}  // namespace
 
 std::string ToStringWithNonStringAsEmpty(Napi::Value value) {
     if (!value.IsString()) {
@@ -37,19 +37,28 @@ std::string ToStringWithNonStringAsEmpty(Napi::Value value) {
     return value.As<String>();
 }
 
+int KerberosClient::ParseWrapOptionsProtect(const Napi::Object& options) {
+    if (!options.Has("protect"))    return 0;
+
+    if (!options.Get("protect").IsBoolean()) {
+        throw TypeError::New(options.Env(), "options.protect must be a boolean.");
+    }
+
+    bool protect = options.Get("protect");
+    return protect ? 1 : 0;
+}
+
 Function KerberosClient::Init(Napi::Env env) {
-    return
-        DefineClass(env,
-                    "KerberosClient",
-                    {
-                      InstanceMethod("step", &KerberosClient::Step, writable_and_configurable),
-                      InstanceMethod("wrap", &KerberosClient::WrapData, writable_and_configurable),
-                      InstanceMethod("unwrap", &KerberosClient::UnwrapData, writable_and_configurable),
-                      InstanceAccessor("username", &KerberosClient::UserNameGetter, nullptr),
-                      InstanceAccessor("response", &KerberosClient::ResponseGetter, nullptr),
-                      InstanceAccessor("responseConf", &KerberosClient::ResponseConfGetter, nullptr),
-                      InstanceAccessor("contextComplete", &KerberosClient::ContextCompleteGetter, nullptr)
-                    });
+    return DefineClass(
+        env,
+        "KerberosClient",
+        {InstanceMethod("step", &KerberosClient::Step, writable_and_configurable),
+         InstanceMethod("wrap", &KerberosClient::WrapData, writable_and_configurable),
+         InstanceMethod("unwrap", &KerberosClient::UnwrapData, writable_and_configurable),
+         InstanceAccessor("username", &KerberosClient::UserNameGetter, nullptr),
+         InstanceAccessor("response", &KerberosClient::ResponseGetter, nullptr),
+         InstanceAccessor("responseConf", &KerberosClient::ResponseConfGetter, nullptr),
+         InstanceAccessor("contextComplete", &KerberosClient::ContextCompleteGetter, nullptr)});
 }
 
 Object KerberosClient::NewInstance(Napi::Env env, std::shared_ptr<krb_client_state> state) {
@@ -60,8 +69,7 @@ Object KerberosClient::NewInstance(Napi::Env env, std::shared_ptr<krb_client_sta
     return obj;
 }
 
-KerberosClient::KerberosClient(const CallbackInfo& info)
-    : ObjectWrap(info) {}
+KerberosClient::KerberosClient(const CallbackInfo& info) : ObjectWrap(info) {}
 
 std::shared_ptr<krb_client_state> KerberosClient::state() const {
     return _state;
@@ -91,16 +99,14 @@ Value KerberosClient::ContextCompleteGetter(const CallbackInfo& info) {
 
 /// KerberosServer
 Function KerberosServer::Init(Napi::Env env) {
-    return
-        DefineClass(env,
-                    "KerberosServer",
-                    {
-                      InstanceMethod("step", &KerberosServer::Step, writable_and_configurable),
-                      InstanceAccessor("username", &KerberosServer::UserNameGetter, nullptr),
-                      InstanceAccessor("response", &KerberosServer::ResponseGetter, nullptr),
-                      InstanceAccessor("targetName", &KerberosServer::TargetNameGetter, nullptr),
-                      InstanceAccessor("contextComplete", &KerberosServer::ContextCompleteGetter, nullptr)
-                    });
+    return DefineClass(
+        env,
+        "KerberosServer",
+        {InstanceMethod("step", &KerberosServer::Step, writable_and_configurable),
+         InstanceAccessor("username", &KerberosServer::UserNameGetter, nullptr),
+         InstanceAccessor("response", &KerberosServer::ResponseGetter, nullptr),
+         InstanceAccessor("targetName", &KerberosServer::TargetNameGetter, nullptr),
+         InstanceAccessor("contextComplete", &KerberosServer::ContextCompleteGetter, nullptr)});
 }
 
 Object KerberosServer::NewInstance(Napi::Env env, std::shared_ptr<krb_server_state> state) {
@@ -111,8 +117,7 @@ Object KerberosServer::NewInstance(Napi::Env env, std::shared_ptr<krb_server_sta
     return obj;
 }
 
-KerberosServer::KerberosServer(const CallbackInfo& info)
-    : ObjectWrap(info) {}
+KerberosServer::KerberosServer(const CallbackInfo& info) : ObjectWrap(info) {}
 
 std::shared_ptr<krb_server_state> KerberosServer::state() const {
     return _state;
@@ -156,18 +161,19 @@ void TestMethod(const CallbackInfo& info) {
         callback = info[3].As<Function>();
     }
 
-    KerberosWorker::Run(callback, "kerberos:TestMethod", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
-        return onFinished([=](KerberosWorker* worker) {
-            Napi::Env env = worker->Env();
-            if (shouldError) {
-                worker->Call(std::initializer_list<napi_value>
-                    { Error::New(env).Value(), env.Null() });
-            } else {
-                worker->Call(std::initializer_list<napi_value>
-                    { env.Null(), String::New(env, optionalString) });
-            }
+    KerberosWorker::Run(
+        callback, "kerberos:TestMethod", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
+            return onFinished([=](KerberosWorker* worker) {
+                Napi::Env env = worker->Env();
+                if (shouldError) {
+                    worker->Call(
+                        std::initializer_list<napi_value>{Error::New(env).Value(), env.Null()});
+                } else {
+                    worker->Call(std::initializer_list<napi_value>{
+                        env.Null(), String::New(env, optionalString)});
+                }
+            });
         });
-    });
 }
 
 static Object Init(Env env, Object exports) {
@@ -179,10 +185,8 @@ static Object Init(Env env, Object exports) {
     Function KerberosServerCtor = KerberosServer::Init(env);
     exports["KerberosClient"] = KerberosClientCtor;
     exports["KerberosServer"] = KerberosServerCtor;
-    env.SetInstanceData(new InstanceData {
-        Reference<Function>::New(KerberosClientCtor, 1),
-        Reference<Function>::New(KerberosServerCtor, 1)
-    });
+    env.SetInstanceData(new InstanceData{Reference<Function>::New(KerberosClientCtor, 1),
+                                         Reference<Function>::New(KerberosServerCtor, 1)});
     exports["initializeClient"] = Function::New(env, InitializeClient);
     exports["initializeServer"] = Function::New(env, InitializeServer);
     exports["principalDetails"] = Function::New(env, PrincipalDetails);
@@ -193,4 +197,4 @@ static Object Init(Env env, Object exports) {
 
 NODE_API_MODULE(kerberos, Init)
 
-}
+}  // namespace node_kerberos

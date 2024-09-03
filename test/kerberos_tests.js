@@ -4,6 +4,7 @@ const request = require('request');
 const chai = require('chai');
 const expect = chai.expect;
 const os = require('os');
+const { test } = require('mocha');
 chai.use(require('chai-string'));
 
 // environment variables
@@ -118,6 +119,52 @@ describe('Kerberos', function () {
               });
             }
           );
+        });
+      });
+    });
+  });
+
+  describe('Client.wrap()', function () {
+    async function establishConext() {
+      const service = `HTTP@${hostname}`;
+      client = await kerberos.initializeClient(service, {});
+      server = await kerberos.initializeServer(service);
+      const clientResponse = await client.step('');
+      const serverResponse = await server.step(clientResponse);
+      await client.step(serverResponse);
+      expect(client.contextComplete).to.be.true;
+      return { client, server };
+    }
+
+    let client;
+    let server;
+
+    before(establishConext);
+    describe('options.protect', function () {
+      context('valid values for `protect`', function () {
+        test('no options provided', async function () {
+          await client.wrap('challenge');
+        });
+
+        test('options provided (protect omitted)', async function () {
+          await client.wrap('challenge', {});
+        });
+
+        test('protect = false', async function () {
+          await client.wrap('challenge', { protect: false });
+        });
+
+        test('protect = true', async function () {
+          await client.wrap('challenge', { protect: true });
+        });
+      })
+
+      context('when set to an invalid value', function () {
+        it('successfully wraps a payload', async function () {
+          const error = await client.wrap('challenge', { protect: 'non-boolean' }).catch(e => e);
+          expect(error)
+            .to.be.instanceOf(TypeError)
+            .to.match(/options.protect must be a boolean/);
         });
       });
     });
