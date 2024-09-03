@@ -4,6 +4,7 @@ const request = require('request');
 const chai = require('chai');
 const expect = chai.expect;
 const os = require('os');
+const { test } = require('mocha');
 chai.use(require('chai-string'));
 
 // environment variables
@@ -159,7 +160,7 @@ describe('Kerberos', function () {
       });
 
       context('when set to an invalid value', function () {
-        it('successfully wraps a payload', async function () {
+        it('throws a TypeError', async function () {
           const error = await client.wrap('challenge', { protect: 'non-boolean' }).catch(e => e);
           expect(error)
             .to.be.instanceOf(TypeError)
