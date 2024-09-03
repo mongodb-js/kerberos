@@ -37,11 +37,15 @@ std::string ToStringWithNonStringAsEmpty(Napi::Value value) {
     return value.As<String>();
 }
 
-int BooleanToIntWithNonIntAsError(Napi::Value value) {
-    if (!value.IsBoolean()) {
-        throw TypeError::New(value.Env(), "Expected a boolean value");
+int KerberosClient::ParseWrapOptionsProtect(const Napi::Object& options) {
+    if (!options.Has("protect"))    return 0;
+
+    if (!options.Get("protect").IsBoolean()) {
+        throw TypeError::New(options.Env(), "options.protect must be a boolean.");
     }
-    return value.As<Boolean>().Value() ? 1 : 0;
+
+    bool protect = options.Get("protect").As<Boolean>();
+    return protect ? 1 : 0;
 }
 
 Function KerberosClient::Init(Napi::Env env) {
