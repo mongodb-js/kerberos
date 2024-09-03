@@ -62,7 +62,8 @@
     "precommit": "check-clang-format",
     "docs": "jsdoc2md --template etc/README.hbs --plugin dmd-clear --files lib/kerberos.js > README.md",
     "test": "mocha test",
-    "prebuild": "prebuild --runtime napi --strip --verbose --all"
+    "prebuild": "prebuild --runtime napi --strip --verbose --all",
+    "clean-build": "node-gyp clean && node-gyp configure && node-gyp build"
   },
   "engines": {
     "node": ">=12.9.0"
