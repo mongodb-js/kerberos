@@ -104,6 +104,5 @@ fi
 echo "npm location: $(which npm)"
 echo "npm version: $(npm -v)"
 
-npm install "${NPM_OPTIONS}" --ignore-scripts
-npm run clean-build
+npm install "${NPM_OPTIONS}" --build-from-source
 ldd build/*/kerberos.node || true
