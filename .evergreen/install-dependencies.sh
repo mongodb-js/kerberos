@@ -104,5 +104,5 @@ fi
 echo "npm location: $(which npm)"
 echo "npm version: $(npm -v)"
 
-npm install "${NPM_OPTIONS}"
+npm install "${NPM_OPTIONS}" --build-from-source
 ldd build/*/kerberos.node || true
