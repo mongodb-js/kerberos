@@ -68,7 +68,6 @@ functions:
           PROJECT_DIRECTORY: ${PROJECT_DIRECTORY}
           PROJECT: ${project}
           GYP_DEFINES: ${GYP_DEFINES|}
-          NPM_OPTIONS: ${NPM_OPTIONS|}
         args:
           - run
           - '--interactive'
@@ -80,8 +79,6 @@ functions:
           - PROJECT_DIRECTORY=/app
           - '--env'
           - GYP_DEFINES
-          - '--env'
-          - NPM_OPTIONS
           - 'ubuntu:22.04'
           - /bin/bash
           - /app/.evergreen/run-tests-ubuntu.sh
@@ -125,7 +122,6 @@ tasks:
       - func: run tests ubuntu
         vars:
           GYP_DEFINES: kerberos_use_rtld=false
-          NPM_OPTIONS: --build-from-source
   - name: run-prebuild
     commands:
       - func: install dependencies
