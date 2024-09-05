@@ -55,6 +55,8 @@ class KerberosClient : public Napi::ObjectWrap<KerberosClient> {
     void UnwrapData(const Napi::CallbackInfo& info);
     void WrapData(const Napi::CallbackInfo& info);
 
+    int ParseWrapOptionsProtect(const Napi::Object& options);
+
    private:
     friend class Napi::ObjectWrap<KerberosClient>;
     explicit KerberosClient(const Napi::CallbackInfo& info);
