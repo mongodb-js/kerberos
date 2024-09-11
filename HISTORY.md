@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.2.0](https://github.com/mongodb-js/kerberos/compare/v2.1.2...v2.2.0) (2024-09-05)
+
+
+### Features
+
+* **NODE-6333:** Allow callers to specify the 'protect' flag ([#198](https://github.com/mongodb-js/kerberos/issues/198)) ([515f4bf](https://github.com/mongodb-js/kerberos/commit/515f4bfa9ed2f98be2670143d34b2e1356eb7089))
+
 ## [2.1.2](https://github.com/mongodb-js/kerberos/compare/v2.1.1...v2.1.2) (2024-08-12)
 
 
