@@ -168,5 +168,24 @@ describe('Kerberos', function () {
         });
       });
     });
+
+    describe('options.user', function () {
+      context('valid values for `user`', function () {
+        test('no options provided', async function () {
+          const rs = await client.wrap('x'.repeat(100));
+          expect(rs).length.to.be.greaterThan(100);
+        });
+
+        test('options provided (user omitted)', async function () {
+          const rs = await client.wrap('x'.repeat(100), {});
+          expect(rs).length.to.be.greaterThan(100);
+        });
+
+        test('options provided (user set)', async function () {
+          const rs = await client.wrap('x'.repeat(100), { user: 'foo' });
+          expect(rs).length.to.be.lessThan(100);
+        });
+      });
+    });
   });
 });
