@@ -29,7 +29,7 @@
   "dependencies": {
     "bindings": "^1.5.0",
     "node-addon-api": "^6.1.0",
-    "prebuild-install": "7.1.1"
+    "prebuild-install": "7.1.2"
   },
   "devDependencies": {
     "chai": "^4.3.7",
