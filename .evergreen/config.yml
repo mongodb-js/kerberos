@@ -19,32 +19,13 @@ functions:
     - command: git.get_project
       params:
         directory: src
-    - command: shell.exec
+    - command: subprocess.exec
       params:
         working_dir: src
-        script: |
-          # Get the current unique version of this checkout
-          if [ "${is_patch}" = "true" ]; then
-             CURRENT_VERSION=$(git describe)-patch-${version_id}
-          else
-             CURRENT_VERSION=latest
-          fi
-          export PROJECT_DIRECTORY="$(pwd)"
-          # Python has cygwin path problems on Windows. Detect prospective mongo-orchestration home directory
-          if [ "Windows_NT" = "$OS" ]; then # Magic variable in cygwin
-             export PROJECT_DIRECTORY=$(cygpath -m $PROJECT_DIRECTORY)
-          fi
-          cat <<EOT > expansion.yml
-          CURRENT_VERSION: "$CURRENT_VERSION"
-          PROJECT_DIRECTORY: "$PROJECT_DIRECTORY"
-          PREPARE_SHELL: |
-             set -o errexit
-             set -o xtrace
-             export PROJECT_DIRECTORY="$PROJECT_DIRECTORY"
-             export PROJECT="${project}"
-          EOT
-          # See what we've done
-          cat expansion.yml
+        binary: bash
+        add_expansions_to_env: true
+        args:
+          - '.evergreen/prepare-shell.sh'
     - command: expansions.update
       params:
         file: src/expansion.yml
