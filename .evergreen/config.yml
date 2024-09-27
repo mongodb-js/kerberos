@@ -80,6 +80,7 @@ functions:
       params:
         working_dir: src
         binary: bash
+        add_expansions_to_env: true
         args:
           - .evergreen/install-dependencies.sh
         env:

@@ -10,7 +10,7 @@ export NODE_LTS_VERSION=${NODE_LTS_VERSION:-14}
 # a version lower than latest to support EOL Node versions.
 export NPM_VERSION=${NPM_VERSION:-latest}
 
-source ./.drivers-tools/.evergreen/install-node.sh
+source $DRIVERS_TOOLS/.evergreen/install-node.sh
 
 npm install --build-from-source
 ldd build/*/kerberos.node || true
