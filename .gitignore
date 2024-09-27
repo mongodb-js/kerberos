@@ -24,3 +24,6 @@ bindings
 .npmrc
 
 *.tgz
+
+expansion.yml
+.drivers-tools/
