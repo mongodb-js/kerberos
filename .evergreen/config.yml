@@ -54,10 +54,14 @@ functions:
           - '--interactive'
           - '--volume'
           - ${PROJECT_DIRECTORY}:/app
+          - '--volume'
+          - ${DRIVERS_TOOLS}:/drivers-tools
           - '--workdir'
           - /app
           - '--env'
           - PROJECT_DIRECTORY=/app
+          - '--env'
+          - DRIVERS_TOOLS=/drivers-tools
           - '--env'
           - GYP_DEFINES
           - 'ubuntu:22.04'
