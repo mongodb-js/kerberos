@@ -32,11 +32,13 @@ fi
 cat <<EOT > expansion.yml
 CURRENT_VERSION: "$CURRENT_VERSION"
 PROJECT_DIRECTORY: "$PROJECT_DIRECTORY"
+DRIVERS_TOOLS: "$DRIVERS_TOOLS"
 PREPARE_SHELL: |
     set -o errexit
     set -o xtrace
     export PROJECT_DIRECTORY="$PROJECT_DIRECTORY"
     export PROJECT="${project}"
+    export DRIVERS_TOOLS="$DRIVERS_TOOLS"
 EOT
 
 # See what we've done
