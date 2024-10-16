@@ -468,7 +468,7 @@ gss_result authenticate_gss_client_wrap(gss_client_state* state,
         input_token.length = len;
     }
 
-    if (user) {
+    if (user && *user) {
         // get bufsize
         // server_conf_flags = ((char*) input_token.value)[0];
         ((char*)input_token.value)[0] = 0;
