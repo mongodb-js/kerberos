@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "bindings": "^1.5.0",
-    "node-addon-api": "^6.1.0",
+    "node-addon-api": "^8.2.2",
     "prebuild-install": "^7.1.2"
   },
   "devDependencies": {
