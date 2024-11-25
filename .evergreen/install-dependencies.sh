@@ -10,6 +10,8 @@ export NODE_LTS_VERSION=${NODE_LTS_VERSION:-14}
 # a version lower than latest to support EOL Node versions.
 export NPM_VERSION=${NPM_VERSION:-latest}
 
+echo "Installing Node.js $NODE_LTS_VERSION with npm@$NPM_VERSION"
+
 source $DRIVERS_TOOLS/.evergreen/install-node.sh
 
 npm install --build-from-source

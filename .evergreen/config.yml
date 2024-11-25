@@ -120,8 +120,8 @@ tasks:
       - func: run prebuild
 
 buildvariants:
-  - name: ubuntu2204-64-node-16
-    display_name: 'Ubuntu 22.04 64-bit - Node 16'
+  - name: ubuntu2204-x64-node-16
+    display_name: 'Ubuntu 22.04 x64 - Node 16'
     run_on: ubuntu2204-small
     expansions:
       has_packages: true
@@ -132,8 +132,8 @@ buildvariants:
     tasks:
       - run-tests-ubuntu
       - run-tests-ubuntu-rtld
-  - name: ubuntu2204-64-node-18
-    display_name: 'Ubuntu 22.04 64-bit - Node 18'
+  - name: ubuntu2204-x64-node-18
+    display_name: 'Ubuntu 22.04 x64 - Node 18'
     run_on: ubuntu2204-small
     expansions:
       has_packages: true
@@ -143,8 +143,8 @@ buildvariants:
     tasks:
       - run-tests-ubuntu
       - run-tests-ubuntu-rtld
-  - name: ubuntu2204-64-node-20
-    display_name: 'Ubuntu 22.04 64-bit - Node 20'
+  - name: ubuntu2204-x64-node-20
+    display_name: 'Ubuntu 22.04 x64 - Node 20'
     run_on: ubuntu2204-small
     expansions:
       has_packages: true
@@ -154,8 +154,8 @@ buildvariants:
     tasks:
       - run-tests-ubuntu
       - run-tests-ubuntu-rtld
-  - name: ubuntu2204-64-node-22
-    display_name: 'Ubuntu 22.04 64-bit - Node 22'
+  - name: ubuntu2204-x64-node-22
+    display_name: 'Ubuntu 22.04 x64 - Node 22'
     run_on: ubuntu2204-small
     expansions:
       has_packages: true
