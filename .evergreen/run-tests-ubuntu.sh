@@ -14,6 +14,8 @@ export KERBEROS_PORT="80"
 export KERBEROS_HOSTNAME=$HOSTNAME.$KERBEROS_REALM
 export DEBIAN_FRONTEND=noninteractive
 
+export NODE_LTS_VERSION=$NODE_LTS_VERSION
+
 echo "Installing all the packages required in this test"
 apt-get update
 apt-get -y -qq install \
@@ -123,8 +125,7 @@ else
     echo -e "SUCCESS: Apache site built and set for Kerberos auth\nActual Output:\n$CURL_OUTPUT"
 fi
 
-echo "Run: install Node.js 20"
-export NODE_LTS_VERSION=20
+echo "Run: install Node.js"
 source "${PROJECT_DIRECTORY}/.evergreen/install-dependencies.sh"
 
 npm test
