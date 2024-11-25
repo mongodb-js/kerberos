@@ -68,6 +68,8 @@ functions:
           - GYP_DEFINES
           - '--env'
           - NODE_LTS_VERSION=${NODE_LTS_VERSION}
+          - '--env'
+          - NPM_VERSION=${NPM_VERSION}
           - 'ubuntu:22.04'
           - /bin/bash
           - /app/.evergreen/run-tests-ubuntu.sh
@@ -126,6 +128,7 @@ buildvariants:
       packager_distro: ubuntu2204
       packager_arch: x86_64
       NODE_LTS_VERSION: "16"
+      NPM_VERSION: "9"
     tasks:
       - run-tests-ubuntu
       - run-tests-ubuntu-rtld
@@ -170,6 +173,7 @@ buildvariants:
       packager_distro: ubuntu2204
       packager_arch: arm64
       NODE_LTS_VERSION: "16"
+      NPM_VERSION: "9"
     tasks:
       - run-tests-ubuntu
       - run-tests-ubuntu-rtld
