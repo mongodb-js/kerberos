@@ -1,5 +1,8 @@
 'use strict';
-const kerberos = require('../lib/kerberos');
+
+const { loadBindings } = require('../lib/util');
+
+const kerberos = loadBindings();
 const defineOperation = require('../lib/util').defineOperation;
 const expect = require('chai').expect;
 
