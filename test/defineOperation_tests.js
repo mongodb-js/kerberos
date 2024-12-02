@@ -1,5 +1,5 @@
 'use strict';
-const kerberos = require('bindings')('kerberos');
+const kerberos = require('../lib/kerberos');
 const defineOperation = require('../lib/util').defineOperation;
 const expect = require('chai').expect;
 
@@ -16,7 +16,7 @@ describe('defineOperation', () => {
   });
 
   it('should validate optional parameters, with valid parameters after', function () {
-    expect(() => testMethod('llamas', false, true, () => {})).to.throw(
+    expect(() => testMethod('llamas', false, true, () => { })).to.throw(
       /Invalid type for parameter `optionalString`/
     );
   });
