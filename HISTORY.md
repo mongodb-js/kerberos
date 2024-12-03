@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.2.1](https://github.com/mongodb-js/kerberos/compare/v2.2.0...v2.2.1) (2024-12-03)
+
+
+### Bug Fixes
+
+* **NODE-6592:** remove dependency on `bindings` ([#220](https://github.com/mongodb-js/kerberos/issues/220)) ([b07a5d2](https://github.com/mongodb-js/kerberos/commit/b07a5d21a219a06303d7be9ad9577d2ffe3aa7c4))
+
 ## [2.2.0](https://github.com/mongodb-js/kerberos/compare/v2.1.2...v2.2.0) (2024-09-05)
 
 
