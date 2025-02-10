@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.2.2](https://github.com/mongodb-js/kerberos/compare/v2.2.1...v2.2.2) (2025-02-10)
+
+
+### Bug Fixes
+
+* **NODE-6732:** test and fix webpack bundling  ([#230](https://github.com/mongodb-js/kerberos/issues/230)) ([81bf1a7](https://github.com/mongodb-js/kerberos/commit/81bf1a7a091016769abbf23d4828d28483380bc7))
+
 ## [2.2.1](https://github.com/mongodb-js/kerberos/compare/v2.2.0...v2.2.1) (2024-12-10)
 
 
