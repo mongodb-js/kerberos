@@ -1,0 +1,42 @@
+name: Webpack
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Use Node.js LTS
+      uses: actions/setup-node@v4
+      with:
+        node-version: 'lts/*'
+
+    - name: "Install dependencies"
+      shell: bash
+      run: |
+        npm install
+
+    - name: "Install dependencies in the Webpack bundle test package"
+      shell: bash
+      working-directory: ./test/bundling/webpack
+      run: |
+        npm install
+
+    - name: "Install local kerberos into Webpack bundle test package"
+      shell: bash
+      working-directory: ./test/bundling/webpack
+      run: |
+        npm run install:kerberos
+
+    - name: "Run webpack build"
+      shell: bash
+      working-directory: ./test/bundling/webpack
+      run: |
+        npm run build
