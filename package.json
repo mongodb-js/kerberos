@@ -38,7 +38,7 @@
     "clang-format": "^1.8.0",
     "dmd-clear": "^0.1.2",
     "eslint": "^9.9.0",
-    "eslint-config-prettier": "^9.1.0",
+    "eslint-config-prettier": "^10.0.2",
     "eslint-plugin-prettier": "^5.2.1",
     "jsdoc-to-markdown": "^9.0.5",
     "mocha": "^10.7.3",
