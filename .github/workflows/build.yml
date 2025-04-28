@@ -15,7 +15,7 @@ jobs:
   host_builds:
     strategy:
       matrix:
-        os: [macos-latest, windows-2019]
+        os: [macos-latest, windows-2019, windows-11-arm]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
