@@ -33,19 +33,19 @@
   "devDependencies": {
     "@types/node": "^22.15.3",
     "chai": "^4.4.1",
-    "chai-string": "^1.5.0",
+    "chai-string": "^1.6.0",
     "chalk": "^4.1.2",
     "clang-format": "^1.8.0",
     "dmd-clear": "^0.1.2",
     "eslint": "^9.25.1",
-    "eslint-config-prettier": "^10.0.2",
+    "eslint-config-prettier": "^10.1.2",
     "eslint-plugin-prettier": "^5.2.6",
-    "jsdoc-to-markdown": "^9.0.5",
+    "jsdoc-to-markdown": "^9.1.1",
     "mocha": "^11.1.0",
     "mongodb": "^6.16.0",
     "node-gyp": "^10.1.0",
     "prebuild": "^13.0.0",
-    "prettier": "^3.3.3",
+    "prettier": "^3.5.3",
     "request": "^2.88.2"
   },
   "overrides": {
