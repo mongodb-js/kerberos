@@ -86,6 +86,16 @@
             ]
           },
         }],
+        ['OS=="freebsd"', {
+          'include_dirs': [
+            '/usr/local/include',
+          ],
+          'link_settings': {
+            'library_dirs': [
+              '/usr/local/lib',
+            ]
+          },
+        }],
         ['OS=="win"',  {
           'sources': [
             'src/win32/kerberos_sspi.cc',
