@@ -63,3 +63,29 @@ jobs:
           if-no-files-found: 'error'
           retention-days: 1
           compression-level: 0
+
+  freebsd_builds:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        freebsd_arch: [aarch64, amd64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build FreeBSD ${{ matrix.freebsd_arch }} Prebuild
+        uses: vmactions/freebsd-vm@v1
+        with:
+          arch: ${{ matrix.freebsd_arch }}
+          usesh: true
+          run: |
+            node .github/scripts/build.mjs
+
+      - id: upload
+        name: Upload prebuild
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-freebsd-${{ matrix.freebsd_arch }}
+          path: prebuilds/
+          if-no-files-found: 'error'
+          retention-days: 1
+          compression-level: 0
