@@ -72,7 +72,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build FreeBSD ${{ matrix.freebsd_arch }} Prebuild
+      - name: Build freebsd-${{ matrix.freebsd_arch }} Prebuild
         uses: vmactions/freebsd-vm@v1
         with:
           arch: ${{ matrix.freebsd_arch }}
