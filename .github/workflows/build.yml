@@ -77,6 +77,8 @@ jobs:
         with:
           arch: ${{ matrix.freebsd_arch }}
           usesh: true
+          prepare: |
+            pkg install -y node
           run: |
             node .github/scripts/build.mjs
 
