@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.3.0](https://github.com/mongodb-js/kerberos/compare/v2.2.2...v2.3.0) (2025-06-20)
+
+
+### Features
+
+* **NODE-6993:** Add support for FreeBSD ([#248](https://github.com/mongodb-js/kerberos/issues/248)) ([d3e1a71](https://github.com/mongodb-js/kerberos/commit/d3e1a717b5cbb8de01b44d2c083d8f6db317e738))
+
 ## [2.2.2](https://github.com/mongodb-js/kerberos/compare/v2.2.1...v2.2.2) (2025-02-10)
 
 
