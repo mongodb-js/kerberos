@@ -87,12 +87,12 @@
           },
         }],
         ['OS=="freebsd"', {
-          'include_dirs': [
-            '/usr/local/include',
+          'include_dirs+': [
+            '<!(pkg-config krb5 --cflags-only-I | sed -E "s/(-I *|-isystem *)//g")',
           ],
           'link_settings': {
             'library_dirs': [
-              '/usr/local/lib',
+              '<!(pkg-config krb5 --libs-only-L | sed -e "s/-L//g")',
             ]
           },
         }],

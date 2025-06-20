@@ -78,7 +78,7 @@ jobs:
           arch: ${{ matrix.freebsd_arch }}
           usesh: true
           prepare: |
-            pkg install -y krb5 node npm
+            pkg install -y krb5 node npm pkgconf
           run: |
             node .github/scripts/build.mjs
 
