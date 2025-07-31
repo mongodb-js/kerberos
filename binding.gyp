@@ -105,7 +105,7 @@
             'libraries': [
               '-lcrypt32',
               '-lsecur32',
-              '-lShlwapi'
+              '-lshlwapi'
             ]
           }
         }]
