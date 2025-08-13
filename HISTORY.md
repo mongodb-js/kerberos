@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.3.0](https://github.com/mongodb-js/kerberos/compare/v2.2.2...v2.3.0) (2025-08-13)
+
+
+### Features
+
+* **NODE-6993:** Add support for FreeBSD ([#248](https://github.com/mongodb-js/kerberos/issues/248)) ([d3e1a71](https://github.com/mongodb-js/kerberos/commit/d3e1a717b5cbb8de01b44d2c083d8f6db317e738))
+* **NODE-7051:** Normalize casing of shlwapi.lib ([#253](https://github.com/mongodb-js/kerberos/issues/253)) ([1a91b69](https://github.com/mongodb-js/kerberos/commit/1a91b6926fdb616ecb7875f73d40216eaa8ee565))
+
+
+### Bug Fixes
+
+* **NODE-7064:** bump prebuild-install ([#254](https://github.com/mongodb-js/kerberos/issues/254)) ([d2a887a](https://github.com/mongodb-js/kerberos/commit/d2a887a23eb490b31d6932b5d3d90c2f7529a098))
+
 ## [2.2.2](https://github.com/mongodb-js/kerberos/compare/v2.2.1...v2.2.2) (2025-02-10)
 
 
