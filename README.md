@@ -2,30 +2,6 @@ Kerberos
 ========
 The `kerberos` package is a C++ extension for Node.js that provides cross-platform support for kerberos authentication using GSSAPI on linux/osx, and SSPI on windows. Much of the code in this module is adapted from [ccs-kerberos](https://github.com/apple/ccs-pykerberos) and [winkerberos](https://github.com/mongodb-labs/winkerberos).
 
-### Requirements
-
-**Linux**
-- `python` v2.7
-- `make`
-- A proper C/C++ compiler toolchain, like [GCC](https://gcc.gnu.org/)
-- Distribution-specific kerberos packages (e.g. `krb5-dev` on Ubuntu)
-
-**macOS**
-- `Xcode Command Line Tools`: Can be installed with `xcode-select --install`
-- Distribution-specific kerberos packages (e.g. `krb5` on Homebrew)
-
-**Windows**
-- **Option 1:** Install all the required tools and configurations using Microsoft's [windows-build-tools](https://github.com/felixrieseberg/windows-build-tools) by running `npm install -g windows-build-tools` from an elevated PowerShell (run as Administrator).
-- **Option 2:** Install dependencies and configuration manually
-   1. Visual C++ Build Environment:
-     * **Option 1:** Install [Visual C++ Build Tools](http://go.microsoft.com/fwlink/?LinkId=691126) using the *Default Install* option.
-     * **Option 2:** Install [Visual Studio 2015](https://www.visualstudio.com/products/visual-studio-community-vs) (or modify an existing installation) and select *Common Tools for Visual C++* during setup.
-
-  > :bulb: [Windows Vista / 7 only] requires [.NET Framework 4.5.1](http://www.microsoft.com/en-us/download/details.aspx?id=40773)
-
-  2. Install [Python 2.7](https://www.python.org/downloads/) or [Miniconda 2.7](http://conda.pydata.org/miniconda.html) (`v3.x.x` is not supported), and run `npm config set python python2.7`
-  3. Launch cmd, `npm config set msvs_version 2015`
-
 ### MongoDB Node.js Driver Version Compatibility
 
 Only the following version combinations with the [MongoDB Node.js Driver](https://github.com/mongodb/node-mongodb-native) are considered stable.
@@ -38,6 +14,8 @@ Only the following version combinations with the [MongoDB Node.js Driver](https:
 | `mongodb@3.x` | ✓              | N/A            |
 
 ### Installation
+
+Kerberos requires a platform-specific kerberos package installed and available to dynamically link with (ex: `krb5-dev` on Linux).
 
 Now you can install `kerberos` with the following:
 
@@ -59,6 +37,10 @@ Below are the platforms that are available as prebuilds on each github release.
     - arm64
 - Windows
     - x64
+ 
+#### Compilation
+
+Kerberos may compile on platforms in addition to the prebuilds that are provided.  These platforms are considered **unsupported**.
 
 ### Release Integrity
 
@@ -88,7 +70,34 @@ No verification is done when using npm to install the package. To ensure release
 
 To verify the native `.node` packages, follow the same steps as above. 
 
-### Testing
+### Contributing
+
+#### Building
+
+**Linux**
+- `python` v2.7
+- `make`
+- A proper C/C++ compiler toolchain, like [GCC](https://gcc.gnu.org/)
+- Distribution-specific kerberos packages (e.g. `krb5-dev` on Ubuntu)
+
+**macOS**
+- `Xcode Command Line Tools`: Can be installed with `xcode-select --install`
+- Distribution-specific kerberos packages (e.g. `krb5` on Homebrew)
+
+**Windows**
+- **Option 1:** Install all the required tools and configurations using Microsoft's [windows-build-tools](https://github.com/felixrieseberg/windows-build-tools) by running `npm install -g windows-build-tools` from an elevated PowerShell (run as Administrator).
+- **Option 2:** Install dependencies and configuration manually
+   1. Visual C++ Build Environment:
+     * **Option 1:** Install [Visual C++ Build Tools](http://go.microsoft.com/fwlink/?LinkId=691126) using the *Default Install* option.
+     * **Option 2:** Install [Visual Studio 2015](https://www.visualstudio.com/products/visual-studio-community-vs) (or modify an existing installation) and select *Common Tools for Visual C++* during setup.
+
+  > :bulb: [Windows Vista / 7 only] requires [.NET Framework 4.5.1](http://www.microsoft.com/en-us/download/details.aspx?id=40773)
+
+  2. Install [Python 2.7](https://www.python.org/downloads/) or [Miniconda 2.7](http://conda.pydata.org/miniconda.html) (`v3.x.x` is not supported), and run `npm config set python python2.7`
+  3. Launch cmd, `npm config set msvs_version 2015`
+
+
+#### Testing
 
 Run the test suite using:
 
