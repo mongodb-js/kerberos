@@ -121,11 +121,6 @@ NOTE: The test suite requires an active kerberos deployment.
 <dd></dd>
 <dt><a href="#KerberosServer">KerberosServer</a></dt>
 <dd></dd>
-<dt><del><a href="#MongoAuthProcess">MongoAuthProcess</a></del></dt>
-<dd><p>A class that was used for MongoDB kerberos authentication with legacy
-MongoDB Node drivers (<code>mongodb&lt;4.0</code>).</p>
-<p>Not intended for direct use.</p>
-</dd>
 </dl>
 
 ## Functions
@@ -243,16 +238,6 @@ Perform the client side kerberos unwrap step
 Processes a single kerberos server-side step using the supplied client data.
 
 **Returns**: <code>Promise</code> - returns Promise if no callback passed  
-<a name="MongoAuthProcess"></a>
-
-## ~~MongoAuthProcess~~
-***This class will be removed in an upcoming major release.***
-
-A class that was used for MongoDB kerberos authentication with legacy
-MongoDB Node drivers (`mongodb<4.0`).
-
-Not intended for direct use.
-
 <a name="checkPassword"></a>
 
 ## checkPassword(username, password, service, [defaultRealm], [callback])
