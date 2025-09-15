@@ -141,4 +141,84 @@ describe('Kerberos', function () {
       });
     });
   });
+
+  describe('parameter validation', function () {
+    test('initializeClient() throws if service is not a string', async function () {
+      expect(await kerberos.initializeClient().catch(e => e))
+        .to.be.instanceOf(TypeError)
+        .to.match(/`service` must be a string/);
+    });
+
+    test('initializeServer() throws if service is not a string', async function () {
+      expect(await kerberos.initializeServer().catch(e => e))
+        .to.be.instanceOf(TypeError)
+        .to.match(/`service` must be a string/);
+    });
+
+    test('principalDetails() throws if service is not a string', async function () {
+      expect(await kerberos.principalDetails(3, 'foo').catch(e => e))
+        .to.be.instanceOf(TypeError)
+        .to.match(/`service` must be a string/);
+    });
+
+    test('principalDetails() throws if hostname is not a string', async function () {
+      expect(await kerberos.principalDetails('foo', 3).catch(e => e))
+        .to.be.instanceOf(TypeError)
+        .to.match(/`hostname` must be a string/);
+    });
+
+    test('checkPassword() throws if username is not a string', async function () {
+      expect(await kerberos.checkPassword(3, 'password', 'service').catch(e => e))
+        .to.be.instanceOf(TypeError)
+        .to.match(/`username` must be a string/);
+    });
+
+    test('checkPassword() throws if password is not a string', async function () {
+      expect(await kerberos.checkPassword('username', 3, 'service').catch(e => e))
+        .to.be.instanceOf(TypeError)
+        .to.match(/`password` must be a string/);
+    });
+
+    test('checkPassword() throws if service is not a string', async function () {
+      expect(await kerberos.checkPassword('username', 'password', 3).catch(e => e))
+        .to.be.instanceOf(TypeError)
+        .to.match(/`service` must be a string/);
+    });
+
+    test('KerberosServer.step() throws if challenge is not a string', async function () {
+      const service = `HTTP@${hostname}`;
+
+      const server = await kerberos.initializeServer(service);
+      expect(await server.step(3).catch(e => e))
+        .to.be.instanceOf(TypeError)
+        .to.match(/`challenge` must be a string/);
+    });
+
+    describe('KerberosClient', function () {
+      let client;
+      beforeEach(async function () {
+        const service = `HTTP@${hostname}`;
+
+        client = await kerberos.initializeClient(service);
+      });
+
+      test('KerberosClient.unwrap() throws if challenge is not a string', async function () {
+        expect(await client.unwrap(3).catch(e => e))
+          .to.be.instanceOf(TypeError)
+          .to.match(/`challenge` must be a string/);
+      });
+
+      test('KerberosClient.wrap() throws if challenge is not a string', async function () {
+        expect(await client.wrap(3).catch(e => e))
+          .to.be.instanceOf(TypeError)
+          .to.match(/`challenge` must be a string/);
+      });
+
+      test('KerberosClient.step() throws if challenge is not a string', async function () {
+        expect(await client.step(3).catch(e => e))
+          .to.be.instanceOf(TypeError)
+          .to.match(/`challenge` must be a string/);
+      });
+    });
+  });
 });
