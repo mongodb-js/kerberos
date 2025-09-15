@@ -1,6 +1,8 @@
 Kerberos
 ========
-The `kerberos` package is a C++ extension for Node.js that provides cross-platform support for kerberos authentication using GSSAPI on linux/osx, and SSPI on windows. Much of the code in this module is adapted from [ccs-kerberos](https://github.com/apple/ccs-pykerberos) and [winkerberos](https://github.com/mongodb-labs/winkerberos).
+The `kerberos` package is a C++ extension for Node.js that provides cross-platform support for kerberos authentication
+using GSSAPI on linux/osx, and SSPI on windows. Much of the code in this module is adapted from
+[ccs-kerberos](https://github.com/apple/ccs-pykerberos) and [winkerberos](https://github.com/mongodb-labs/winkerberos).
 
 ### Requirements
 
@@ -15,27 +17,34 @@ The `kerberos` package is a C++ extension for Node.js that provides cross-platfo
 - Distribution-specific kerberos packages (e.g. `krb5` on Homebrew)
 
 **Windows**
-- **Option 1:** Install all the required tools and configurations using Microsoft's [windows-build-tools](https://github.com/felixrieseberg/windows-build-tools) by running `npm install -g windows-build-tools` from an elevated PowerShell (run as Administrator).
+- **Option 1:** Install all the required tools and configurations using Microsoft's
+[windows-build-tools](https://github.com/felixrieseberg/windows-build-tools) by running `npm install -g
+windows-build-tools` from an elevated PowerShell (run as Administrator).
 - **Option 2:** Install dependencies and configuration manually
-   1. Visual C++ Build Environment:
-     * **Option 1:** Install [Visual C++ Build Tools](http://go.microsoft.com/fwlink/?LinkId=691126) using the *Default Install* option.
-     * **Option 2:** Install [Visual Studio 2015](https://www.visualstudio.com/products/visual-studio-community-vs) (or modify an existing installation) and select *Common Tools for Visual C++* during setup.
+1. Visual C++ Build Environment:
+* **Option 1:** Install [Visual C++ Build Tools](http://go.microsoft.com/fwlink/?LinkId=691126) using the *Default
+Install* option.
+* **Option 2:** Install [Visual Studio 2015](https://www.visualstudio.com/products/visual-studio-community-vs) (or
+modify an existing installation) and select *Common Tools for Visual C++* during setup.
 
-  > :bulb: [Windows Vista / 7 only] requires [.NET Framework 4.5.1](http://www.microsoft.com/en-us/download/details.aspx?id=40773)
+> :bulb: [Windows Vista / 7 only] requires [.NET Framework
+4.5.1](http://www.microsoft.com/en-us/download/details.aspx?id=40773)
 
-  2. Install [Python 2.7](https://www.python.org/downloads/) or [Miniconda 2.7](http://conda.pydata.org/miniconda.html) (`v3.x.x` is not supported), and run `npm config set python python2.7`
-  3. Launch cmd, `npm config set msvs_version 2015`
+2. Install [Python 2.7](https://www.python.org/downloads/) or [Miniconda 2.7](http://conda.pydata.org/miniconda.html)
+(`v3.x.x` is not supported), and run `npm config set python python2.7`
+3. Launch cmd, `npm config set msvs_version 2015`
 
 ### MongoDB Node.js Driver Version Compatibility
 
-Only the following version combinations with the [MongoDB Node.js Driver](https://github.com/mongodb/node-mongodb-native) are considered stable.
+Only the following version combinations with the [MongoDB Node.js
+Driver](https://github.com/mongodb/node-mongodb-native) are considered stable.
 
-|               | `kerberos@1.x` | `kerberos@2.x` |
+| | `kerberos@1.x` | `kerberos@2.x` |
 | ------------- | -------------- | -------------- |
-| `mongodb@6.x` | N/A            | ✓              |
-| `mongodb@5.x` | ✓              | ✓              |
-| `mongodb@4.x` | ✓              | ✓              |
-| `mongodb@3.x` | ✓              | N/A            |
+| `mongodb@6.x` | N/A | ✓ |
+| `mongodb@5.x` | ✓ | ✓ |
+| `mongodb@4.x` | ✓ | ✓ |
+| `mongodb@3.x` | ✓ | N/A |
 
 ### Installation
 
@@ -51,18 +60,20 @@ Below are the platforms that are available as prebuilds on each github release.
 `prebuild-install` downloads these automatically depending on the platform you are running npm install on.
 
 - Linux GLIBC 2.23 or later
-    - s390x
-    - arm64
-    - x64
+- s390x
+- arm64
+- x64
 - MacOS universal binary
-    - x64
-    - arm64
+- x64
+- arm64
 - Windows
-    - x64
+- x64
 
 ### Release Integrity
 
-Releases are created automatically and signed using the [Node team's GPG key](https://pgp.mongodb.com/node-driver.asc). This applies to the git tag as well as all release packages provided as part of a GitHub release. To verify the provided packages, download the key and import it using gpg:
+Releases are created automatically and signed using the [Node team's GPG key](https://pgp.mongodb.com/node-driver.asc).
+This applies to the git tag as well as all release packages provided as part of a GitHub release. To verify the provided
+packages, download the key and import it using gpg:
 
 ```
 gpg --import node-driver.asc
@@ -71,9 +82,9 @@ gpg --import node-driver.asc
 The GitHub release contains a detached signature file for the NPM package (named
 `kerberos-X.Y.Z.tgz.sig`).
 
-The following command returns the link npm package. 
+The following command returns the link npm package.
 ```shell
-npm view kerberos@vX.Y.Z dist.tarball 
+npm view kerberos@vX.Y.Z dist.tarball
 ```
 
 Using the result of the above command, a `curl` command can return the official npm package for the release.
@@ -84,16 +95,19 @@ gpg --verify kerberos-X.Y.Z.tgz.sig kerberos-X.Y.Z.tgz
 ```
 
 >[!Note]
-No verification is done when using npm to install the package. To ensure release integrity when using npm, download the tarball manually from the GitHub release, verify the signature, then install the package from the downloaded tarball using npm install mongodb-X.Y.Z.tgz.
+No verification is done when using npm to install the package. To ensure release integrity when using npm, download the
+tarball manually from the GitHub release, verify the signature, then install the package from the downloaded tarball
+using npm install mongodb-X.Y.Z.tgz.
 
-To verify the native `.node` packages, follow the same steps as above. 
+To verify the native `.node` packages, follow the same steps as above.
 
 ### Testing
 
 Run the test suite using:
 
 ```bash
-docker run -i -v PATH_TO_KERBEROS_REPO:/app -w /app -e PROJECT_DIRECTORY=/app ubuntu:20.04 /bin/bash /app/.evergreen/run-tests-ubuntu.sh
+docker run -i -v PATH_TO_KERBEROS_REPO:/app -w /app -e PROJECT_DIRECTORY=/app ubuntu:20.04 /bin/bash
+/app/.evergreen/run-tests-ubuntu.sh
 ```
 
 NOTE: The test suite requires an active kerberos deployment.
@@ -278,7 +292,7 @@ Details are looked up via the `/etc/keytab` file.
 | [options] | <code>object</code> | Optional settings |
 | [options.principal] | <code>string</code> | Optional string containing the client principal in the form 'user@realm' (e.g. 'jdoe@example.com'). |
 | [options.flags] | <code>number</code> | Optional integer used to set GSS flags. (e.g.  `GSS_C_DELEG_FLAG\|GSS_C_MUTUAL_FLAG\|GSS_C_SEQUENCE_FLAG` will allow for forwarding credentials to the remote host) |
-| [options.mechOID] | <code>number</code> | Optional GSS mech OID. Defaults to None (`GSS_C_NO_OID`). Other possible values are `GSS_MECH_OID_KRB5`, `GSS_MECH_OID_SPNEGO`. |
+| [options.mechOID] | <code>number</code> | Optional GSS mech OID. Defaults to None (GSS_C_NO_OID). Other possible values are `GSS_MECH_OID_KRB5`, `GSS_MECH_OID_SPNEGO`. |
 | [callback] | <code>function</code> |  |
 
 Initializes a context for client-side authentication with the given service principal.

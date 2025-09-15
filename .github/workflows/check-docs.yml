@@ -1,0 +1,29 @@
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+  workflow_call: {}
+
+name: Build and Test
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  check_docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm install --ignore-scripts
+
+      - name: Build and check docs
+        run: |
+            npm run docs
+            if ! git diff --quiet README.md ; then
+                echo "Generated readme is out-of-sync!  Please update the readme and re-commit, modifying the template in etc/README.hbs if necessary."
+                exit 1
+            fi
