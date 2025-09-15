@@ -39,12 +39,12 @@ modify an existing installation) and select *Common Tools for Visual C++* during
 Only the following version combinations with the [MongoDB Node.js
 Driver](https://github.com/mongodb/node-mongodb-native) are considered stable.
 
-|               | `kerberos@1.x` | `kerberos@2.x` |
+| | `kerberos@1.x` | `kerberos@2.x` |
 | ------------- | -------------- | -------------- |
-| `mongodb@6.x` | N/A            | ✓              |
-| `mongodb@5.x` | ✓              | ✓              |
-| `mongodb@4.x` | ✓              | ✓              |
-| `mongodb@3.x` | ✓              | N/A            |
+| `mongodb@6.x` | N/A | ✓ |
+| `mongodb@5.x` | ✓ | ✓ |
+| `mongodb@4.x` | ✓ | ✓ |
+| `mongodb@3.x` | ✓ | N/A |
 
 ### Installation
 
@@ -121,11 +121,6 @@ NOTE: The test suite requires an active kerberos deployment.
 <dd></dd>
 <dt><a href="#KerberosServer">KerberosServer</a></dt>
 <dd></dd>
-<dt><del><a href="#MongoAuthProcess">MongoAuthProcess</a></del></dt>
-<dd><p>A class that was used for MongoDB kerberos authentication with legacy
-MongoDB Node drivers (<code>mongodb&lt;4.0</code>).</p>
-<p>Not intended for direct use.</p>
-</dd>
 </dl>
 
 ## Functions
@@ -163,12 +158,12 @@ security could be compromised if you do.</p>
 ## KerberosClient
 **Properties**
 
-| Name            | Type                 | Description                                                        |
-| --------------- | -------------------- | ------------------------------------------------------------------ |
-| username        | <code>string</code>  | The username used for authentication                               |
-| response        | <code>string</code>  | The last response received during authentication steps             |
-| responseConf    | <code>string</code>  | Indicates whether confidentiality was applied or not (GSSAPI only) |
-| contextComplete | <code>boolean</code> | Indicates that authentication has successfully completed or not    |
+| Name | Type | Description |
+| --- | --- | --- |
+| username | <code>string</code> | The username used for authentication |
+| response | <code>string</code> | The last response received during authentication steps |
+| responseConf | <code>string</code> | Indicates whether confidentiality was applied or not (GSSAPI only) |
+| contextComplete | <code>boolean</code> | Indicates that authentication has successfully completed or not |
 
 
 * [KerberosClient](#KerberosClient)
@@ -184,8 +179,8 @@ security could be compromised if you do.</p>
 
 ### *kerberosClient*.step(challenge)
 
-| Param     | Type                | Description                                                                                |
-| --------- | ------------------- | ------------------------------------------------------------------------------------------ |
+| Param | Type | Description |
+| --- | --- | --- |
 | challenge | <code>string</code> | A string containing the base64-encoded server data (which may be empty for the first step) |
 
 Processes a single kerberos client-side step using the supplied server challenge.
@@ -195,11 +190,11 @@ Processes a single kerberos client-side step using the supplied server challenge
 
 ### *kerberosClient*.wrap(challenge, [options])
 
-| Param             | Type                 | Description                                                  |
-| ----------------- | -------------------- | ------------------------------------------------------------ |
-| challenge         | <code>string</code>  | The response returned after calling `unwrap`                 |
-| [options]         | <code>object</code>  | Optional settings                                            |
-| [options.user]    | <code>string</code>  | The user to authorize                                        |
+| Param | Type | Description |
+| --- | --- | --- |
+| challenge | <code>string</code> | The response returned after calling `unwrap` |
+| [options] | <code>object</code> | Optional settings |
+| [options.user] | <code>string</code> | The user to authorize |
 | [options.protect] | <code>boolean</code> | Indicates if the wrap should request message confidentiality |
 
 Perform the client side kerberos wrap step.
@@ -209,8 +204,8 @@ Perform the client side kerberos wrap step.
 
 ### *kerberosClient*.unwrap(challenge)
 
-| Param     | Type                | Description                                        |
-| --------- | ------------------- | -------------------------------------------------- |
+| Param | Type | Description |
+| --- | --- | --- |
 | challenge | <code>string</code> | A string containing the base64-encoded server data |
 
 Perform the client side kerberos unwrap step
@@ -221,19 +216,19 @@ Perform the client side kerberos unwrap step
 ## KerberosServer
 **Properties**
 
-| Name            | Type                 | Description                                                     |
-| --------------- | -------------------- | --------------------------------------------------------------- |
-| username        | <code>string</code>  | The username used for authentication                            |
-| response        | <code>string</code>  | The last response received during authentication steps          |
-| targetName      | <code>string</code>  | The target used for authentication                              |
+| Name | Type | Description |
+| --- | --- | --- |
+| username | <code>string</code> | The username used for authentication |
+| response | <code>string</code> | The last response received during authentication steps |
+| targetName | <code>string</code> | The target used for authentication |
 | contextComplete | <code>boolean</code> | Indicates that authentication has successfully completed or not |
 
 <a name="KerberosServer+step"></a>
 
 ### *kerberosServer*.step(challenge)
 
-| Param     | Type                | Description                                        |
-| --------- | ------------------- | -------------------------------------------------- |
+| Param | Type | Description |
+| --- | --- | --- |
 | challenge | <code>string</code> | A string containing the base64-encoded client data |
 
 Processes a single kerberos server-side step using the supplied client data.
@@ -243,12 +238,12 @@ Processes a single kerberos server-side step using the supplied client data.
 
 ## checkPassword(username, password, service, [defaultRealm])
 
-| Param          | Type                | Description                                                                            |
-| -------------- | ------------------- | -------------------------------------------------------------------------------------- |
-| username       | <code>string</code> | The Kerberos user name. If no realm is supplied, then the `defaultRealm` will be used. |
-| password       | <code>string</code> | The password for the user.                                                             |
-| service        | <code>string</code> | The Kerberos service to check access for.                                              |
-| [defaultRealm] | <code>string</code> | The default realm to use if one is not supplied in the user argument.                  |
+| Param | Type | Description |
+| --- | --- | --- |
+| username | <code>string</code> | The Kerberos user name. If no realm is supplied, then the `defaultRealm` will be used. |
+| password | <code>string</code> | The password for the user. |
+| service | <code>string</code> | The Kerberos service to check access for. |
+| [defaultRealm] | <code>string</code> | The default realm to use if one is not supplied in the user argument. |
 
 This function provides a simple way to verify that a user name and password
 match those normally used for Kerberos authentication.
@@ -271,10 +266,10 @@ security could be compromised if you do.
 
 ## principalDetails(service, hostname)
 
-| Param    | Type                | Description                               |
-| -------- | ------------------- | ----------------------------------------- |
-| service  | <code>string</code> | The Kerberos service type for the server. |
-| hostname | <code>string</code> | The hostname of the server.               |
+| Param | Type | Description |
+| --- | --- | --- |
+| service | <code>string</code> | The Kerberos service type for the server. |
+| hostname | <code>string</code> | The hostname of the server. |
 
 This function returns the service principal for the server given a service type and hostname.
 
@@ -285,13 +280,13 @@ Details are looked up via the `/etc/keytab` file.
 
 ## initializeClient(service, [options])
 
-| Param               | Type                | Description                                                                                                                                                         |
-| ------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| service             | <code>string</code> | A string containing the service principal in the form 'type@fqdn' (e.g. 'imap@mail.apple.com').                                                                     |
-| [options]           | <code>object</code> | Optional settings                                                                                                                                                   |
-| [options.principal] | <code>string</code> | Optional string containing the client principal in the form 'user@realm' (e.g. 'jdoe@example.com').                                                                 |
-| [options.flags]     | <code>number</code> | Optional integer used to set GSS flags. (e.g.  `GSS_C_DELEG_FLAG\|GSS_C_MUTUAL_FLAG\|GSS_C_SEQUENCE_FLAG` will allow for forwarding credentials to the remote host) |
-| [options.mechOID]   | <code>number</code> | Optional GSS mech OID. Defaults to None (GSS_C_NO_OID). Other possible values are `GSS_MECH_OID_KRB5`, `GSS_MECH_OID_SPNEGO`.                                       |
+| Param | Type | Description |
+| --- | --- | --- |
+| service | <code>string</code> | A string containing the service principal in the form 'type@fqdn' (e.g. 'imap@mail.apple.com'). |
+| [options] | <code>object</code> | Optional settings |
+| [options.principal] | <code>string</code> | Optional string containing the client principal in the form 'user@realm' (e.g. 'jdoe@example.com'). |
+| [options.flags] | <code>number</code> | Optional integer used to set GSS flags. (e.g.  `GSS_C_DELEG_FLAG\|GSS_C_MUTUAL_FLAG\|GSS_C_SEQUENCE_FLAG` will allow for forwarding credentials to the remote host) |
+| [options.mechOID] | <code>number</code> | Optional GSS mech OID. Defaults to None (GSS_C_NO_OID). Other possible values are `GSS_MECH_OID_KRB5`, `GSS_MECH_OID_SPNEGO`. |
 
 Initializes a context for client-side authentication with the given service principal.
 
@@ -300,8 +295,8 @@ Initializes a context for client-side authentication with the given service prin
 
 ## initializeServer(service)
 
-| Param   | Type                | Description                                                                                     |
-| ------- | ------------------- | ----------------------------------------------------------------------------------------------- |
+| Param | Type | Description |
+| --- | --- | --- |
 | service | <code>string</code> | A string containing the service principal in the form 'type@fqdn' (e.g. 'imap@mail.apple.com'). |
 
 Initializes a context for server-side authentication with the given service principal.
