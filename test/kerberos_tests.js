@@ -27,10 +27,8 @@ describe('Kerberos', function () {
   it('should check a given password against a kerberos server', async function () {
     const service = `HTTP/${hostname}`;
 
-    // Test with correct password - should not throw
     await kerberos.checkPassword(username, password, service, realm.toUpperCase());
 
-    // Test with incorrect password - should throw
     const error = await kerberos
       .checkPassword(username, 'incorrect-password', service, realm.toUpperCase())
       .catch(e => e);
@@ -50,6 +48,7 @@ describe('Kerberos', function () {
     expect(client.contextComplete).to.be.false;
 
     const serverResponse = await server.step(clientResponse);
+
     expect(client.contextComplete).to.be.false;
 
     await client.step(serverResponse);

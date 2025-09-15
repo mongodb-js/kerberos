@@ -126,7 +126,7 @@ NOTE: The test suite requires an active kerberos deployment.
 ## Functions
 
 <dl>
-<dt><a href="#checkPassword">checkPassword(username, password, service, [defaultRealm])</a> ⇒ <code>Promise</code></dt>
+<dt><a href="#checkPassword">checkPassword(username, password, service, [defaultRealm])</a> ⇒ <code>Promise.&lt;null&gt;</code></dt>
 <dd><p>This function provides a simple way to verify that a user name and password
 match those normally used for Kerberos authentication.
 It does this by checking that the supplied user name and password can be
@@ -145,10 +145,10 @@ security could be compromised if you do.</p>
 <dd><p>This function returns the service principal for the server given a service type and hostname.</p>
 <p>Details are looked up via the <code>/etc/keytab</code> file.</p>
 </dd>
-<dt><a href="#initializeClient">initializeClient(service, [options])</a> ⇒ <code>Promise</code></dt>
+<dt><a href="#initializeClient">initializeClient(service, [options])</a> ⇒ <code><a href="#KerberosClient">Promise.&lt;KerberosClient&gt;</a></code></dt>
 <dd><p>Initializes a context for client-side authentication with the given service principal.</p>
 </dd>
-<dt><a href="#initializeServer">initializeServer(service)</a> ⇒ <code>Promise</code></dt>
+<dt><a href="#initializeServer">initializeServer(service)</a> ⇒ <code><a href="#KerberosServer">Promise.&lt;KerberosServer&gt;</a></code></dt>
 <dd><p>Initializes a context for server-side authentication with the given service principal.</p>
 </dd>
 </dl>
@@ -185,7 +185,6 @@ security could be compromised if you do.</p>
 
 Processes a single kerberos client-side step using the supplied server challenge.
 
-**Returns**: <code>Promise</code> - returns Promise  
 <a name="KerberosClient+wrap"></a>
 
 ### *kerberosClient*.wrap(challenge, [options])
@@ -199,7 +198,6 @@ Processes a single kerberos client-side step using the supplied server challenge
 
 Perform the client side kerberos wrap step.
 
-**Returns**: <code>Promise</code> - returns Promise  
 <a name="KerberosClient+unwrap"></a>
 
 ### *kerberosClient*.unwrap(challenge)
@@ -210,7 +208,6 @@ Perform the client side kerberos wrap step.
 
 Perform the client side kerberos unwrap step
 
-**Returns**: <code>Promise</code> - returns Promise  
 <a name="KerberosServer"></a>
 
 ## KerberosServer
@@ -233,7 +230,6 @@ Perform the client side kerberos unwrap step
 
 Processes a single kerberos server-side step using the supplied client data.
 
-**Returns**: <code>Promise</code> - returns Promise  
 <a name="checkPassword"></a>
 
 ## checkPassword(username, password, service, [defaultRealm])
@@ -261,7 +257,7 @@ IMPORTANT: This method is vulnerable to KDC spoofing attacks and it should
 only be used for testing. Do not use this in any production system - your
 security could be compromised if you do.
 
-**Returns**: <code>Promise</code> - returns Promise  
+**Returns**: <code>Promise.&lt;null&gt;</code> - returns Promise that rejects if the password is invalid  
 <a name="principalDetails"></a>
 
 ## principalDetails(service, hostname)
@@ -290,7 +286,7 @@ Details are looked up via the `/etc/keytab` file.
 
 Initializes a context for client-side authentication with the given service principal.
 
-**Returns**: <code>Promise</code> - returns Promise  
+**Returns**: [<code>Promise.&lt;KerberosClient&gt;</code>](#KerberosClient) - returns Promise  
 <a name="initializeServer"></a>
 
 ## initializeServer(service)
@@ -301,4 +297,4 @@ Initializes a context for client-side authentication with the given service prin
 
 Initializes a context for server-side authentication with the given service principal.
 
-**Returns**: <code>Promise</code> - returns Promise  
+**Returns**: [<code>Promise.&lt;KerberosServer&gt;</code>](#KerberosServer) - returns Promise  
