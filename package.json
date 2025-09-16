@@ -34,6 +34,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.2.1",
+    "@typescript-eslint/eslint-plugin": "^8.31.1",
     "chai": "^4.4.1",
     "chai-string": "^1.6.0",
     "chalk": "^4.1.2",
@@ -57,7 +58,7 @@
     "install": "prebuild-install --runtime napi || node-gyp rebuild",
     "format-cxx": "clang-format -i 'src/**/*'",
     "format-js": "ESLINT_USE_FLAT_CONFIG=false eslint lib test --fix",
-    "check:lint": "ESLINT_USE_FLAT_CONFIG=false eslint lib test",
+    "check:lint": "ESLINT_USE_FLAT_CONFIG=false eslint lib test index.d.ts",
     "precommit": "check-clang-format",
     "docs": "jsdoc2md --template etc/README.hbs --plugin dmd-clear --files lib/kerberos.js > README.md",
     "test": "mocha 'test/*_tests.js'",

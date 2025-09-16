@@ -34,8 +34,17 @@
     "prettier/prettier": "error",
     "no-console": "error",
     "valid-typeof": "error",
-    "eqeqeq": ["error", "always", {"null": "ignore"}],
-    "strict": ["error", "global"],
+    "eqeqeq": [
+      "error",
+      "always",
+      {
+        "null": "ignore"
+      }
+    ],
+    "strict": [
+      "error",
+      "global"
+    ],
     "no-restricted-syntax": [
       "error",
       {
@@ -66,6 +75,19 @@
         "no-console": "off",
         "no-restricted-syntax": "off"
       }
+    },
+    {
+      "files": [
+        "**/*.ts"
+      ],
+      "extends": [
+        "plugin:@typescript-eslint/eslint-recommended",
+        "plugin:@typescript-eslint/recommended"
+      ],
+      "plugins": [
+        "prettier",
+        "@typescript-eslint"
+      ]
     }
   ]
 }
