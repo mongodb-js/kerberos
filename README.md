@@ -192,7 +192,7 @@ Processes a single kerberos client-side step using the supplied server challenge
 | Param | Type | Description |
 | --- | --- | --- |
 | challenge | <code>string</code> | The response returned after calling `unwrap` |
-| [options] | <code>object</code> | Optional settings |
+| [options] | <code>object</code> | Options |
 | [options.user] | <code>string</code> | The user to authorize |
 | [options.protect] | <code>boolean</code> | Indicates if the wrap should request message confidentiality |
 
