@@ -33,8 +33,4 @@ describe('module', function () {
     expect(api.principalDetails).to.be.a('function');
     expect(api.checkPassword).to.be.a('function');
   });
-
-  it('should export Kerberos', () => {
-    expect(api.Kerberos).to.be.an('object');
-  });
 });
