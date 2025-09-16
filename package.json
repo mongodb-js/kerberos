@@ -64,7 +64,7 @@
     "prebuild": "prebuild --runtime napi --strip --verbose --all"
   },
   "engines": {
-    "node": ">=12.9.0"
+    "node": ">=20.19.0"
   },
   "binary": {
     "napi_versions": [

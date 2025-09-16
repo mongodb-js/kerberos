@@ -120,29 +120,6 @@ tasks:
       - func: run prebuild
 
 buildvariants:
-  - name: ubuntu2204-x64-node-16
-    display_name: 'Ubuntu 22.04 x64 - Node 16'
-    run_on: ubuntu2204-small
-    expansions:
-      has_packages: true
-      packager_distro: ubuntu2204
-      packager_arch: x86_64
-      NODE_LTS_VERSION: "16"
-      NPM_VERSION: "9"
-    tasks:
-      - run-tests-ubuntu
-      - run-tests-ubuntu-rtld
-  - name: ubuntu2204-x64-node-18
-    display_name: 'Ubuntu 22.04 x64 - Node 18'
-    run_on: ubuntu2204-small
-    expansions:
-      has_packages: true
-      packager_distro: ubuntu2204
-      packager_arch: x86_64
-      NODE_LTS_VERSION: "18"
-    tasks:
-      - run-tests-ubuntu
-      - run-tests-ubuntu-rtld
   - name: ubuntu2204-x64-node-20
     display_name: 'Ubuntu 22.04 x64 - Node 20'
     run_on: ubuntu2204-small
@@ -162,29 +139,6 @@ buildvariants:
       packager_distro: ubuntu2204
       packager_arch: x86_64
       NODE_LTS_VERSION: "22"
-    tasks:
-      - run-tests-ubuntu
-      - run-tests-ubuntu-rtld
-  - name: ubuntu2204-arm64-node-16
-    display_name: 'Ubuntu 22.04 arm64 - Node 16'
-    run_on: ubuntu2204-arm64-small
-    expansions:
-      has_packages: true
-      packager_distro: ubuntu2204
-      packager_arch: arm64
-      NODE_LTS_VERSION: "16"
-      NPM_VERSION: "9"
-    tasks:
-      - run-tests-ubuntu
-      - run-tests-ubuntu-rtld
-  - name: ubuntu2204-arm64-node-18
-    display_name: 'Ubuntu 22.04 arm64 - Node 18'
-    run_on: ubuntu2204-arm64-small
-    expansions:
-      has_packages: true
-      packager_distro: ubuntu2204
-      packager_arch: arm64
-      NODE_LTS_VERSION: "18"
     tasks:
       - run-tests-ubuntu
       - run-tests-ubuntu-rtld
