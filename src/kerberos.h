@@ -1,15 +1,10 @@
 #ifndef KERBEROS_NATIVE_EXTENSION_H
 #define KERBEROS_NATIVE_EXTENSION_H
 
-// We generally only target N-API version 4, but the instance data
-// feature is only available in N-API version 6. However, it is
-// available in all Node.js versions that have N-API version 4
-#define NAPI_VERSION 6
-// as an experimental feature (that has not been changed since then).
-#define NAPI_EXPERIMENTAL
-#define NODE_API_EXPERIMENTAL_NOGC_ENV_OPT_OUT
+#define NAPI_VERSION 9
 
 #include <napi.h>
+
 #include "kerberos_common.h"
 
 namespace node_kerberos {
@@ -74,6 +69,6 @@ void TestMethod(const Napi::CallbackInfo& info);
 
 std::string ToStringWithNonStringAsEmpty(Napi::Value value);
 
-}
+}  // namespace node_kerberos
 
 #endif  // KERBEROS_NATIVE_EXTENSION_H
