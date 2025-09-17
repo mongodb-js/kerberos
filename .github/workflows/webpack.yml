@@ -21,7 +21,7 @@ jobs:
     - name: "Install dependencies"
       shell: bash
       run: |
-        npm install
+        npm install --ignore-scripts
 
     - name: "Install dependencies in the Webpack bundle test package"
       shell: bash
