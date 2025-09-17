@@ -22,10 +22,6 @@ jobs:
       shell: bash
       run: |
         npm install --ignore-scripts
-    - name: "Install necessary gssapi C++ dependencies"
-      shell: bash
-      run: |
-        apt-get -qq update && apt-get -qq install -y python3 build-essential libkrb5-dev && ldd --version
 
     - name: "Install dependencies in the Webpack bundle test package"
       shell: bash
