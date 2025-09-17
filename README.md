@@ -150,6 +150,8 @@ NOTE: The test suite requires an active kerberos deployment.
 <dd></dd>
 <dt><a href="#GSS_MECH_OID_SPNEGO">GSS_MECH_OID_SPNEGO</a></dt>
 <dd></dd>
+<dt><a href="#version">version</a></dt>
+<dd></dd>
 </dl>
 
 ## Functions
@@ -295,6 +297,9 @@ Processes a single kerberos server-side step using the supplied client data.
 <a name="GSS_MECH_OID_SPNEGO"></a>
 
 ## GSS_MECH_OID_SPNEGO
+<a name="version"></a>
+
+## version
 <a name="checkPassword"></a>
 
 ## checkPassword(username, password, service, [defaultRealm])
