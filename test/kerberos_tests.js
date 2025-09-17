@@ -222,7 +222,7 @@ describe('Kerberos', function () {
     });
   });
 
-  it('napiVersion() returns 9', function () {
-    expect(kerberos.napiVersion()).to.equal('9');
+  it('definedNapiVersion() returns 9', function () {
+    expect(kerberos.definedNapiVersion()).to.equal('9');
   });
 });

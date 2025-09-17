@@ -66,7 +66,7 @@ void CheckPassword(const Napi::CallbackInfo& info);
 
 std::string ToStringWithNonStringAsEmpty(Napi::Value value);
 
-Napi::Value GetNapiVersion(const Napi::CallbackInfo& info);
+Napi::Value GetDefinedNapiVersion(const Napi::CallbackInfo& info);
 
 }  // namespace node_kerberos
 
