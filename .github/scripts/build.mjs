@@ -83,8 +83,10 @@ async function buildBindings(args, pkg) {
 
   if (process.platform === 'darwin' && process.arch === 'arm64') {
     // The "arm64" build is actually a universal binary
-    const armTar = `kerberos-v${pkg.version}-napi-v4-darwin-arm64.tar.gz`;
-    const x64Tar = `kerberos-v${pkg.version}-napi-v4-darwin-x64.tar.gz`;
+    // @ts-ignore
+    const napiVersion = require('../../package.json').binary.napi_versions[0];
+    const armTar = `kerberos-v${pkg.version}-napi-v${napiVersion}-darwin-arm64.tar.gz`;
+    const x64Tar = `kerberos-v${pkg.version}-napi-v${napiVersion}-darwin-x64.tar.gz`;
     await fs.copyFile(resolveRoot('prebuilds', armTar), resolveRoot('prebuilds', x64Tar));
   }
 
