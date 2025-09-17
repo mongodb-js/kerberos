@@ -154,31 +154,8 @@ Value KerberosServer::ContextCompleteGetter(const CallbackInfo& info) {
     return Boolean::New(Env(), state()->context_complete);
 }
 
-void TestMethod(const CallbackInfo& info) {
-    std::string string = info[0].ToString();
-    bool shouldError = info[1].ToBoolean();
-
-    std::string optionalString;
-    Function callback;
-    if (info[2].IsFunction()) {
-        callback = info[2].As<Function>();
-    } else {
-        optionalString = info[2].ToString();
-        callback = info[3].As<Function>();
-    }
-
-    KerberosWorker::Run(callback, "kerberos:TestMethod", [=](KerberosWorker::SetOnFinishedHandler onFinished) {
-        return onFinished([=](KerberosWorker* worker) {
-            Napi::Env env = worker->Env();
-            if (shouldError) {
-                worker->Call(std::initializer_list<napi_value>
-                    { Error::New(env).Value(), env.Null() });
-            } else {
-                worker->Call(std::initializer_list<napi_value>
-                    { env.Null(), String::New(env, optionalString) });
-            }
-        });
-    });
+Value GetNapiVersion(const CallbackInfo& info) {
+    return String::New(info.Env(), std::to_string(NAPI_VERSION));
 }
 
 static Object Init(Env env, Object exports) {
@@ -190,18 +167,16 @@ static Object Init(Env env, Object exports) {
     Function KerberosServerCtor = KerberosServer::Init(env);
     exports["KerberosClient"] = KerberosClientCtor;
     exports["KerberosServer"] = KerberosServerCtor;
-    env.SetInstanceData(new InstanceData {
-        Reference<Function>::New(KerberosClientCtor, 1),
-        Reference<Function>::New(KerberosServerCtor, 1)
-    });
+    env.SetInstanceData(new InstanceData{Reference<Function>::New(KerberosClientCtor, 1),
+                                         Reference<Function>::New(KerberosServerCtor, 1)});
     exports["initializeClient"] = Function::New(env, InitializeClient);
     exports["initializeServer"] = Function::New(env, InitializeServer);
     exports["principalDetails"] = Function::New(env, PrincipalDetails);
     exports["checkPassword"] = Function::New(env, CheckPassword);
-    exports["_testMethod"] = Function::New(env, TestMethod);
+    exports["napiVersion"] = Function::New(env, GetNapiVersion);
     return exports;
 }
 
 NODE_API_MODULE(kerberos, Init)
 
-}
+}  // namespace node_kerberos

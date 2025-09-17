@@ -64,10 +64,9 @@ void InitializeClient(const Napi::CallbackInfo& info);
 void InitializeServer(const Napi::CallbackInfo& info);
 void CheckPassword(const Napi::CallbackInfo& info);
 
-// NOTE: explicitly used for unit testing `defineOperation`, not meant to be exported
-void TestMethod(const Napi::CallbackInfo& info);
-
 std::string ToStringWithNonStringAsEmpty(Napi::Value value);
+
+Napi::Value GetNapiVersion(const Napi::CallbackInfo& info);
 
 }  // namespace node_kerberos
 
