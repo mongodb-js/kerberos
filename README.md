@@ -123,6 +123,35 @@ NOTE: The test suite requires an active kerberos deployment.
 <dd></dd>
 </dl>
 
+## Constants
+
+<dl>
+<dt><a href="#GSS_C_DELEG_FLAG">GSS_C_DELEG_FLAG</a></dt>
+<dd></dd>
+<dt><a href="#GSS_C_MUTUAL_FLAG">GSS_C_MUTUAL_FLAG</a></dt>
+<dd></dd>
+<dt><a href="#GSS_C_REPLAY_FLAG">GSS_C_REPLAY_FLAG</a></dt>
+<dd></dd>
+<dt><a href="#GSS_C_SEQUENCE_FLAG">GSS_C_SEQUENCE_FLAG</a></dt>
+<dd></dd>
+<dt><a href="#GSS_C_CONF_FLAG">GSS_C_CONF_FLAG</a></dt>
+<dd></dd>
+<dt><a href="#GSS_C_INTEG_FLAG">GSS_C_INTEG_FLAG</a></dt>
+<dd></dd>
+<dt><a href="#GSS_C_ANON_FLAG">GSS_C_ANON_FLAG</a></dt>
+<dd></dd>
+<dt><a href="#GSS_C_PROT_READY_FLAG">GSS_C_PROT_READY_FLAG</a></dt>
+<dd></dd>
+<dt><a href="#GSS_C_TRANS_FLAG">GSS_C_TRANS_FLAG</a></dt>
+<dd></dd>
+<dt><a href="#GSS_C_NO_OID">GSS_C_NO_OID</a></dt>
+<dd></dd>
+<dt><a href="#GSS_MECH_OID_KRB5">GSS_MECH_OID_KRB5</a></dt>
+<dd></dd>
+<dt><a href="#GSS_MECH_OID_SPNEGO">GSS_MECH_OID_SPNEGO</a></dt>
+<dd></dd>
+</dl>
+
 ## Functions
 
 <dl>
@@ -230,6 +259,42 @@ Perform the client side kerberos unwrap step
 
 Processes a single kerberos server-side step using the supplied client data.
 
+<a name="GSS_C_DELEG_FLAG"></a>
+
+## GSS_C_DELEG_FLAG
+<a name="GSS_C_MUTUAL_FLAG"></a>
+
+## GSS_C_MUTUAL_FLAG
+<a name="GSS_C_REPLAY_FLAG"></a>
+
+## GSS_C_REPLAY_FLAG
+<a name="GSS_C_SEQUENCE_FLAG"></a>
+
+## GSS_C_SEQUENCE_FLAG
+<a name="GSS_C_CONF_FLAG"></a>
+
+## GSS_C_CONF_FLAG
+<a name="GSS_C_INTEG_FLAG"></a>
+
+## GSS_C_INTEG_FLAG
+<a name="GSS_C_ANON_FLAG"></a>
+
+## GSS_C_ANON_FLAG
+<a name="GSS_C_PROT_READY_FLAG"></a>
+
+## GSS_C_PROT_READY_FLAG
+<a name="GSS_C_TRANS_FLAG"></a>
+
+## GSS_C_TRANS_FLAG
+<a name="GSS_C_NO_OID"></a>
+
+## GSS_C_NO_OID
+<a name="GSS_MECH_OID_KRB5"></a>
+
+## GSS_MECH_OID_KRB5
+<a name="GSS_MECH_OID_SPNEGO"></a>
+
+## GSS_MECH_OID_SPNEGO
 <a name="checkPassword"></a>
 
 ## checkPassword(username, password, service, [defaultRealm])
@@ -283,6 +348,8 @@ Details are looked up via the `/etc/keytab` file.
 | [options.principal] | <code>string</code> | Optional string containing the client principal in the form 'user@realm' (e.g. 'jdoe@example.com'). |
 | [options.flags] | <code>number</code> | Optional integer used to set GSS flags. (e.g.  `GSS_C_DELEG_FLAG\|GSS_C_MUTUAL_FLAG\|GSS_C_SEQUENCE_FLAG` will allow for forwarding credentials to the remote host) |
 | [options.mechOID] | <code>number</code> | Optional GSS mech OID. Defaults to None (GSS_C_NO_OID). Other possible values are `GSS_MECH_OID_KRB5`, `GSS_MECH_OID_SPNEGO`. |
+| [options.user] | <code>string</code> | The username with which to authenticate.  Only used on Windows. |
+| [options.pass] | <code>string</code> | The password with which to authenticate.  Only used on Windows. |
 
 Initializes a context for client-side authentication with the given service principal.
 
