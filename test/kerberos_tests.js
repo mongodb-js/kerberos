@@ -221,4 +221,8 @@ describe('Kerberos', function () {
       });
     });
   });
+
+  it('definedNapiVersion() returns 9', function () {
+    expect(kerberos.definedNapiVersion()).to.equal('9');
+  });
 });

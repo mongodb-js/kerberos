@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 'use strict';
 
 const { execSync } = require('node:child_process');
@@ -19,6 +20,7 @@ console.log(`kerberos Version: ${kerberosVersion}`);
 
 xtrace('npm pack --pack-destination test/bundling/webpack', { cwd: kerberosRoot });
 
-xtrace(`npm install --no-save kerberos-${kerberosVersion}.tgz`);
+// --ignore-scripts: don't worry about downloading prebuilt binaries, we're only bundling
+xtrace(`npm install --ignore-scripts --no-save kerberos-${kerberosVersion}.tgz`);
 
 console.log('kerberos installed!');
