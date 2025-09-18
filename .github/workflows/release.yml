@@ -36,7 +36,7 @@ jobs:
     environment: release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Node and dependencies
         uses: mongodb-labs/drivers-github-tools/node/setup@v2
@@ -93,7 +93,7 @@ jobs:
     environment: release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Node and dependencies
         uses: mongodb-labs/drivers-github-tools/node/setup@v2
