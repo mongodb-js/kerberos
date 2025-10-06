@@ -59,7 +59,7 @@ npm install kerberos
 Below are the platforms that are available as prebuilds on each github release.
 `prebuild-install` downloads these automatically depending on the platform you are running npm install on.
 
-- Linux GLIBC 2.23 or later
+- Linux GLIBC 2.28 or later
 - s390x
 - arm64
 - x64

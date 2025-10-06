@@ -1,4 +1,4 @@
-FROM ubuntu:noble AS build
+FROM redhat/ubi8 AS build
 
 # Possible values: s390x, arm64, x64
 ARG NODE_ARCH
@@ -9,7 +9,9 @@ ENV PATH=$PATH:/nodejs/bin
 WORKDIR /kerberos
 COPY . .
 
-RUN apt-get -qq update && apt-get -qq install -y python3 build-essential libkrb5-dev && ldd --version
+RUN yum install -y python39 git make gcc-c++ krb5-devel
+
+RUN if [[ $(ldd --version) =~ "2.28" ]]; then  echo "using glibc 2.28"; else echo "glibc version is not 2.28.  bailing..." && exit 1; fi
 
 RUN node .github/scripts/build.mjs
 
