@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [3.0.0-alpha](https://github.com/mongodb-js/kerberos/compare/v2.2.2...v3.0.0-alpha) (2025-10-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* **NODE-7213:** upgrade macos deployment target to 11 ([#277](https://github.com/mongodb-js/kerberos/issues/277))
+* **NODE-7166:** increase napi version to 9 ([#275](https://github.com/mongodb-js/kerberos/issues/275))
+* **NODE-7159:** remove Kerberos export ([#271](https://github.com/mongodb-js/kerberos/issues/271))
+* **NODE-6416:** drop callback support from public API ([#269](https://github.com/mongodb-js/kerberos/issues/269))
+* **NODE-7155:** update minimum supported Node version to 20.19.0 ([#268](https://github.com/mongodb-js/kerberos/issues/268))
+
+### Features
+
+* **NODE-6416:** drop callback support from public API ([#269](https://github.com/mongodb-js/kerberos/issues/269)) ([3a5a37f](https://github.com/mongodb-js/kerberos/commit/3a5a37f381c5b268c4eeb6fff32b4742d44ec710))
+* **NODE-6993:** Add support for FreeBSD ([#248](https://github.com/mongodb-js/kerberos/issues/248)) ([d3e1a71](https://github.com/mongodb-js/kerberos/commit/d3e1a717b5cbb8de01b44d2c083d8f6db317e738))
+* **NODE-7051:** Normalize casing of shlwapi.lib ([#253](https://github.com/mongodb-js/kerberos/issues/253)) ([1a91b69](https://github.com/mongodb-js/kerberos/commit/1a91b6926fdb616ecb7875f73d40216eaa8ee565))
+* **NODE-7152:** deprecate MongoAuthProcess class ([#267](https://github.com/mongodb-js/kerberos/issues/267)) ([6b022d3](https://github.com/mongodb-js/kerberos/commit/6b022d326c59c1056444603a21df8b5f44e8a800))
+* **NODE-7155:** update minimum supported Node version to 20.19.0 ([#268](https://github.com/mongodb-js/kerberos/issues/268)) ([286624d](https://github.com/mongodb-js/kerberos/commit/286624dce90fd32cb293aa68189cd55cfdde5778))
+* **NODE-7159:** remove Kerberos export ([#271](https://github.com/mongodb-js/kerberos/issues/271)) ([7170783](https://github.com/mongodb-js/kerberos/commit/7170783f0b09ff53bb2a4f4faee8306ccf06ca77))
+* **NODE-7164:** add TS definition file to kerberos package ([#274](https://github.com/mongodb-js/kerberos/issues/274)) ([8764240](https://github.com/mongodb-js/kerberos/commit/876424069c6d743eb9de1c8f6be274986291dc76))
+* **NODE-7166:** increase napi version to 9 ([#275](https://github.com/mongodb-js/kerberos/issues/275)) ([cd75e37](https://github.com/mongodb-js/kerberos/commit/cd75e37da1c731eb4c05f38417eaa27c546bd75d))
+* **NODE-7213:** upgrade macos deployment target to 11 ([#277](https://github.com/mongodb-js/kerberos/issues/277)) ([2faa561](https://github.com/mongodb-js/kerberos/commit/2faa56119797421b37d8ac03e40a651da26aefb8))
+
+
+### Bug Fixes
+
+* **NODE-7064:** bump prebuild-install ([#254](https://github.com/mongodb-js/kerberos/issues/254)) ([d2a887a](https://github.com/mongodb-js/kerberos/commit/d2a887a23eb490b31d6932b5d3d90c2f7529a098))
+* **NODE-7226:** build glibc prebuilds on platforms with libc 2.28 ([#281](https://github.com/mongodb-js/kerberos/issues/281)) ([c215be2](https://github.com/mongodb-js/kerberos/commit/c215be2b71afa83de5b076fc57e2e8d301ec5a45))
+
 ## [2.2.2](https://github.com/mongodb-js/kerberos/compare/v2.2.1...v2.2.2) (2025-02-10)
 
 
