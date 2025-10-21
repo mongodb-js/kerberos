@@ -1,6 +1,6 @@
 {
   "name": "kerberos",
-  "version": "2.2.2",
+  "version": "3.0.0-alpha",
   "description": "Kerberos library for Node.js",
   "main": "lib/index.js",
   "files": [
