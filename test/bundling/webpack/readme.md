@@ -9,7 +9,6 @@ In order to use kerberos with webpack there are two changes beyond the default c
 
 To use this bundler test:
 - Make changes to bson
-- run `npm run build` in the root of the repo to rebuild the kerberos src
 - in this directory run `npm run install:kerberos` to install kerberos as if it were from npm
   - We use a `.tgz` install to make sure we're using exactly what will be published to npm
 - run `npm run build` to check that webpack can pull in the changes

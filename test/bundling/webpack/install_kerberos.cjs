@@ -23,4 +23,9 @@ xtrace('npm pack --pack-destination test/bundling/webpack', { cwd: kerberosRoot 
 // --ignore-scripts: don't worry about downloading prebuilt binaries, we're only bundling
 xtrace(`npm install --ignore-scripts --no-save kerberos-${kerberosVersion}.tgz`);
 
-console.log('kerberos installed!');
+console.log('kerberos unpacked! Now rebuilding...');
+
+// build .node
+xtrace(`npm rebuild kerberos`);
+
+console.log('kerberos installed and built!');
