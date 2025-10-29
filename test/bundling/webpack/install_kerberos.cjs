@@ -26,6 +26,6 @@ xtrace(`npm install --ignore-scripts --no-save kerberos-${kerberosVersion}.tgz`)
 console.log('kerberos unpacked! Now rebuilding...');
 
 // build .node
-xtrace(`npm rebuild kerberos --build-from-source`);
+xtrace(`npm rebuild kerberos`);
 
 console.log('kerberos installed and built!');
