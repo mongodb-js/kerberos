@@ -40,3 +40,9 @@ jobs:
       working-directory: ./test/bundling/webpack
       run: |
         npm run build
+
+    - name: "Run bundled script"
+      shell: bash
+      working-directory: ./test/bundling/webpack
+      run: |
+        node dist/main.js
