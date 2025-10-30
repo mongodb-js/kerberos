@@ -142,6 +142,17 @@ buildvariants:
     tasks:
       - run-tests-ubuntu
       - run-tests-ubuntu-rtld
+  - name: ubuntu2204-x64-node-24
+    display_name: 'Ubuntu 22.04 x64 - Node 24'
+    run_on: ubuntu2204-small
+    expansions:
+      has_packages: true
+      packager_distro: ubuntu2204
+      packager_arch: x86_64
+      NODE_LTS_VERSION: "24"
+    tasks:
+      - run-tests-ubuntu
+      - run-tests-ubuntu-rtld
   - name: ubuntu2204-arm64-node-20
     display_name: 'Ubuntu 22.04 arm64 - Node 20'
     run_on: ubuntu2204-arm64-small
@@ -161,6 +172,17 @@ buildvariants:
       packager_distro: ubuntu2204
       packager_arch: arm64
       NODE_LTS_VERSION: "22"
+    tasks:
+      - run-tests-ubuntu
+      - run-tests-ubuntu-rtld
+  - name: ubuntu2204-arm64-node-24
+    display_name: 'Ubuntu 22.04 arm64 - Node 24'
+    run_on: ubuntu2204-arm64-small
+    expansions:
+      has_packages: true
+      packager_distro: ubuntu2204
+      packager_arch: arm64
+      NODE_LTS_VERSION: "24"
     tasks:
       - run-tests-ubuntu
       - run-tests-ubuntu-rtld
