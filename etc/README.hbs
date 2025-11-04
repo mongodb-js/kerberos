@@ -39,12 +39,13 @@ modify an existing installation) and select *Common Tools for Visual C++* during
 Only the following version combinations with the [MongoDB Node.js
 Driver](https://github.com/mongodb/node-mongodb-native) are considered stable.
 
-| | `kerberos@1.x` | `kerberos@2.x` |
-| ------------- | -------------- | -------------- |
-| `mongodb@6.x` | N/A | ✓ |
-| `mongodb@5.x` | ✓ | ✓ |
-| `mongodb@4.x` | ✓ | ✓ |
-| `mongodb@3.x` | ✓ | N/A |
+|               | `kerberos@1.x` | `kerberos@2.x` | `kerberos@7.x` |
+| ------------- | -------------- | -------------- | -------------- |
+| `mongodb@7.x` | N/A            | N/A            | ✓              |
+| `mongodb@6.x` | N/A            | ✓              | N/A            |
+| `mongodb@5.x` | ✓              | ✓              | N/A            |
+| `mongodb@4.x` | ✓              | ✓              | N/A            |
+| `mongodb@3.x` | ✓              | N/A            | N/A            |
 
 ### Installation
 
