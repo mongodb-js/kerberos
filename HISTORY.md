@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [7.0.0](https://github.com/mongodb-js/kerberos/compare/v3.0.0-alpha...v7.0.0) (2025-11-04)
+
+
+### Documentation
+
+* **NODE-7272:** update compat tables for v7 ([#290](https://github.com/mongodb-js/kerberos/issues/290)) ([a22c5ae](https://github.com/mongodb-js/kerberos/commit/a22c5ae99fdfb47886d631562f4fa17a4ca1ea03))
+
 ## [3.0.0-alpha](https://github.com/mongodb-js/kerberos/compare/v2.2.2...v3.0.0-alpha) (2025-10-21)
 
 
