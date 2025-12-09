@@ -15,20 +15,27 @@ jobs:
   host_builds:
     strategy:
       matrix:
-        os: [macos-latest, windows-2022]
+        include:
+          - os: macos-latest
+            arch: ''
+          - os: windows-2022
+            arch: ''
+          - os: windows-2022
+            arch: arm64
+            runs_on: windows-11-arm
       fail-fast: false
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runs_on || matrix.os }}
     steps:
       - uses: actions/checkout@v5
 
-      - name: Build ${{ matrix.os }} Prebuild
-        run: node .github/scripts/build.mjs
+      - name: Build ${{ matrix.os }}${{ matrix.arch && format(' {0}', matrix.arch) || '' }} Prebuild
+        run: node .github/scripts/build.mjs${{ matrix.arch && format(' --arch {0}', matrix.arch) || '' }}
 
       - id: upload
         name: Upload prebuild
         uses: actions/upload-artifact@v4
         with:
-          name: build-${{ matrix.os }}
+          name: build-${{ matrix.os }}${{ matrix.arch && format('-{0}', matrix.arch) || '' }}
           path: prebuilds/
           if-no-files-found: 'error'
           retention-days: 1
