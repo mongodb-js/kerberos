@@ -20,7 +20,6 @@ async function parseArguments() {
 
   const options = {
     'kerberos_use_rtld': { type: 'boolean', default: true },
-    arch: { short: 'a', type: 'string', default: '' },
     help: { short: 'h', type: 'boolean', default: false }
   };
 
@@ -38,7 +37,6 @@ async function parseArguments() {
 
   return {
     kerberos_use_rtld: !!args.values.kerberos_use_rtld,
-    arch: args.values.arch || '',
     pkg
   };
 }
@@ -78,12 +76,7 @@ async function buildBindings(args, pkg) {
       ? { env: { ...process.env, GYP_DEFINES: gypDefines } }
       : undefined;
 
-  const prebuildArgs = ['run', 'prebuild'];
-  if (args.arch) {
-    prebuildArgs.push('--', '--arch', args.arch);
-  }
-
-  await run('npm', prebuildArgs, prebuildOptions);
+  await run('npm', ['run', 'prebuild'], prebuildOptions);
 
   // TODO(NODE-5140): When we have a TS build step
   // await run('npm', ['run', 'prepare']);
