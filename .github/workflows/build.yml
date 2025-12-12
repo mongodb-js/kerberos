@@ -15,7 +15,7 @@ jobs:
   host_builds:
     strategy:
       matrix:
-        os: [macos-latest, windows-2022]
+        os: [macos-latest, windows-2022, windows-11-arm]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:

@@ -69,6 +69,7 @@ Below are the platforms that are available as prebuilds on each github release.
 - arm64
 - Windows
 - x64
+- arm64
 
 ### Release Integrity
 
