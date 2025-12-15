@@ -39,13 +39,13 @@ modify an existing installation) and select *Common Tools for Visual C++* during
 Only the following version combinations with the [MongoDB Node.js
 Driver](https://github.com/mongodb/node-mongodb-native) are considered stable.
 
-| | `kerberos@1.x` | `kerberos@2.x` | `kerberos@7.x` |
+|               | `kerberos@1.x` | `kerberos@2.x` | `kerberos@7.x` |
 | ------------- | -------------- | -------------- | -------------- |
-| `mongodb@7.x` | N/A | N/A | ✓ |
-| `mongodb@6.x` | N/A | ✓ | N/A |
-| `mongodb@5.x` | ✓ | ✓ | N/A |
-| `mongodb@4.x` | ✓ | ✓ | N/A |
-| `mongodb@3.x` | ✓ | N/A | N/A |
+| `mongodb@7.x` | N/A            | N/A            | ✓              |
+| `mongodb@6.x` | N/A            | ✓              | N/A            |
+| `mongodb@5.x` | ✓              | ✓              | N/A            |
+| `mongodb@4.x` | ✓              | ✓              | N/A            |
+| `mongodb@3.x` | ✓              | N/A            | N/A            |
 
 ### Installation
 
@@ -59,7 +59,7 @@ npm install kerberos
 
 There are two support tiers:
 
-- **Tier 1**: These platforms represent the majority of Node.js users. Test failures on tier 1 platforms will block
+- **Tier 1**: These platforms represent the majority of our users. Test failures on tier 1 platforms will block
 releases.
 - **Experimental**: May not compile, test suite may not exist or may not pass. Test failures on experimental platforms
 do not block releases. Contributions to improve support for these platforms are welcome.
