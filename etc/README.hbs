@@ -39,13 +39,13 @@ modify an existing installation) and select *Common Tools for Visual C++* during
 Only the following version combinations with the [MongoDB Node.js
 Driver](https://github.com/mongodb/node-mongodb-native) are considered stable.
 
-|               | `kerberos@1.x` | `kerberos@2.x` | `kerberos@7.x` |
+| | `kerberos@1.x` | `kerberos@2.x` | `kerberos@7.x` |
 | ------------- | -------------- | -------------- | -------------- |
-| `mongodb@7.x` | N/A            | N/A            | ✓              |
-| `mongodb@6.x` | N/A            | ✓              | N/A            |
-| `mongodb@5.x` | ✓              | ✓              | N/A            |
-| `mongodb@4.x` | ✓              | ✓              | N/A            |
-| `mongodb@3.x` | ✓              | N/A            | N/A            |
+| `mongodb@7.x` | N/A | N/A | ✓ |
+| `mongodb@6.x` | N/A | ✓ | N/A |
+| `mongodb@5.x` | ✓ | ✓ | N/A |
+| `mongodb@4.x` | ✓ | ✓ | N/A |
+| `mongodb@3.x` | ✓ | N/A | N/A |
 
 ### Installation
 
@@ -55,20 +55,28 @@ Now you can install `kerberos` with the following:
 npm install kerberos
 ```
 
+#### Support Strategy
+
+There are two support tiers:
+
+- **Tier 1**: These platforms represent the majority of Node.js users. Test failures on tier 1 platforms will block
+releases.
+- **Experimental**: May not compile, test suite may not exist or may not pass. Test failures on experimental platforms
+do not block releases. Contributions to improve support for these platforms are welcome.
+
 #### Prebuild Platforms
 
 Below are the platforms that are available as prebuilds on each github release.
 `prebuild-install` downloads these automatically depending on the platform you are running npm install on.
 
-- Linux GLIBC 2.28 or later
-- s390x
-- arm64
-- x64
-- MacOS universal binary
-- x64
-- arm64
-- Windows
-- x64
+| Operating System | Platform | Support Type |
+| ---------------- | -------- | ------------ |
+| Linux GLIBC 2.28 or later | s390x | Tier 1 |
+| Linux GLIBC 2.28 or later | arm64 | Tier 1 |
+| Linux GLIBC 2.28 or later | x64 | Tier 1 |
+| MacOS universal binary | x64 | Tier 1 |
+| MacOS universal binary | arm64 | Tier 1 |
+| Windows | x64 | Tier 1 |
 
 ### Release Integrity
 
