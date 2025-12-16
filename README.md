@@ -61,7 +61,7 @@ There are two support tiers:
 
 - **Tier 1**: These platforms represent the majority of our users. Test failures on tier 1 platforms will block
 releases.
-- **Experimental**: May not compile, test suite may not exist or may not pass. Test failures on experimental platforms
+- **Experimental**: Test suite may not exist or may not pass. Test failures on experimental platforms
 do not block releases. Contributions to improve support for these platforms are welcome.
 
 #### Prebuild Platforms
