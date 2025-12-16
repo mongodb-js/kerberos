@@ -69,14 +69,14 @@ do not block releases. Contributions to improve support for these platforms are 
 Below are the platforms that are available as prebuilds on each github release.
 `prebuild-install` downloads these automatically depending on the platform you are running npm install on.
 
-| Operating System | Platform | Support Type |
-| ---------------- | -------- | ------------ |
-| Linux GLIBC 2.28 or later | s390x | Tier 1 |
-| Linux GLIBC 2.28 or later | arm64 | Tier 1 |
-| Linux GLIBC 2.28 or later | x64 | Tier 1 |
-| MacOS universal binary | x64 | Tier 1 |
-| MacOS universal binary | arm64 | Tier 1 |
-| Windows | x64 | Tier 1 |
+| Operating System          | Platform | Support Type |
+| ------------------------- | -------- | ------------ |
+| Linux GLIBC 2.28 or later |    s390x |       Tier 1 |
+| Linux GLIBC 2.28 or later |    arm64 |       Tier 1 |
+| Linux GLIBC 2.28 or later |      x64 |       Tier 1 |
+| MacOS universal binary    |      x64 |       Tier 1 |
+| MacOS universal binary    |    arm64 |       Tier 1 |
+| Windows                   |      x64 |       Tier 1 |
 
 ### Release Integrity
 
