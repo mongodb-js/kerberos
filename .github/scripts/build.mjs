@@ -96,7 +96,7 @@ async function buildBindings(args, pkg) {
     await fs.copyFile(resolveRoot('prebuilds', armTar), resolveRoot('prebuilds', x64Tar));
   }
 
-  await run('node', ['--print', `require('.')`], { cwd: resolveRoot() })
+  await run('node', ['--print', `require('.')`], { cwd: resolveRoot() });
 }
 
 async function main() {

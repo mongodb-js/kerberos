@@ -77,6 +77,7 @@ Below are the platforms that are available as prebuilds on each github release.
 | MacOS universal binary    |      x64 |       Tier 1 |
 | MacOS universal binary    |    arm64 |       Tier 1 |
 | Windows                   |      x64 |       Tier 1 |
+| Windows                   |    arm64 | Experimental |
 
 ### Release Integrity
 
