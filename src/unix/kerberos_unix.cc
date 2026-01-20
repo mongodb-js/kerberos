@@ -11,10 +11,10 @@ using namespace Napi;
 #define GSS_MECH_OID_SPNEGO 6
 
 static char krb5_mech_oid_bytes[] = "\x2a\x86\x48\x86\xf7\x12\x01\x02\x02";
-gss_OID_desc krb5_mech_oid = {9, &krb5_mech_oid_bytes};
+static gss_OID_desc krb5_mech_oid = {9, &krb5_mech_oid_bytes};
 
 static char spnego_mech_oid_bytes[] = "\x2b\x06\x01\x05\x05\x02";
-gss_OID_desc spnego_mech_oid = {6, &spnego_mech_oid_bytes};
+static gss_OID_desc spnego_mech_oid = {6, &spnego_mech_oid_bytes};
 
 /// KerberosClient
 void KerberosClient::Step(const CallbackInfo& info) {
