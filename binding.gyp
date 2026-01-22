@@ -21,6 +21,8 @@
       },
       'cflags!': [ '-fno-exceptions' ],
       'cflags_cc!': [ '-fno-exceptions' ],
+      'cflags': [ '-fstack-protector-strong' ],
+      'cflags_cc': [ '-fstack-protector-strong' ],
       'msvs_configuration_attributes': {
         'SpectreMitigation': 'Spectre'
       },
