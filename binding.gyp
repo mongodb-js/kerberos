@@ -29,6 +29,9 @@
           'ExceptionHandling': 1,
           'AdditionalOptions': [
             '/guard:cf',
+            '/sdl',
+            '/W3',
+            '/w34146',
             '/w34244',
             '/w34267',
             '/ZH:SHA_256'
