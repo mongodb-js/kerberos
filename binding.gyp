@@ -44,6 +44,10 @@
         }
       },
       'conditions': [
+        ['OS!="win"', {
+          'cflags': ['-fstack-protector-strong'],
+          'cflags_cc': ['-fstack-protector-strong']
+        }],
         ['OS=="mac"', { 'cflags+': ['-fvisibility=hidden'] }],
         ['_type!="static_library" and ARCH=="arm64"', {
           'xcode_settings': {
