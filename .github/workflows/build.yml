@@ -7,9 +7,7 @@ on:
 name: Build and Test
 
 permissions:
-  contents: write
-  pull-requests: write
-  id-token: write
+  contents: read
 
 jobs:
   host_builds:
