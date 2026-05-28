@@ -82,7 +82,7 @@ Below are the platforms that are available as prebuilds on each github release.
 ### Release Integrity
 
 Releases are created automatically and signed using the [Node team's GPG key](https://pgp.mongodb.com/node-driver.asc).
-This applies to the git tag as well as all release packages provided as part of a GitHub release. To verify the provided
+All release packages provided as part of a GitHub release are signed. To verify the provided
 packages, download the key and import it using gpg:
 
 ```
@@ -105,11 +105,17 @@ gpg --verify kerberos-X.Y.Z.tgz.sig kerberos-X.Y.Z.tgz
 ```
 
 >[!Note]
-No verification is done when using npm to install the package. To ensure release integrity when using npm, download the
+No GPG verification is done when using npm to install the package. To ensure release integrity when using npm, download the
 tarball manually from the GitHub release, verify the signature, then install the package from the downloaded tarball
-using npm install mongodb-X.Y.Z.tgz.
+using npm install kerberos-X.Y.Z.tgz.
 
 To verify the native `.node` packages, follow the same steps as above.
+
+Releases published to the npm registry also include a [provenance attestation](https://docs.npmjs.com/generating-provenance-statements), which cryptographically links the package to its source repository and build workflow. To verify provenance:
+
+```shell
+npm audit signatures
+```
 
 ### Testing
 
