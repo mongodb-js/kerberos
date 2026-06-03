@@ -5,12 +5,20 @@
 
 version: 2
 updates:
-  - package-ecosystem: "github-actions" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
       interval: "monthly"
-  - package-ecosystem: "npm" # See documentation for possible values
-    directory: "/" # Location of package manifests
+    groups:
+      github-actions:
+        patterns: ["*"]
+        applies-to: both
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "npm"
+    directory: "/"
     schedule:
       interval: "monthly"
     ignore:
@@ -28,17 +36,28 @@ updates:
       # node-gyp now depends on python 3.10, we install 3.6 in our dockerfile
       - dependency-name: "node-gyp"
       - dependency-name: "prebuild"
-      
     groups:
-      prod-dependencies:
+      production-dependencies:
         dependency-type: "production"
-        applies-to: version-updates
+        applies-to: both
         update-types:
-        - "minor"
-        - "patch"
+          - "minor"
+          - "patch"
       development-dependencies:
         dependency-type: "development"
-        applies-to: version-updates
+        applies-to: both
         update-types:
-        - "minor"
-        - "patch"
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "npm"
+    directory: "/test/bundling/webpack"
+    schedule:
+      interval: "monthly"
+    groups:
+      webpack-test-dependencies:
+        patterns: ["*"]
+        applies-to: both
+        update-types:
+          - "minor"
+          - "patch"
