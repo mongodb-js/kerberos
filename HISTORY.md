@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [7.1.0](https://github.com/mongodb-js/kerberos/compare/v7.0.0...v7.1.0) (2026-06-03)
+
+
+### Features
+
+* **NODE-7338:** support building win32-arm64 prebuild ([#295](https://github.com/mongodb-js/kerberos/issues/295)) ([687aaf1](https://github.com/mongodb-js/kerberos/commit/687aaf1706f1aa693e198b6b9cc9ebd5ff8f743b))
+* **NODE-7403:** enable more build warnings on Windows ([#305](https://github.com/mongodb-js/kerberos/issues/305)) ([d3e2cb2](https://github.com/mongodb-js/kerberos/commit/d3e2cb2488980be07df49332f0ee4f96825c724e))
+* **NODE-7404:** enable stack-protector-strong flag on Linux ([#306](https://github.com/mongodb-js/kerberos/issues/306)) ([d16dd0a](https://github.com/mongodb-js/kerberos/commit/d16dd0a7344e41edb52887a44f8f01f1ddb9761c))
+
+
+### Bug Fixes
+
+* **NODE-7395:** do not export mech_oid symbols ([#302](https://github.com/mongodb-js/kerberos/issues/302)) ([11a15bb](https://github.com/mongodb-js/kerberos/commit/11a15bb5797f395ee3ab1bba3512586aa7d109a5))
+
 ## [7.0.0](https://github.com/mongodb-js/kerberos/compare/v3.0.0-alpha...v7.0.0) (2025-11-04)
 
 
