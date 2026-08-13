@@ -39,7 +39,7 @@ All scripts from `package.json`:
 
 ## Commit Messages
 
-- [Conventional Commits](https://www.conventionalcommits.org/), optionally with a Jira ticket: `<type>(NODE-XXXX): <subject>`. Types are `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`. Breaking changes use `!` (e.g. `feat(NODE-XXXX)!: …`). Though this is an optional rule, it is encouraged.
+[Conventional Commits](https://www.conventionalcommits.org/) optionally with a Jira ticket: `<type>(NODE-XXXX): <subject>` — types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`; breaking changes use `!` (e.g. `feat(NODE-XXXX)!: …`). This rule is mandatory for PR descriptions, because that is what ends up in the history. The individual commits inside a PR do not have to follow this convention, because we squash PR commits.
 
 ## Related Repositories
 
