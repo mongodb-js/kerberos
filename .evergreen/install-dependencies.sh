@@ -7,13 +7,11 @@ set -o errexit  # Exit the script with error if any of the commands fail
 ## a full nodejs version, in the format v<major>.<minor>.patch
 export NODE_LTS_VERSION=${NODE_LTS_VERSION:-20}
 
-# Use the npm bundled with the installed Node.js release instead of upgrading to
-# npm@latest. TODO: npm v12 does not support build-from-source
-export SKIP_NPM_UPGRADE=true
 # npm version can be defined in the environment for cases where we need to install
 # a version lower than latest to support EOL Node versions. When not provided will
 # be handled by this script in drivers tools.
 source $DRIVERS_TOOLS/.evergreen/install-node.sh
 
-npm install --build-from-source
+npm_config_build_from_source=true npm install
+
 ldd build/*/kerberos.node || true
