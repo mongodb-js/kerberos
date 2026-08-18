@@ -128,8 +128,6 @@ docker run -i -v PATH_TO_KERBEROS_REPO:/app -w /app -e PROJECT_DIRECTORY=/app ub
 
 NOTE: The test suite requires an active kerberos deployment.
 
-## Development
-
 ## AI Agent Configuration
 
 This repository uses [agentskills.io](https://agentskills.io) conventions for AI coding agent
