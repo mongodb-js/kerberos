@@ -16,7 +16,7 @@ All scripts from `package.json`:
 - `npm run check:lint` — lint JS/TS.
 - `npm run format-js` — eslint --fix.
 - `npm run format-cxx` — clang-format the C++ sources in `src/`.
-- `npm run docs` — regenerate README.md from JSDoc in `lib/index.js` (never edit README.md directly, edit `etc/README.hbs` or the JSDoc).
+- `npm run docs` — regenerate README.md from JSDoc in `lib/index.js` (never edit README.md directly, edit `etc/README.hbs` or the JSDoc). Deletes the README before regenerating it.
 - `npm run precommit` — `check-clang-format`. Verifies C++ formatting, and is invoked by the pre-commit hook.
 - `npm run prepare` — points `core.hooksPath` at `.githooks/` so the tracked pre-commit hook is active. Runs automatically on `npm install` in a clone. It does not run for downstream consumers installing the published package.
 - `npm run prebuild` — build prebuilt addon binaries (`prebuild --runtime napi --strip --verbose --all`). Used by CI and release, rarely run locally.
