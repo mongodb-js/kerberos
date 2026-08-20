@@ -128,6 +128,20 @@ docker run -i -v PATH_TO_KERBEROS_REPO:/app -w /app -e PROJECT_DIRECTORY=/app ub
 
 NOTE: The test suite requires an active kerberos deployment.
 
+## AI Agent Configuration
+
+This repository uses [agentskills.io](https://agentskills.io) conventions for AI coding agent
+instructions. `AGENTS.md` is the canonical source of truth — tool-specific files like `CLAUDE.md`
+are generated references.
+
+### Adding a nested AGENTS.md
+
+1. Create an `AGENTS.md` in the target directory.
+2. `git add` the file.
+3. Run `scripts/symlink-claude-md.sh` to generate the companion `CLAUDE.md`.
+    - Note: `scripts/symlink-claude-md.sh` is vendored from an [internal repo](https://github.com/10gen/mongohouse/blob/master/scripts/symlink-claude-md.sh) and should not be edited directly.
+4. Stage and commit the files.
+
 # Documentation
 
 ## Classes
@@ -386,3 +400,4 @@ Initializes a context for client-side authentication with the given service prin
 Initializes a context for server-side authentication with the given service principal.
 
 **Returns**: [<code>Promise.&lt;KerberosServer&gt;</code>](#KerberosServer) - returns Promise  
+
