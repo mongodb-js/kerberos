@@ -10,9 +10,11 @@ updates:
     schedule:
       interval: "monthly"
   - package-ecosystem: "npm" # See documentation for possible values
-    directory: "/" # Location of package manifests
+    directories: # Location of package manifests
+      - "/"
+      - "/test/bundling/webpack"
     schedule:
-      interval: "monthly"
+      interval: "quarterly"
     ignore:
       # chai is esmodule only.
       - dependency-name: "chai"
