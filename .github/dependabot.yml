@@ -9,12 +9,18 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "monthly"
+    commit-message:
+      prefix: "chore" # Prefix PR with chore(...)
+      include: "scope" # Prefix the PR with chore(deps)
   - package-ecosystem: "npm" # See documentation for possible values
     directories: # Location of package manifests
       - "/"
       - "/test/bundling/webpack"
     schedule:
       interval: "quarterly"
+    commit-message:
+      prefix: "chore" # Prefix PR with chore(...)
+      include: "scope" # Prefix the PR with chore(deps) or chore(deps-dev)
     ignore:
       # chai is esmodule only.
       - dependency-name: "chai"
@@ -30,7 +36,7 @@ updates:
       # node-gyp now depends on python 3.10, we install 3.6 in our dockerfile
       - dependency-name: "node-gyp"
       - dependency-name: "prebuild"
-      
+
     groups:
       prod-dependencies:
         dependency-type: "production"
