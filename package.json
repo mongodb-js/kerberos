@@ -45,9 +45,14 @@
     "eslint-plugin-prettier": "^5.5.4",
     "jsdoc-to-markdown": "^9.1.2",
     "mocha": "^11.7.1",
-    "node-gyp": "^11.4.2",
+    "node-gyp": "^12.4.0",
     "prebuild": "^13.0.1",
     "prettier": "^3.6.2"
+  },
+  "overrides": {
+    "prebuild": {
+      "node-gyp": "$node-gyp"
+    }
   },
   "scripts": {
     "install": "prebuild-install --runtime napi || node-gyp rebuild",
