@@ -25,8 +25,9 @@ updates:
         versions: [">=5.0.0"]
       # we ignore TS as a part of quarterly dependency updates.
       - dependency-name: "typescript"
-      # node-gyp now depends on python 3.10, we install 3.6 in our dockerfile
+      # node-gyp 13+ drops Node 20, so we must keep to 12.x
       - dependency-name: "node-gyp"
+        versions: [">=13.0.0"]
       - dependency-name: "prebuild"
       
     groups:
