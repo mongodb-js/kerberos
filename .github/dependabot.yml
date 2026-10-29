@@ -9,10 +9,18 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "monthly"
+    commit-message:
+      prefix: "chore" # Prefix PR with chore(...)
+      include: "scope" # Prefix the PR with chore(deps)
   - package-ecosystem: "npm" # See documentation for possible values
-    directory: "/" # Location of package manifests
+    directories: # Location of package manifests
+      - "/"
+      - "/test/bundling/webpack"
     schedule:
-      interval: "monthly"
+      interval: "quarterly"
+    commit-message:
+      prefix: "chore" # Prefix PR with chore(...)
+      include: "scope" # Prefix the PR with chore(deps) or chore(deps-dev)
     ignore:
       # chai is esmodule only.
       - dependency-name: "chai"
@@ -29,7 +37,7 @@ updates:
       - dependency-name: "node-gyp"
         versions: [">=13.0.0"]
       - dependency-name: "prebuild"
-      
+
     groups:
       prod-dependencies:
         dependency-type: "production"
